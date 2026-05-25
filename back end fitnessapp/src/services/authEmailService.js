@@ -27,7 +27,7 @@ export const sendLoginEmail = async (email, user_id) => {
 
     await sendEmail(
       email,
-      ' Novo acesso à sua conta',
+      ' Novo acesso a sua conta',
       `Olá!\n\nDetectamos um novo login na sua conta do Fitness App.\n\nData e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n\nSe não foi você, recomendamos que altere sua senha imediatamente.\n\nEquipe Fitness App`
     );
 

@@ -72,10 +72,11 @@ export const login = async (c) => {
       { expiresIn: '3h' }
     );
 
-    c.header(
-      'Set-Cookie',
-      `auth_token=${token}; HttpOnly; Path=/; Max-Age=10800; SameSite=None; Secure`
-    );
+  return c.json({
+  message: 'Login bem-sucedido',
+  token,
+  user: { user_id, email },
+});
 
     sendLoginEmail(email, user_id).catch((err) =>
       console.error('Falha ao enviar e-mail de login:', err.message)
@@ -114,10 +115,7 @@ export const validate = async (c) => {
 
 export const logout = async (c) => {
   try {
-    c.header(
-      'Set-Cookie',
-      'auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure'
-    );
+  return c.json({ message: 'Logout bem-sucedido' });
 
     return c.json({ message: 'Logout bem-sucedido' });
   } catch (error) {
