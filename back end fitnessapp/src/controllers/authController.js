@@ -77,7 +77,10 @@ export const login = async (c) => {
       { expiresIn: '3h' }
     );
 
-    c.header('Set-Cookie', `auth_token=${token}; HttpOnly; Path=/; Max-Age=10800; SameSite=Strict; Secure`);
+    c.header(
+      'Set-Cookie',
+      `auth_token=${token}; HttpOnly; Path=/; Max-Age=10800; SameSite=None; Secure`
+    );
 
     return c.json({
       message: 'Login bem-sucedido',
@@ -115,7 +118,10 @@ export const validate = async (c) => {
 
 export const logout = async (c) => {
   try {
-    c.header('Set-Cookie', 'auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict; Secure');
+    c.header(
+      'Set-Cookie',
+      'auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure'
+    );
 
     return c.json({
       message: 'Logout bem-sucedido',
