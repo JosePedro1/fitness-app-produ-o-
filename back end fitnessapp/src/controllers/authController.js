@@ -5,6 +5,7 @@ import { sendRegisterEmail, sendLoginEmail } from '../services/authEmailService.
 export const register = async (c) => {
   try {
     const { email, password } = await c.req.json();
+    console.log(`[register] Tentativa de cadastro para: ${email}`);
 
     const { data: existingUser } = await supabase
       .from('users')
@@ -22,6 +23,7 @@ export const register = async (c) => {
     });
 
     if (error) {
+      console.error(`[register] Erro no signUp:`, error.message);
       return c.json({ error: error.message }, 400);
     }
 
@@ -33,17 +35,14 @@ export const register = async (c) => {
 
     const { error: userError } = await supabase
       .from('users')
-      .insert({
-        user_id,
-        email,
-        password,
-      });
+      .insert({ user_id, email, password });
 
     if (userError) {
+      console.error(`[register] Erro ao salvar no banco:`, userError.message);
       return c.json({ error: 'Erro ao salvar usuário' }, 500);
     }
 
-    // Envia e-mail de boas-vindas (não bloqueia a resposta)
+    console.log(`[register] Usuário salvo, chamando sendRegisterEmail...`);
     sendRegisterEmail(email).catch((err) =>
       console.error('Falha ao enviar e-mail de cadastro:', err)
     );
