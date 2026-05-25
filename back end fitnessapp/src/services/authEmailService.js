@@ -1,21 +1,22 @@
-import supabase from '../config/supabase.js';  
-import { sendEmail } from './emailService.js';  
+import supabase from '../config/supabase.js';
+import { sendEmail } from './emailService.js';
 
 export const sendRegisterEmail = async (email) => {
+  console.log(`[sendRegisterEmail] Iniciando envio para ${email}`);
   try {
     await sendEmail(
       email,
       'Cadastro realizado com sucesso',
       `Olá, seu cadastro no Fitness App foi realizado com sucesso. Seja bem-vindo!`
     );
-
-    console.log(`E-mail de cadastro enviado para ${email}`);
+    console.log(`[sendRegisterEmail] Sucesso para ${email}`);
   } catch (error) {
-    console.error('Erro ao enviar e-mail de cadastro', error);
+    console.error('[sendRegisterEmail] ERRO:', error.message, error.code, error.response);
   }
 };
 
 export const sendLoginEmail = async (email, user_id) => {
+  console.log(`[sendLoginEmail] Iniciando envio para ${email}`);
   try {
     const today = new Date().toISOString().split('T')[0];
 
@@ -26,7 +27,7 @@ export const sendLoginEmail = async (email, user_id) => {
       .single();
 
     if (user?.last_login_email_sent === today) {
-      console.log(`E-mail de login já enviado hoje para ${email}`);
+      console.log(`[sendLoginEmail] Já enviado hoje para ${email}`);
       return;
     }
 
@@ -38,13 +39,11 @@ export const sendLoginEmail = async (email, user_id) => {
 
     await supabase
       .from('users')
-      .update({
-        last_login_email_sent: today,
-      })
+      .update({ last_login_email_sent: today })
       .eq('user_id', user_id);
 
-    console.log(`E-mail de login enviado para ${email}`);
+    console.log(`[sendLoginEmail] Sucesso para ${email}`);
   } catch (error) {
-    console.error('Erro ao enviar e-mail de login', error);
+    console.error('[sendLoginEmail] ERRO:', error.message, error.code, error.response);
   }
 };

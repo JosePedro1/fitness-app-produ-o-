@@ -17,10 +17,7 @@ export const register = async (c) => {
       return c.json({ error: 'Este e-mail já está registrado.' }, 400);
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
       console.error(`[register] Erro no signUp:`, error.message);
@@ -43,9 +40,8 @@ export const register = async (c) => {
     }
 
     console.log(`[register] Usuário salvo, chamando sendRegisterEmail...`);
-    sendRegisterEmail(email).catch((err) =>
-      console.error('Falha ao enviar e-mail de cadastro:', err)
-    );
+    await sendRegisterEmail(email);
+    console.log(`[register] sendRegisterEmail concluído`);
 
     return c.json({
       message: 'Usuário registrado com sucesso',
@@ -60,11 +56,9 @@ export const register = async (c) => {
 export const login = async (c) => {
   try {
     const { email, password } = await c.req.json();
+    console.log(`[login] Tentativa de login para: ${email}`);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       return c.json({ error: 'E-mail ou senha incorretos.' }, 400);
@@ -87,17 +81,12 @@ export const login = async (c) => {
       `auth_token=${token}; HttpOnly; Path=/; Max-Age=10800; SameSite=None; Secure`
     );
 
-    // Envia e-mail de login (máx 1 por dia, não bloqueia a resposta)
-    sendLoginEmail(email, user_id).catch((err) =>
-      console.error('Falha ao enviar e-mail de login:', err)
-    );
+    await sendLoginEmail(email, user_id);
+    console.log(`[login] sendLoginEmail concluído`);
 
     return c.json({
       message: 'Login bem-sucedido',
-      user: {
-        user_id,
-        email,
-      }
+      user: { user_id, email }
     });
   } catch (error) {
     console.error(error);
@@ -133,9 +122,7 @@ export const logout = async (c) => {
       'auth_token=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure'
     );
 
-    return c.json({
-      message: 'Logout bem-sucedido',
-    });
+    return c.json({ message: 'Logout bem-sucedido' });
   } catch (error) {
     console.error('Erro no logout:', error);
     return c.json({ error: error.message }, 500);
