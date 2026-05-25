@@ -1,25 +1,34 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Verifica a conexão com o Gmail ao iniciar
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('ERRO NA CONEXÃO SMTP:', error);
+  } else {
+    console.log('SMTP conectado com sucesso, pronto para enviar e-mails');
+  }
+});
 
 export const sendEmail = async (to, subject, text) => {
   console.log(`Tentando enviar e-mail para ${to}...`);
   try {
-    const { data, error } = await resend.emails.send({
-      from: 'Fitness App <onboarding@resend.dev>',
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_USER,
       to,
       subject,
       text,
     });
-
-    if (error) {
-      console.error('ERRO AO ENVIAR E-MAIL:', error);
-      throw error;
-    }
-
-    console.log(`E-mail enviado para ${to} — ID: ${data.id}`);
+    console.log(`E-mail enviado para ${to} — ID: ${info.messageId}`);
   } catch (err) {
-    console.error('ERRO AO ENVIAR E-MAIL:', err);
+    console.error('ERRO AO ENVIAR E-MAIL:', JSON.stringify(err, null, 2));
     throw err;
   }
 };
