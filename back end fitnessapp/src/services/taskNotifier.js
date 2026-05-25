@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import supabase from '../config/supabase.js';
-import { sendEmail } from '../services/emailService.js';
+import supabase from '..supabase.js';
+import { sendEmail } from '.emailService.js';
 
 export const checkTasksDeadlines = async () => {
   try {

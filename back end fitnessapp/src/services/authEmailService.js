@@ -1,5 +1,5 @@
-import supabase from '../config/supabase.js';
-import { sendEmail } from './emailService.js';
+import supabase from '..supabase.js';
+import { sendEmail } from '.emailService.js';
 
 export const sendRegisterEmail = async (email) => {
   try {
