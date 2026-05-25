@@ -33,7 +33,7 @@ export const sendEmail = async (to, subject, text) => {
     });
     console.log(`E-mail enviado para ${to} — ID: ${result.data.id}`);
   } catch (err) {
-    console.error('ERRO AO ENVIAR E-MAIL:', err.message);
+    console.error('Erro ao enviar e-mail:', err.message);
     throw err;
   }
 };

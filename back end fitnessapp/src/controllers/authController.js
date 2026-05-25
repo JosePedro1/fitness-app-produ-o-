@@ -5,7 +5,6 @@ import { sendRegisterEmail, sendLoginEmail } from '../services/authEmailService.
 export const register = async (c) => {
   try {
     const { email, password } = await c.req.json();
-    console.log(`[register] Tentativa de cadastro para: ${email}`);
 
     const { data: existingUser } = await supabase
       .from('users')
@@ -20,7 +19,6 @@ export const register = async (c) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
-      console.error(`[register] Erro no signUp:`, error.message);
       return c.json({ error: error.message }, 400);
     }
 
@@ -35,13 +33,12 @@ export const register = async (c) => {
       .insert({ user_id, email, password });
 
     if (userError) {
-      console.error(`[register] Erro ao salvar no banco:`, userError.message);
       return c.json({ error: 'Erro ao salvar usuário' }, 500);
     }
 
-    console.log(`[register] Usuário salvo, chamando sendRegisterEmail...`);
-    await sendRegisterEmail(email);
-    console.log(`[register] sendRegisterEmail concluído`);
+    sendRegisterEmail(email).catch((err) =>
+      console.error('Falha ao enviar e-mail de cadastro:', err.message)
+    );
 
     return c.json({
       message: 'Usuário registrado com sucesso',
@@ -56,7 +53,6 @@ export const register = async (c) => {
 export const login = async (c) => {
   try {
     const { email, password } = await c.req.json();
-    console.log(`[login] Tentativa de login para: ${email}`);
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -81,12 +77,13 @@ export const login = async (c) => {
       `auth_token=${token}; HttpOnly; Path=/; Max-Age=10800; SameSite=None; Secure`
     );
 
-    await sendLoginEmail(email, user_id);
-    console.log(`[login] sendLoginEmail concluído`);
+    sendLoginEmail(email, user_id).catch((err) =>
+      console.error('Falha ao enviar e-mail de login:', err.message)
+    );
 
     return c.json({
       message: 'Login bem-sucedido',
-      user: { user_id, email }
+      user: { user_id, email },
     });
   } catch (error) {
     console.error(error);

@@ -2,21 +2,18 @@ import supabase from '../config/supabase.js';
 import { sendEmail } from './emailService.js';
 
 export const sendRegisterEmail = async (email) => {
-  console.log(`[sendRegisterEmail] Iniciando envio para ${email}`);
   try {
     await sendEmail(
       email,
-      'Cadastro realizado com sucesso',
-      `Olá, seu cadastro no Fitness App foi realizado com sucesso. Seja bem-vindo!`
+      ' Bem-vindo ao Fitness App!',
+      `Olá!\n\nSeu cadastro no Fitness App foi realizado com sucesso.\n\nAgora você tem acesso a:\n• Criação de rotinas de treino personalizadas\n• Registro de progresso físico\n• Gerenciamento de tarefas e metas\n• Cronômetro para seus treinos\n\nAcesse agora: https://fitness-app-produ-o.vercel.app\n\nBons treinos!\nEquipe Fitness App`
     );
-    console.log(`[sendRegisterEmail] Sucesso para ${email}`);
   } catch (error) {
-    console.error('[sendRegisterEmail] ERRO:', error.message, error.code, error.response);
+    console.error('Erro ao enviar e-mail de cadastro:', error.message);
   }
 };
 
 export const sendLoginEmail = async (email, user_id) => {
-  console.log(`[sendLoginEmail] Iniciando envio para ${email}`);
   try {
     const today = new Date().toISOString().split('T')[0];
 
@@ -26,15 +23,12 @@ export const sendLoginEmail = async (email, user_id) => {
       .eq('user_id', user_id)
       .single();
 
-    if (user?.last_login_email_sent === today) {
-      console.log(`[sendLoginEmail] Já enviado hoje para ${email}`);
-      return;
-    }
+    if (user?.last_login_email_sent === today) return;
 
     await sendEmail(
       email,
-      'Novo login realizado',
-      `Olá, um novo login foi realizado na sua conta do Fitness App.`
+      ' Novo acesso à sua conta',
+      `Olá!\n\nDetectamos um novo login na sua conta do Fitness App.\n\nData e hora: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}\n\nSe não foi você, recomendamos que altere sua senha imediatamente.\n\nEquipe Fitness App`
     );
 
     await supabase
@@ -42,8 +36,7 @@ export const sendLoginEmail = async (email, user_id) => {
       .update({ last_login_email_sent: today })
       .eq('user_id', user_id);
 
-    console.log(`[sendLoginEmail] Sucesso para ${email}`);
   } catch (error) {
-    console.error('[sendLoginEmail] ERRO:', error.message, error.code, error.response);
+    console.error('Erro ao enviar e-mail de login:', error.message);
   }
 };
