@@ -57,7 +57,7 @@ export const checkTasksDeadlines = async () => {
   }
 };
 
-// cron.schedule('*/1 * * * *', () => {
-//   console.log('Verificando prazos de tarefas');
-//   checkTasksDeadlines();
-// });
+cron.schedule('0 0 * * *', () => {
+  console.log('Verificando prazos de tarefas');
+  checkTasksDeadlines();
+});

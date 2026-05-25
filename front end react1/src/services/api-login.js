@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://fitness-app-produ-o.onrender.com';
 
 /**
  * Login do usuário. Salva user_id e email no localStorage.
