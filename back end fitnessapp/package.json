@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "Este é o backend para o aplicativo Fitness App, desenvolvido para ajudar os usuários a gerenciar suas rotinas de exercícios, dietas e acompanhar seu progresso físico ao longo do tempo.",
   "dependencies": {
+    "googleapis": "^144.0.0",
   "resend": "^4.0.0",
     "@hono/node-server": "^1.13.8",
     "@supabase/supabase-js": "^2.49.1",
