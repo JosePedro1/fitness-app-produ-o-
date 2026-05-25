@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import supabase from '../config/supabase.js';
+import { sendRegisterEmail, sendLoginEmail } from '../services/authEmailService.js';
 
 export const register = async (c) => {
   try {
@@ -42,6 +43,11 @@ export const register = async (c) => {
       return c.json({ error: 'Erro ao salvar usuário' }, 500);
     }
 
+    // Envia e-mail de boas-vindas (não bloqueia a resposta)
+    sendRegisterEmail(email).catch((err) =>
+      console.error('Falha ao enviar e-mail de cadastro:', err)
+    );
+
     return c.json({
       message: 'Usuário registrado com sucesso',
       user: { user_id, email },
@@ -80,6 +86,11 @@ export const login = async (c) => {
     c.header(
       'Set-Cookie',
       `auth_token=${token}; HttpOnly; Path=/; Max-Age=10800; SameSite=None; Secure`
+    );
+
+    // Envia e-mail de login (máx 1 por dia, não bloqueia a resposta)
+    sendLoginEmail(email, user_id).catch((err) =>
+      console.error('Falha ao enviar e-mail de login:', err)
     );
 
     return c.json({
