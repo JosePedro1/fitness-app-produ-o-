@@ -1,0 +1,29 @@
+{
+  "name": "fitness-app-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Este é o backend para o aplicativo Fitness App, desenvolvido para ajudar os usuários a gerenciar suas rotinas de exercícios, dietas e acompanhar seu progresso físico ao longo do tempo.",
+  "dependencies": {
+    "@hono/node-server": "^1.13.8",
+    "@supabase/supabase-js": "^2.49.1",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "fitness-app-backend": "file:",
+    "hono": "^4.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
