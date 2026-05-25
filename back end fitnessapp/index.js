@@ -10,10 +10,9 @@ import { checkTasksDeadlines } from './src/services/taskNotifier.js';
 
 import 'dotenv/config';
 
-console.log('=== INICIANDO SERVIDOR ===');
-console.log('EMAIL_USER:', process.env.EMAIL_USER ?? 'NÃO DEFINIDO');
-console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'DEFINIDO' : 'NÃO DEFINIDO');
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL ?? 'NÃO DEFINIDO');
+console.log('GMAIL_CLIENT_ID:', process.env.GMAIL_CLIENT_ID ?? 'NÃO DEFINIDO');
+console.log('GMAIL_CLIENT_SECRET:', process.env.GMAIL_CLIENT_SECRET ? 'DEFINIDO' : 'NÃO DEFINIDO');
+console.log('GMAIL_REFRESH_TOKEN:', process.env.GMAIL_REFRESH_TOKEN ? 'DEFINIDO' : 'NÃO DEFINIDO');
 
 const app = new Hono();
 
