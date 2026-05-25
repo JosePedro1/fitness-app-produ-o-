@@ -12,14 +12,15 @@ import 'dotenv/config';
 
 const app = new Hono();
 
-app.use(cors({
+app.use('*', cors({
   origin: [
     'http://localhost:4200',
     'http://localhost:8080',
     'https://fitness-app-produ-o.vercel.app'
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
 app.route('/auth', authRoutes);
