@@ -10,6 +10,11 @@ import { checkTasksDeadlines } from './src/services/taskNotifier.js';
 
 import 'dotenv/config';
 
+console.log('=== INICIANDO SERVIDOR ===');
+console.log('EMAIL_USER:', process.env.EMAIL_USER ?? 'NÃO DEFINIDO');
+console.log('EMAIL_PASS:', process.env.EMAIL_PASS ? 'DEFINIDO' : 'NÃO DEFINIDO');
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ?? 'NÃO DEFINIDO');
+
 const app = new Hono();
 
 app.use('*', cors({
