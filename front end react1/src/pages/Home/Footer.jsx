@@ -101,17 +101,17 @@ const Footer  = () => {
         {/* Copyright */}
         <div className="w-full flex flex-col items-center justify-between py-4 border-t mt-auto border-gray-400" style={{ position: 'relative', bottom: 0 }} >
           <p className="text-sm text-gray-400 font-normal">
-            © 2025 JOSÉ PEDRO
+            © 2025 Matheus
           </p>
           
           <div className="flex items-center justify-center gap-4 mt-2">
-            <a href="https://github.com/JosePedro1" target="_blank" className="w-8 h-8 flex items-center justify-center bg-transparent text-white hover:text-gray-400">
+            <a href="https://github.com/Matheusloran573" target="_blank" className="w-8 h-8 flex items-center justify-center bg-transparent text-white hover:text-gray-400">
               <Github className="w-5 h-5" />
             </a>
-            <a href="https://www.instagram.com/jose_pedro510/" target="_blank" className="w-8 h-8 flex items-center justify-center bg-transparent text-white hover:text-gray-400">
+            <a href="https://www.instagram.com/m_lorannn/" target="_blank" className="w-8 h-8 flex items-center justify-center bg-transparent text-white hover:text-gray-400">
               <Instagram className="w-5 h-5" />
             </a>
-            <a href="https://www.linkedin.com/in/josepedro1/" target="_blank" className="w-8 h-8 flex items-center justify-center bg-transparent text-white hover:text-gray-400">
+            <a href="https://www.linkedin.com/in/matheus-lorannn-84537b34a/" target="_blank" className="w-8 h-8 flex items-center justify-center bg-transparent text-white hover:text-gray-400">
               <Linkedin className="w-5 h-5" />
             </a>
           </div>
