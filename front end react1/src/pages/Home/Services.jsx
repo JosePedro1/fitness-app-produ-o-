@@ -1,4 +1,4 @@
-import { Dumbbell, ArrowRight, ClipboardList, LineChart, Timer } from 'lucide-react';
+import { Dumbbell, ArrowRight, ClipboardList, LineChart, Timer, BookOpen } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -41,6 +41,15 @@ const Services = () => {
       link: "/timer",
       icon: <Timer className="w-6 h-6 text-white" />,
       btnText: "Iniciar Cronômetro",
+    },
+    {
+      id: 5,
+      serviceImg: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=870&auto=format&fit=crop",
+      title: "Biblioteca de Exercícios",
+      desc: "Explore vídeos de exercícios por grupo muscular e adicione diretamente nas suas rotinas de treino.",
+      link: "/exercises-library",
+      icon: <BookOpen className="w-6 h-6 text-white" />,
+      btnText: "Explorar Exercícios",
     },
   ];
 

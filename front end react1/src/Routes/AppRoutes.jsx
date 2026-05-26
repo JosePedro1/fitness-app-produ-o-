@@ -10,6 +10,7 @@ import SignupPage from "../pages/Signup/SignupPage";
 import ForgotPasswordPage from "../pages/ForgotPassword/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPassword/ResetPasswordPage";
 import PrivateRoute from "./PrivateRoute";
+import ExercisesLibraryPage from '../pages/ExercisesLibrary/ExercisesLibraryPage';
 
 const AppRoutes = () => {
   return (
@@ -21,6 +22,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       <Route element={<PrivateRoute />}>
+      <Route path="/exercises-library" element={<ExercisesLibraryPage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/tasks" element={<TaskPage />} />
         <Route path="/routines" element={<RoutinePage />} />
