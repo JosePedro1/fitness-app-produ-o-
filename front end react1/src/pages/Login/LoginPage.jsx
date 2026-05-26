@@ -96,6 +96,7 @@ const LoginPage = () => {
           name="password"
           value={form.password}
           onChange={handleChange}
+          placeholder="senha"
           icon={Lock}
           error={errors.password}
         />

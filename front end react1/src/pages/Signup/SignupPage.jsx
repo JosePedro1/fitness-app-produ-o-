@@ -101,20 +101,22 @@ const SignupPage = () => {
           error={errors.email}
         />
         <AuthInput
-          label="Your Password"
+          label="Senha"
           type="password"
           name="password"
           value={form.password}
           onChange={handleChange}
+          placeholder="Senha"
           icon={Lock}
           error={errors.password}
         />
         <AuthInput
-          label="Confirm your Password"
+          label="Confirme Sua Senha"
           type="password"
           name="passwordConfirm"
           value={form.passwordConfirm}
           onChange={handleChange}
+          placeholder="Confirme Sua Senha"
           icon={Lock}
           error={errors.passwordConfirm}
         />
