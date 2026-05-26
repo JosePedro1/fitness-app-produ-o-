@@ -28,7 +28,6 @@ const AppRoutes = () => {
         <Route path="/routines" element={<RoutinePage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/timer" element={<TimerPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />
