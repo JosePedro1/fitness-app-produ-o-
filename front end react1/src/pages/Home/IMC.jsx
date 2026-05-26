@@ -9,31 +9,26 @@ import { gerarTreinoPersonalizado } from '../../utils/imcTreinoEngine';
 
 const IMC_CONFIG = {
   'Abaixo do peso': {
-    cor: 'text-blue-400', corBorda: 'border-blue-400/40', emoji: '⚠️',
     mensagem: 'Seu corpo precisa de atenção! Estar abaixo do peso pode impactar sua saúde e energia.',
     cta: 'Que tal uma rotina personalizada para ganho de massa? Vamos montar isso pra você!',
     labelBtn: 'Quero minha rotina de ganho de massa',
   },
   'Peso normal': {
-    cor: 'text-green-400', corBorda: 'border-green-400/40', emoji: '✅',
     mensagem: 'Parabéns! Você está com o peso ideal. Continue assim!',
     cta: 'Para manter essa forma, que tal uma rotina de manutenção e qualidade de vida?',
     labelBtn: 'Quero minha rotina de manutenção',
   },
   'Sobrepeso': {
-    cor: 'text-yellow-400', corBorda: 'border-yellow-400/40', emoji: '📊',
     mensagem: 'Você está um pouco acima do ideal — mas a mudança começa hoje!',
     cta: 'Não está satisfeito com esse resultado? Venha conhecer nossos serviços ou monte sua rotina agora!',
     labelBtn: 'Quero minha rotina de emagrecimento',
   },
   'Obesidade grau 1': {
-    cor: 'text-orange-400', corBorda: 'border-orange-400/40', emoji: '🎯',
     mensagem: 'Sabemos que não é fácil, mas cada passo conta. Você não precisa fazer isso sozinho!',
     cta: 'Venha conhecer nossos planos personalizados ou comece agora com uma rotina adaptada para você.',
     labelBtn: 'Quero uma rotina adaptada',
   },
   'Obesidade grau 2': {
-    cor: 'text-red-400', corBorda: 'border-red-400/40', emoji: '💪',
     mensagem: 'Sua saúde é prioridade. Estamos aqui para te ajudar nessa jornada!',
     cta: 'Recomendamos fortemente nosso acompanhamento personalizado. Que tal começar com um treino leve hoje?',
     labelBtn: 'Iniciar rotina leve agora',
@@ -174,7 +169,7 @@ const IMC = () => {
                       </div>
 
                       {/* Objetivo */}
-                      <p className="text-gray-500 text-xs">🎯 Objetivo: {treinoGerado.objetivo}</p>
+                      <p className="text-gray-500 text-xs">Objetivo: {treinoGerado.objetivo}</p>
 
                       {/* Preview dos exercícios */}
                       <div className="bg-black/30 rounded-lg px-4 py-3 text-left">
@@ -190,13 +185,13 @@ const IMC = () => {
 
                       {/* Próximo treino */}
                       <p className="text-gray-500 text-xs">
-                        📅 Próximo treino: <span className="text-gray-400">{treinoGerado.proximoDiaLabel}</span>
+                        Próximo treino: <span className="text-gray-400">{treinoGerado.proximoDiaLabel}</span>
                       </p>
 
                       {/* Progressão de fase */}
                       {treinoGerado.proximaFaseLabel && (
                         <p className="text-gray-500 text-xs">
-                          🚀 Faltam <span className="text-indigo-400 font-semibold">{treinoGerado.faltamParaProx} treino{treinoGerado.faltamParaProx !== 1 ? 's' : ''}</span> para a fase <span className="text-indigo-400 font-semibold">{treinoGerado.proximaFaseLabel}</span>
+                          Faltam <span className="text-indigo-400 font-semibold">{treinoGerado.faltamParaProx} treino{treinoGerado.faltamParaProx !== 1 ? 's' : ''}</span> para a fase <span className="text-indigo-400 font-semibold">{treinoGerado.proximaFaseLabel}</span>
                         </p>
                       )}
                       {!treinoGerado.proximaFaseLabel && (
