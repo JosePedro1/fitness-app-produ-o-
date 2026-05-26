@@ -84,8 +84,8 @@ const SignupPage = () => {
 
       <AuthLayout
         title="Entre e comece hoje mesmo!"
-        primaryBtnText={loading ? "Cadastrando..." : "Signup Now"}
-        secondaryBtnText="Login Now"
+        primaryBtnText={loading ? "Cadastrando..." : "Criar conta"}
+        secondaryBtnText="Entrar"
         onSubmit={handleSubmit}
         onNavigate={handleNavigate}
         disablePrimaryBtn={!isFormValid() || loading}
@@ -106,7 +106,7 @@ const SignupPage = () => {
           name="password"
           value={form.password}
           onChange={handleChange}
-          placeholder="Senha"
+          placeholder="Defina Sua Senha"
           icon={Lock}
           error={errors.password}
         />
