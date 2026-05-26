@@ -158,7 +158,7 @@ export const forgotPassword = async (c) => {
 
     await sendEmail(
       email,
-      '🔑 Redefinição de senha — Fitness App',
+      'Redefinição de senha — Fitness App',
       `Olá!\n\nRecebemos uma solicitação para redefinir a senha da sua conta.\n\nClique no link abaixo para criar uma nova senha (válido por 1 hora):\n\n${resetLink}\n\nSe você não solicitou isso, ignore este e-mail.\n\nEquipe Fitness App`
     );
 

@@ -61,7 +61,7 @@ const AuthLayout = ({
       </section>
 
       {/* Ilustrativa — direita no desktop */}
-      <section className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#EEEEEE] p-6 overflow-hidden">
+      <section className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#7001FD] p-6 overflow-hidden">
         <h1 className="text-4xl font-bold text-[#1E2772] text-center leading-tight">
           Você deveria se mover!
         </h1>
