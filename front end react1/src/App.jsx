@@ -3,10 +3,9 @@ import { BrowserRouter as Router, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import AppRoutes from "./Routes/AppRoutes";
 
-// Navbar só aparece em rotas autenticadas (não no login/signup)
 const AppLayout = () => {
   const location = useLocation();
-  const authRoutes = ["/login", "/signup"];
+  const authRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
   const isAuthPage = authRoutes.includes(location.pathname);
 
   return (

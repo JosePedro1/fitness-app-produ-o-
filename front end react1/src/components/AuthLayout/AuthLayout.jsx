@@ -12,28 +12,23 @@ const AuthLayout = ({
   children,
 }) => {
   return (
-    <main className="flex flex-col md:flex-row items-stretch min-h-screen font-['Poppins',sans-serif]">
+    <main className="flex flex-col md:flex-row md:h-screen md:overflow-hidden font-['Poppins',sans-serif]">
 
-      {/* Seção ilustrativa — aparece no topo em mobile */}
-      <section className="flex md:hidden flex-col items-center justify-center bg-[#7001FD] px-6 py-10">
+      {/* Seção ilustrativa — topo em mobile */}
+      <section className="flex md:hidden flex-col items-center justify-center bg-[#7001FD] px-6 py-8">
         <h1 className="text-2xl font-bold text-white text-center leading-tight mb-4">
           Você deveria se mover!
         </h1>
-        <img
-          src={ilustracao}
-          alt="Ilustração"
-          className="max-w-[220px] w-full object-contain"
-        />
+        <img src={ilustracao} alt="Ilustração" className="max-w-[180px] w-full object-contain" />
       </section>
 
-      {/* Seção do formulário */}
-      <section className="flex flex-col items-center justify-center px-6 md:px-10 py-10 w-full md:w-[420px] md:min-w-[380px] bg-white">
-
-        <div className="mb-6">
+      {/* Formulário */}
+      <section className="flex flex-col items-center justify-center px-6 md:px-10 py-8 w-full md:w-[440px] md:min-w-[380px] bg-white md:overflow-y-auto">
+        <div className="mb-5">
           <img src={logo} alt="Logo" className="w-24 md:w-28 object-contain" />
         </div>
 
-        <h2 className="text-lg md:text-xl font-bold text-[#555555] mb-6 text-center">
+        <h2 className="text-lg md:text-xl font-bold text-[#555555] mb-5 text-center">
           {title}
         </h2>
 
@@ -41,7 +36,7 @@ const AuthLayout = ({
           {children}
         </div>
 
-        <div className="flex flex-col items-center w-full gap-5 mt-7">
+        <div className="flex flex-col items-center w-full gap-4 mt-6">
           <button
             onClick={onSubmit}
             disabled={disablePrimaryBtn}
@@ -65,7 +60,7 @@ const AuthLayout = ({
         </div>
       </section>
 
-      {/* Seção ilustrativa — aparece na direita em desktop */}
+      {/* Ilustrativa — direita no desktop */}
       <section className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#EEEEEE] p-6 overflow-hidden">
         <h1 className="text-4xl font-bold text-[#1E2772] text-center leading-tight">
           Você deveria se mover!

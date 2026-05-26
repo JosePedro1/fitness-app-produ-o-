@@ -13,13 +13,16 @@ oauth2Client.setCredentials({
 const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
 const makeEmailBody = (to, subject, text) => {
+  const subjectEncoded = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
   const message = [
     `To: ${to}`,
-    `Subject: ${subject}`,
-    'Content-Type: text/plain; charset=utf-8',
+    `Subject: ${subjectEncoded}`,
+    'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
     '',
-    text,
-  ].join('\n');
+    Buffer.from(text).toString('base64'),
+  ].join('\r\n');
 
   return Buffer.from(message).toString('base64url');
 };
