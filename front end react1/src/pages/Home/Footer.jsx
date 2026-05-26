@@ -26,11 +26,11 @@ const Footer  = () => {
               </div>
               <div className="w-full h-auto flex items-center lg:justify-start md:justify-start sm:justify-center justify-center gap-x-2 text-gray-400 hover:text-indigo-600 ease-out duration-300 cursor-pointer">
                 <MailOpen className="w-5 h-5" />
-                <p className="text-base">IFPI@example.com</p>
+                <p className="text-base">fitnessgymap@gmail.com</p>
               </div>
               <div className="w-full h-auto flex items-center lg:justify-start md:justify-start sm:justify-center justify-center gap-x-2 text-gray-400 hover:text-indigo-600 ease-out duration-300 cursor-pointer">
                 <Phone className="w-5 h-5" />
-                <p className="text-base">(89)99999-9999</p>
+                <p className="text-base">(89)994369838</p>
               </div>
             </div>
           </div>
