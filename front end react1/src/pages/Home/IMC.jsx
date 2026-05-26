@@ -13,7 +13,7 @@ const IMC_CONFIG = {
     mensagem: 'Seu corpo precisa de atenção! Estar abaixo do peso pode impactar sua saúde e energia.',
     cta: 'Que tal uma rotina personalizada para ganho de massa? Vamos montar isso pra você!',
     labelBtn: 'Quero minha rotina de ganho de massa',
-    treinoSugerido: ['Supino reto 3x12', 'Agachamento livre 3x10', 'Remada curvada 3x12', 'Rosca direta 3x15', 'Tríceps testa 3x12'],
+    treinoSugerido: ['Supino Reto', 'Agachamento Livre', 'Remada Curvada', 'Rosca Direta', 'Tríceps Testa'],
     nomeSugerido: 'Rotina Ganho de Massa (IMC)',
   },
   'Peso normal': {
@@ -23,7 +23,7 @@ const IMC_CONFIG = {
     mensagem: 'Parabéns! Você está com o peso ideal. Continue assim!',
     cta: 'Para manter essa forma, que tal uma rotina de manutenção e qualidade de vida?',
     labelBtn: 'Quero minha rotina de manutenção',
-    treinoSugerido: ['Corrida leve 20min', 'Agachamento 3x12', 'Flexão de braço 3x15', 'Prancha 3x45s', 'Alongamento 10min'],
+    treinoSugerido: ['Agachamento Livre', 'Flexão de Braços', 'Prancha', 'Elevação Lateral', 'Abdominal Crunch'],
     nomeSugerido: 'Rotina Manutenção (IMC)',
   },
   'Sobrepeso': {
@@ -33,7 +33,7 @@ const IMC_CONFIG = {
     mensagem: 'Você está um pouco acima do ideal — mas a mudança começa hoje!',
     cta: 'Não está satisfeito com esse resultado? Venha conhecer nossos serviços ou monte sua rotina de emagrecimento agora!',
     labelBtn: 'Quero minha rotina de emagrecimento',
-    treinoSugerido: ['Caminhada rápida 30min', 'Burpees 3x10', 'Agachamento sumô 3x15', 'Mountain climber 3x20', 'Polichinelo 3x30'],
+    treinoSugerido: ['Agachamento Sumô', 'Prancha', 'Flexão de Braços', 'Abdominal Crunch', 'Elevação de Pernas'],
     nomeSugerido: 'Rotina Emagrecimento (IMC)',
   },
   'Obesidade grau 1': {
@@ -43,7 +43,7 @@ const IMC_CONFIG = {
     mensagem: 'Sabemos que não é fácil, mas cada passo conta. Você não precisa fazer isso sozinho!',
     cta: 'Venha conhecer nossos planos personalizados ou comece agora com uma rotina adaptada para você.',
     labelBtn: 'Quero uma rotina adaptada',
-    treinoSugerido: ['Caminhada 25min', 'Agachamento na cadeira 3x12', 'Elevação lateral 3x12', 'Abdominais 3x15', 'Alongamento completo 10min'],
+    treinoSugerido: ['Agachamento Livre', 'Elevação Lateral', 'Abdominal Crunch', 'Prancha', 'Leg Press'],
     nomeSugerido: 'Rotina Adaptada Obesidade G1 (IMC)',
   },
   'Obesidade grau 2': {
@@ -53,7 +53,7 @@ const IMC_CONFIG = {
     mensagem: 'Sua saúde é prioridade. Estamos aqui para te ajudar nessa jornada!',
     cta: 'Recomendamos fortemente nosso acompanhamento personalizado. Que tal começar com um treino leve hoje?',
     labelBtn: 'Iniciar rotina leve agora',
-    treinoSugerido: ['Caminhada 20min (ritmo confortável)', 'Agachamento com apoio 3x10', 'Flexão de parede 3x12', 'Respiração diafragmática 5min', 'Alongamento suave 10min'],
+    treinoSugerido: ['Agachamento Livre', 'Flexão de Braços', 'Abdominal Crunch', 'Prancha', 'Elevação Lateral'],
     nomeSugerido: 'Rotina Leve Obesidade G2 (IMC)',
   },
   'Obesidade grau 3': {
@@ -63,7 +63,7 @@ const IMC_CONFIG = {
     mensagem: 'Sua saúde é a nossa missão. Recomendamos acompanhamento médico e profissional especializado.',
     cta: 'Venha conhecer nosso suporte especializado! Também preparamos uma rotina inicial super leve para você dar o primeiro passo.',
     labelBtn: 'Ver rotina inicial personalizada',
-    treinoSugerido: ['Caminhada 15min (ritmo leve)', 'Exercícios sentado 3x10', 'Flexão de parede 2x10', 'Respiração e relaxamento 10min'],
+    treinoSugerido: ['Flexão de Braços', 'Abdominal Crunch', 'Prancha', 'Agachamento Livre'],
     nomeSugerido: 'Rotina Inicial Obesidade G3 (IMC)',
   },
 };

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Clock, Calendar } from 'lucide-react';
+import { Clock, Calendar, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const DAYS_LABEL = {
   segunda: 'Seg', terca: 'Ter', quarta: 'Qua',
@@ -7,6 +8,12 @@ const DAYS_LABEL = {
 };
 
 const RoutineList = ({ routines, exercisesMap, handleDeleteRoutine, handleToggleExercise }) => {
+  const navigate = useNavigate();
+
+  const handleVerNaBiblioteca = (exerciseName) => {
+    navigate(`/exercises-library?exercise=${encodeURIComponent(exerciseName)}`);
+  };
+
   return (
     <div className="w-full flex flex-col gap-y-4">
       {routines.length === 0 && (
@@ -56,16 +63,28 @@ const RoutineList = ({ routines, exercisesMap, handleDeleteRoutine, handleToggle
             {exercisesMap[routine.id]?.map((exercise) => (
               <div
                 key={exercise.id}
-                className={`px-4 py-2 rounded-md text-gray-200 text-sm flex justify-between items-center ${
+                className={`px-4 py-2.5 rounded-md text-gray-200 text-sm flex justify-between items-center gap-x-2 ${
                   exercise.completed ? 'bg-green-600/50' : 'bg-black/30'
                 }`}
               >
-                <span className={exercise.completed ? 'line-through' : ''}>
-                  {exercise.exercise}
-                </span>
+                <div className="flex items-center gap-x-2 flex-1 min-w-0">
+                  <span className={`truncate ${exercise.completed ? 'line-through text-gray-400' : ''}`}>
+                    {exercise.exercise}
+                  </span>
+                  {/* Link para a biblioteca */}
+                  <button
+                    onClick={() => handleVerNaBiblioteca(exercise.exercise)}
+                    title="Não sabe fazer? Ver na biblioteca"
+                    className="flex items-center gap-x-1 text-indigo-400 hover:text-indigo-300 text-xs whitespace-nowrap shrink-0 transition-colors"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Como fazer?</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={() => handleToggleExercise(exercise)}
-                  className={`text-xs rounded-md px-2 py-1 ${
+                  className={`text-xs rounded-md px-2 py-1 shrink-0 ${
                     exercise.completed
                       ? 'bg-red-500 hover:bg-red-600'
                       : 'bg-green-500 hover:bg-green-600'

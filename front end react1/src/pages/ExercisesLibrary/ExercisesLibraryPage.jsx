@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, Plus, ChevronRight } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { getRoutines } from '../../services/api-routines';
 import axios from 'axios';
 
@@ -10,7 +11,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const YOUTUBE_API_KEY = 'AIzaSyAOX0WpJo7LNSMJC7qXoBmtDaDQJI-tnjY'; // chave pública
+const YOUTUBE_API_KEY = 'AIzaSyAOX0WpJo7LNSMJC7qXoBmtDaDQJI-tnjY';
 
 const CATALOG = {
   Peito: [
@@ -79,6 +80,17 @@ const CATALOG = {
   ],
 };
 
+// Encontra o exercício no catálogo pelo nome (case-insensitive, parcial)
+const findExerciseInCatalog = (name) => {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  for (const [group, exercises] of Object.entries(CATALOG)) {
+    const found = exercises.find(e => e.name.toLowerCase() === lower || e.name.toLowerCase().includes(lower) || lower.includes(e.name.toLowerCase()));
+    if (found) return { group, exercise: found };
+  }
+  return null;
+};
+
 const ExercisesLibraryPage = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -89,6 +101,28 @@ const ExercisesLibraryPage = () => {
   const [showRoutineModal, setShowRoutineModal] = useState(false);
   const [exerciseToAdd, setExerciseToAdd] = useState('');
   const [toast, setToast] = useState(null);
+  const [deepLinkBanner, setDeepLinkBanner] = useState(null);
+
+  const location = useLocation();
+
+  // Detecta ?exercise= na URL e abre automaticamente
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const exerciseName = params.get('exercise');
+    if (!exerciseName) return;
+
+    const found = findExerciseInCatalog(exerciseName);
+    if (found) {
+      setSelectedGroup(found.group);
+      setDeepLinkBanner(exerciseName);
+      handleSelectExercise(found.exercise);
+    } else {
+      // Exercício não encontrado no catálogo — mostra aviso mas não quebra
+      setDeepLinkBanner(exerciseName);
+      setToast({ message: `"${exerciseName}" ainda não está no catálogo. Mostrando a biblioteca completa.`, type: 'info' });
+      setTimeout(() => setToast(null), 4000);
+    }
+  }, [location.search]);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -122,11 +156,7 @@ const ExercisesLibraryPage = () => {
 
   const handleConfirmAdd = async (routineId) => {
     try {
-      await api.post('/exercises', {
-        routine_id: routineId,
-        exercise: exerciseToAdd,
-        completed: false,
-      });
+      await api.post('/exercises', { routine_id: routineId, exercise: exerciseToAdd, completed: false });
       showToast(`"${exerciseToAdd}" adicionado à rotina!`);
       setShowRoutineModal(false);
     } catch {
@@ -136,17 +166,31 @@ const ExercisesLibraryPage = () => {
 
   return (
     <div className="w-full min-h-screen lg:py-16 md:py-14 sm:py-12 py-10 lg:px-24 md:px-16 sm:px-6 px-4">
+      {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${toast.type === 'error' ? 'bg-red-500' : 'bg-indigo-600'}`}>
+        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${
+          toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-indigo-500' : 'bg-indigo-600'
+        }`}>
           {toast.message}
         </div>
       )}
 
-      <div className="w-full flex flex-col gap-y-8">
-
+      <div className="w-full flex flex-col gap-y-6">
         <h1 className="lg:text-2xl md:text-xl text-lg font-semibold text-gray-200 bg-black/20 rounded-md py-2 px-4 w-fit">
           Biblioteca de Exercícios
         </h1>
+
+        {/* Banner de deep link — aparece quando vem da rotina */}
+        {deepLinkBanner && (
+          <div className="w-full bg-indigo-600/20 border border-indigo-500/40 rounded-xl px-5 py-3 flex items-center justify-between">
+            <p className="text-indigo-300 text-sm">
+              Você foi redirecionado para ver: <span className="font-semibold text-white">{deepLinkBanner}</span>
+            </p>
+            <button onClick={() => setDeepLinkBanner(null)} className="text-gray-500 hover:text-gray-300 text-xs ml-4">
+              Fechar
+            </button>
+          </div>
+        )}
 
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -156,11 +200,9 @@ const ExercisesLibraryPage = () => {
             {Object.keys(CATALOG).map(group => (
               <button
                 key={group}
-                onClick={() => { setSelectedGroup(group); setSelectedExercise(null); setVideos([]); setSelectedVideoId(null); }}
+                onClick={() => { setSelectedGroup(group); setSelectedExercise(null); setVideos([]); setSelectedVideoId(null); setDeepLinkBanner(null); }}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
-                  selectedGroup === group
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-black/20 text-gray-300 hover:bg-black/40'
+                  selectedGroup === group ? 'bg-indigo-600 text-white' : 'bg-black/20 text-gray-300 hover:bg-black/40'
                 }`}
               >
                 {group}
@@ -179,9 +221,7 @@ const ExercisesLibraryPage = () => {
                     key={exercise.name}
                     onClick={() => handleSelectExercise(exercise)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
-                      selectedExercise === exercise.name
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-black/20 text-gray-300 hover:bg-black/40'
+                      selectedExercise === exercise.name ? 'bg-indigo-600 text-white' : 'bg-black/20 text-gray-300 hover:bg-black/40'
                     }`}
                   >
                     {exercise.name}
@@ -207,9 +247,7 @@ const ExercisesLibraryPage = () => {
 
           {/* Coluna 3 — vídeos */}
           <div className="flex flex-col gap-y-3">
-            {selectedExercise && (
-              <p className="text-gray-400 text-sm mb-1">Vídeos — {selectedExercise}</p>
-            )}
+            {selectedExercise && <p className="text-gray-400 text-sm mb-1">Vídeos — {selectedExercise}</p>}
 
             {loading && (
               <div className="flex items-center gap-x-3 text-gray-400 mt-4">
@@ -283,10 +321,7 @@ const ExercisesLibraryPage = () => {
                 ))}
               </div>
             )}
-            <button
-              onClick={() => setShowRoutineModal(false)}
-              className="text-gray-500 hover:text-gray-300 text-sm text-center"
-            >
+            <button onClick={() => setShowRoutineModal(false)} className="text-gray-500 hover:text-gray-300 text-sm text-center">
               Cancelar
             </button>
           </div>
