@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar/Navbar";
 import AppRoutes from "./Routes/AppRoutes";
+import FloatingTimer from "./components/FloatingTimer/FloatingTimer";
+import { TimerProvider } from "./context/TimerContext";
 
 const AppLayout = () => {
   const location = useLocation();
@@ -12,6 +14,7 @@ const AppLayout = () => {
     <div className={`w-full min-h-screen h-auto ${isAuthPage ? "" : "bg-[#171717]"}`}>
       {!isAuthPage && <Navbar />}
       <AppRoutes />
+      {!isAuthPage && <FloatingTimer />}
     </div>
   );
 };
@@ -19,7 +22,9 @@ const AppLayout = () => {
 function App() {
   return (
     <Router>
-      <AppLayout />
+      <TimerProvider>
+        <AppLayout />
+      </TimerProvider>
     </Router>
   );
 }
