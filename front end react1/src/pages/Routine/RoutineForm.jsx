@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PrimaryBtn from '../../components/Button/PrimaryBtn';
 import { createRoutine } from '../../services/api-routines';
 
@@ -12,11 +12,26 @@ const DAYS = [
   { label: 'Dom', value: 'domingo' },
 ];
 
-const RoutineForm = ({ setFormVisible, setRefresh, refresh }) => {
+// Retorna o dia da semana atual em português
+const getDiaAtual = () => {
+  const map = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+  return map[new Date().getDay()];
+};
+
+const RoutineForm = ({ setFormVisible, setRefresh, refresh, prefill, onSaved }) => {
   const [name, setName] = useState('');
   const [exercises, setExercises] = useState(['']);
   const [weekDays, setWeekDays] = useState([]);
   const [reminderTime, setReminderTime] = useState('');
+
+  // Pré-preenche campos se vier do IMC
+  useEffect(() => {
+    if (prefill) {
+      setName(prefill.nome || '');
+      setExercises(prefill.exercises?.length > 0 ? prefill.exercises : ['']);
+      setWeekDays([getDiaAtual()]); // marca o dia de hoje automaticamente
+    }
+  }, [prefill]);
 
   const toggleDay = (day) => {
     setWeekDays(prev =>
@@ -41,7 +56,6 @@ const RoutineForm = ({ setFormVisible, setRefresh, refresh }) => {
       alert('Preencha o nome da rotina e todos os exercícios.');
       return;
     }
-
     try {
       await createRoutine({
         name,
@@ -55,6 +69,7 @@ const RoutineForm = ({ setFormVisible, setRefresh, refresh }) => {
       setReminderTime('');
       setFormVisible(false);
       setRefresh(!refresh);
+      if (onSaved) onSaved();
     } catch (error) {
       console.error('Erro ao criar rotina:', error.message);
     }
@@ -77,7 +92,14 @@ const RoutineForm = ({ setFormVisible, setRefresh, refresh }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Dias da Semana</label>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          Dias da Semana
+          {prefill && (
+            <span className="ml-2 text-xs text-indigo-400 font-normal">
+              (hoje marcado automaticamente)
+            </span>
+          )}
+        </label>
         <div className="flex flex-wrap gap-2">
           {DAYS.map(day => (
             <button
@@ -108,17 +130,20 @@ const RoutineForm = ({ setFormVisible, setRefresh, refresh }) => {
         />
       </div>
 
-      {exercises.map((exercise, index) => (
-        <div key={index} className="flex gap-x-2 items-center">
-          <input
-            type="text"
-            value={exercise}
-            onChange={(e) => handleExerciseChange(index, e.target.value)}
-            className="flex-1 px-4 py-2 bg-black/50 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            placeholder={`Exercício ${index + 1}`}
-          />
-        </div>
-      ))}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Exercícios</label>
+        {exercises.map((exercise, index) => (
+          <div key={index} className="flex gap-x-2 items-center mb-2">
+            <input
+              type="text"
+              value={exercise}
+              onChange={(e) => handleExerciseChange(index, e.target.value)}
+              className="flex-1 px-4 py-2 bg-black/50 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              placeholder={`Exercício ${index + 1}`}
+            />
+          </div>
+        ))}
+      </div>
 
       <div className="flex gap-x-4">
         <button
