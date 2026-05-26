@@ -5,11 +5,11 @@ const Contatos = () => {
 
     const contatoData = [
         {
-          id: 1,
-          contatoImg: "https://avatars.githubusercontent.com/u/129105584?v=4",
-          name: "Matheus Loran",
-          // Profissão: "Dev. Back-end",
-          github: "https://github.com/MatheusLoran573" 
+          // id: 1,
+          // contatoImg: "https://avatars.githubusercontent.com/u/129105584?v=4",
+          // name: "Matheus Loran",
+          // // Profissão: "Dev. Back-end",
+          // github: "https://github.com/MatheusLoran573" 
         },
         {
             id: 2,
@@ -20,11 +20,11 @@ const Contatos = () => {
           
         },   
          {
-            id: 3,
-            contatoImg: "https://avatars.githubusercontent.com/u/136371023?v=4",
-            name: "Rodrigo Alves",
-            // Profissão: "Dev. Back-end",
-            github: "https://github.com/Rodrigoaaalves" 
+            // id: 3,
+            // contatoImg: "https://avatars.githubusercontent.com/u/136371023?v=4",
+            // name: "Rodrigo Alves",
+            // // Profissão: "Dev. Back-end",
+            // github: "https://github.com/Rodrigoaaalves" 
           
         }        
       ];
