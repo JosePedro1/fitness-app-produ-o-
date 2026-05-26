@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import supabase from '../config/supabase.js';
-import { sendRegisterEmail, sendLoginEmail, sendEmail } from '../services/authEmailService.js';
+import { sendEmail } from '../services/emailService.js';
+import { sendRegisterEmail, sendLoginEmail, } from '../services/authEmailService.js';
+
 
 export const register = async (c) => {
   try {
