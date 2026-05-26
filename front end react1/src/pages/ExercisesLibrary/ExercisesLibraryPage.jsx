@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Play, Plus } from 'lucide-react';
+import { Play, Plus, ChevronRight } from 'lucide-react';
 import { getRoutines } from '../../services/api-routines';
 import axios from 'axios';
 
@@ -10,27 +10,84 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const MUSCLE_GROUPS = [
-  { label: 'Peito', query: 'supino peito treino' },
-  { label: 'Costas', query: 'remada costas treino' },
-  { label: 'Pernas', query: 'agachamento pernas treino' },
-  { label: 'Ombros', query: 'desenvolvimento ombros treino' },
-  { label: 'Bíceps', query: 'rosca biceps treino' },
-  { label: 'Tríceps', query: 'triceps treino extensão' },
-  { label: 'Abdômen', query: 'abdomen core treino' },
-  { label: 'Glúteos', query: 'gluteos hip thrust treino' },
-];
-
 const YOUTUBE_API_KEY = 'AIzaSyAOX0WpJo7LNSMJC7qXoBmtDaDQJI-tnjY'; // chave pública
 
+const CATALOG = {
+  Peito: [
+    { name: 'Supino Reto', query: 'supino reto com barra execução correta' },
+    { name: 'Supino Inclinado', query: 'supino inclinado halteres execução' },
+    { name: 'Supino Declinado', query: 'supino declinado execução correta' },
+    { name: 'Crucifixo', query: 'crucifixo peitoral halteres execução' },
+    { name: 'Crossover', query: 'crossover peitoral cabo execução' },
+    { name: 'Flexão de Braços', query: 'flexão de braços peito execução correta' },
+  ],
+  Costas: [
+    { name: 'Barra Fixa', query: 'barra fixa execução correta costas' },
+    { name: 'Remada Curvada', query: 'remada curvada barra execução' },
+    { name: 'Remada Unilateral', query: 'remada unilateral haltere execução' },
+    { name: 'Puxada Frontal', query: 'puxada frontal pulley execução costas' },
+    { name: 'Remada Cavalinho', query: 'remada cavalinho execução costas' },
+    { name: 'Levantamento Terra', query: 'levantamento terra execução correta' },
+  ],
+  Pernas: [
+    { name: 'Agachamento Livre', query: 'agachamento livre barra execução correta' },
+    { name: 'Leg Press', query: 'leg press execução correta pernas' },
+    { name: 'Cadeira Extensora', query: 'cadeira extensora quadríceps execução' },
+    { name: 'Mesa Flexora', query: 'mesa flexora posterior execução' },
+    { name: 'Avanço', query: 'avanço lunges execução correta pernas' },
+    { name: 'Panturrilha em Pé', query: 'panturrilha em pé execução correta' },
+  ],
+  Ombros: [
+    { name: 'Desenvolvimento com Barra', query: 'desenvolvimento barra ombros execução' },
+    { name: 'Desenvolvimento Halteres', query: 'desenvolvimento halteres ombros execução' },
+    { name: 'Elevação Lateral', query: 'elevação lateral ombros execução correta' },
+    { name: 'Elevação Frontal', query: 'elevação frontal ombros execução' },
+    { name: 'Remada Alta', query: 'remada alta trapézio ombros execução' },
+    { name: 'Face Pull', query: 'face pull posterior ombro execução' },
+  ],
+  Bíceps: [
+    { name: 'Rosca Direta', query: 'rosca direta bíceps barra execução correta' },
+    { name: 'Rosca Alternada', query: 'rosca alternada halteres bíceps execução' },
+    { name: 'Rosca Martelo', query: 'rosca martelo halteres execução correta' },
+    { name: 'Rosca Concentrada', query: 'rosca concentrada bíceps execução' },
+    { name: 'Rosca Scott', query: 'rosca scott bíceps execução correta' },
+    { name: 'Rosca no Cabo', query: 'rosca bíceps cabo pulley execução' },
+  ],
+  Tríceps: [
+    { name: 'Tríceps Testa', query: 'tríceps testa barra execução correta' },
+    { name: 'Tríceps Corda', query: 'tríceps corda cabo execução correta' },
+    { name: 'Tríceps Francês', query: 'tríceps francês haltere execução' },
+    { name: 'Mergulho no Banco', query: 'mergulho banco tríceps execução' },
+    { name: 'Tríceps Coice', query: 'tríceps coice haltere execução correta' },
+    { name: 'Tríceps Testa Unilateral', query: 'tríceps testa unilateral cabo execução' },
+  ],
+  Abdômen: [
+    { name: 'Abdominal Crunch', query: 'abdominal crunch execução correta' },
+    { name: 'Prancha', query: 'prancha abdominal execução correta plank' },
+    { name: 'Abdominal Infra', query: 'abdominal inferior infra execução' },
+    { name: 'Russian Twist', query: 'russian twist oblíquo execução' },
+    { name: 'Abdominal no Cabo', query: 'abdominal cabo pulley execução' },
+    { name: 'Elevação de Pernas', query: 'elevação de pernas abdominal execução' },
+  ],
+  Glúteos: [
+    { name: 'Hip Thrust', query: 'hip thrust glúteo execução correta' },
+    { name: 'Agachamento Sumô', query: 'agachamento sumô glúteo execução' },
+    { name: 'Stiff', query: 'stiff posterior glúteo execução correta' },
+    { name: 'Abdução no Cabo', query: 'abdução quadril cabo glúteo execução' },
+    { name: 'Glúteo no Cabo', query: 'glúteo cabo coice execução correta' },
+    { name: 'Avanço Reverso', query: 'avanço reverso glúteo execução' },
+  ],
+};
+
 const ExercisesLibraryPage = () => {
-  const [search, setSearch] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [routines, setRoutines] = useState([]);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState('');
+  const [exerciseToAdd, setExerciseToAdd] = useState('');
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -38,12 +95,14 @@ const ExercisesLibraryPage = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const searchVideos = async (query) => {
+  const handleSelectExercise = async (exercise) => {
+    setSelectedExercise(exercise.name);
+    setSelectedVideoId(null);
+    setVideos([]);
     setLoading(true);
-    setSelectedVideo(null);
     try {
       const res = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=8&key=${YOUTUBE_API_KEY}&relevanceLanguage=pt`
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(exercise.query)}&type=video&maxResults=6&key=${YOUTUBE_API_KEY}&relevanceLanguage=pt&regionCode=BR`
       );
       const data = await res.json();
       setVideos(data.items || []);
@@ -54,13 +113,8 @@ const ExercisesLibraryPage = () => {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (search.trim()) searchVideos(search);
-  };
-
   const handleAddToRoutine = async (exerciseName) => {
-    setSelectedExercise(exerciseName);
+    setExerciseToAdd(exerciseName);
     const data = await getRoutines();
     setRoutines(data);
     setShowRoutineModal(true);
@@ -70,10 +124,10 @@ const ExercisesLibraryPage = () => {
     try {
       await api.post('/exercises', {
         routine_id: routineId,
-        exercise: selectedExercise,
+        exercise: exerciseToAdd,
         completed: false,
       });
-      showToast(`"${selectedExercise}" adicionado à rotina!`);
+      showToast(`"${exerciseToAdd}" adicionado à rotina!`);
       setShowRoutineModal(false);
     } catch {
       showToast('Erro ao adicionar exercício.', 'error');
@@ -88,114 +142,124 @@ const ExercisesLibraryPage = () => {
         </div>
       )}
 
-      <div className="w-full flex flex-col items-center gap-y-8">
+      <div className="w-full flex flex-col gap-y-8">
 
-        {/* Header */}
-        <div className="w-full flex justify-between items-center">
-          <h1 className="lg:text-2xl md:text-xl text-lg font-semibold text-gray-200 bg-black/20 rounded-md py-2 px-4">
-            Biblioteca de Exercícios
-          </h1>
-        </div>
+        <h1 className="lg:text-2xl md:text-xl text-lg font-semibold text-gray-200 bg-black/20 rounded-md py-2 px-4 w-fit">
+          Biblioteca de Exercícios
+        </h1>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="w-full flex gap-x-3">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar exercício... ex: agachamento, supino"
-            className="flex-1 px-4 py-2.5 bg-black/30 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 placeholder-gray-500"
-          />
-          <button
-            type="submit"
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md flex items-center gap-x-2 transition-colors"
-          >
-            <Search className="w-4 h-4" />
-            Buscar
-          </button>
-        </form>
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* Grupos musculares */}
-        <div className="w-full">
-          <p className="text-gray-400 text-sm mb-3">Ou explore por grupo muscular:</p>
-          <div className="flex flex-wrap gap-2">
-            {MUSCLE_GROUPS.map(group => (
+          {/* Coluna 1 — grupos musculares */}
+          <div className="flex flex-col gap-y-2">
+            <p className="text-gray-400 text-sm mb-1">Grupo muscular</p>
+            {Object.keys(CATALOG).map(group => (
               <button
-                key={group.label}
-                onClick={() => { setSearch(group.label); searchVideos(group.query); }}
-                className="px-4 py-2 bg-black/30 hover:bg-indigo-600/40 text-gray-300 hover:text-white text-sm rounded-md border border-gray-700 hover:border-indigo-500 transition-all duration-200"
+                key={group}
+                onClick={() => { setSelectedGroup(group); setSelectedExercise(null); setVideos([]); setSelectedVideoId(null); }}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                  selectedGroup === group
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-black/20 text-gray-300 hover:bg-black/40'
+                }`}
               >
-                {group.label}
+                {group}
+                <ChevronRight className="w-4 h-4" />
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Player */}
-        {selectedVideo && (
-          <div className="w-full bg-black/30 rounded-md overflow-hidden">
-            <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
-              <iframe
-                className="absolute top-0 left-0 w-full h-full"
-                src={`https://www.youtube.com/embed/${selectedVideo}`}
-                title="Exercício"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
+          {/* Coluna 2 — exercícios do grupo */}
+          <div className="flex flex-col gap-y-2">
+            {selectedGroup ? (
+              <>
+                <p className="text-gray-400 text-sm mb-1">Exercícios — {selectedGroup}</p>
+                {CATALOG[selectedGroup].map(exercise => (
+                  <button
+                    key={exercise.name}
+                    onClick={() => handleSelectExercise(exercise)}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                      selectedExercise === exercise.name
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-black/20 text-gray-300 hover:bg-black/40'
+                    }`}
+                  >
+                    {exercise.name}
+                    <div className="flex items-center gap-x-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleAddToRoutine(exercise.name); }}
+                        className="p-1 rounded bg-black/30 hover:bg-indigo-600/50 transition-colors"
+                        title="Adicionar à rotina"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  </button>
+                ))}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500 text-sm text-center">Selecione um grupo muscular</p>
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center gap-x-3 text-gray-400">
-            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-            Buscando vídeos...
-          </div>
-        )}
+          {/* Coluna 3 — vídeos */}
+          <div className="flex flex-col gap-y-3">
+            {selectedExercise && (
+              <p className="text-gray-400 text-sm mb-1">Vídeos — {selectedExercise}</p>
+            )}
 
-        {/* Vídeos */}
-        {!loading && videos.length > 0 && (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {videos.map((video) => (
+            {loading && (
+              <div className="flex items-center gap-x-3 text-gray-400 mt-4">
+                <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                Buscando vídeos...
+              </div>
+            )}
+
+            {selectedVideoId && (
+              <div className="w-full bg-black/30 rounded-md overflow-hidden mb-2">
+                <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full"
+                    src={`https://www.youtube.com/embed/${selectedVideoId}`}
+                    title="Exercício"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            )}
+
+            {!loading && videos.map(video => (
               <div
                 key={video.id.videoId}
-                className="bg-black/20 rounded-md overflow-hidden hover:bg-black/40 transition-all duration-200 flex flex-col"
+                className={`flex gap-x-3 p-2 rounded-md cursor-pointer transition-all duration-200 ${
+                  selectedVideoId === video.id.videoId ? 'bg-indigo-600/20 border border-indigo-600/50' : 'bg-black/20 hover:bg-black/40'
+                }`}
+                onClick={() => setSelectedVideoId(video.id.videoId)}
               >
-                <div
-                  className="relative cursor-pointer group"
-                  onClick={() => setSelectedVideo(video.id.videoId)}
-                >
-                  <img
-                    src={video.snippet.thumbnails.medium.url}
-                    alt={video.snippet.title}
-                    className="w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Play className="w-10 h-10 text-white" />
+                <div className="relative flex-shrink-0 w-24 h-16 rounded overflow-hidden group">
+                  <img src={video.snippet.thumbnails.medium.url} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play className="w-5 h-5 text-white" />
                   </div>
                 </div>
-                <div className="p-3 flex flex-col gap-y-2 flex-1">
-                  <p className="text-gray-200 text-sm font-medium line-clamp-2">
-                    {video.snippet.title}
-                  </p>
+                <div className="flex flex-col justify-center gap-y-1 flex-1 min-w-0">
+                  <p className="text-gray-200 text-xs font-medium line-clamp-2">{video.snippet.title}</p>
                   <p className="text-gray-500 text-xs">{video.snippet.channelTitle}</p>
-                  <button
-                    onClick={() => handleAddToRoutine(video.snippet.title)}
-                    className="mt-auto flex items-center justify-center gap-x-1.5 px-3 py-1.5 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs rounded-md border border-indigo-600/50 hover:border-indigo-600 transition-all duration-200"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Adicionar à rotina
-                  </button>
                 </div>
               </div>
             ))}
-          </div>
-        )}
 
-        {!loading && videos.length === 0 && (
-          <p className="text-gray-500 text-center">Busque um exercício ou selecione um grupo muscular para ver vídeos.</p>
-        )}
+            {!loading && !selectedExercise && (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500 text-sm text-center">Selecione um exercício para ver os vídeos</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Modal selecionar rotina */}
@@ -203,7 +267,7 @@ const ExercisesLibraryPage = () => {
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
           <div className="bg-[#1d1d1d] rounded-md p-6 w-full max-w-sm flex flex-col gap-y-4">
             <h3 className="text-gray-200 font-semibold text-lg">Adicionar à qual rotina?</h3>
-            <p className="text-gray-400 text-sm">"{selectedExercise}"</p>
+            <p className="text-gray-400 text-sm">"{exerciseToAdd}"</p>
             {routines.length === 0 ? (
               <p className="text-gray-500 text-sm">Você não tem rotinas. Crie uma primeiro.</p>
             ) : (
