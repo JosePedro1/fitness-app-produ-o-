@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import supabase from '../config/supabase.js';
-import { sendRegisterEmail, sendLoginEmail } from '../services/authEmailService.js';
+import { sendRegisterEmail, sendLoginEmail, sendEmail } from '../services/authEmailService.js';
 
 export const register = async (c) => {
   try {
@@ -50,6 +51,8 @@ export const register = async (c) => {
   }
 };
 
+
+
 export const login = async (c) => {
   try {
     const { email, password } = await c.req.json();
@@ -72,18 +75,13 @@ export const login = async (c) => {
       { expiresIn: '3h' }
     );
 
-  return c.json({
-  message: 'Login bem-sucedido',
-  token,
-  user: { user_id, email },
-});
-
     sendLoginEmail(email, user_id).catch((err) =>
       console.error('Falha ao enviar e-mail de login:', err.message)
     );
 
     return c.json({
       message: 'Login bem-sucedido',
+      token,
       user: { user_id, email },
     });
   } catch (error) {
@@ -91,6 +89,8 @@ export const login = async (c) => {
     return c.json({ error: error.message }, 500);
   }
 };
+
+
 
 export const validate = async (c) => {
   try {
@@ -120,6 +120,85 @@ export const logout = async (c) => {
     return c.json({ message: 'Logout bem-sucedido' });
   } catch (error) {
     console.error('Erro no logout:', error);
+    return c.json({ error: error.message }, 500);
+  }
+};
+
+
+
+export const forgotPassword = async (c) => {
+  try {
+    const { email } = await c.req.json();
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('user_id')
+      .eq('email', email)
+      .single();
+
+    // Responde igual mesmo se o e-mail não existir (segurança)
+    if (!user) {
+      return c.json({ message: 'Se o e-mail existir, você receberá as instruções.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hora
+
+    await supabase
+      .from('users')
+      .update({
+        reset_token: token,
+        reset_token_expires: expires.toISOString(),
+      })
+      .eq('user_id', user.user_id);
+
+    const resetLink = `https://fitness-app-produ-o.vercel.app/reset-password?token=${token}`;
+
+    await sendEmail(
+      email,
+      '🔑 Redefinição de senha — Fitness App',
+      `Olá!\n\nRecebemos uma solicitação para redefinir a senha da sua conta.\n\nClique no link abaixo para criar uma nova senha (válido por 1 hora):\n\n${resetLink}\n\nSe você não solicitou isso, ignore este e-mail.\n\nEquipe Fitness App`
+    );
+
+    return c.json({ message: 'Se o e-mail existir, você receberá as instruções.' });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: error.message }, 500);
+  }
+};
+
+export const resetPassword = async (c) => {
+  try {
+    const { token, password } = await c.req.json();
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('user_id, reset_token_expires')
+      .eq('reset_token', token)
+      .single();
+
+    if (!user) {
+      return c.json({ error: 'Link inválido ou expirado.' }, 400);
+    }
+
+    if (new Date(user.reset_token_expires) < new Date()) {
+      return c.json({ error: 'Link expirado. Solicite uma nova recuperação.' }, 400);
+    }
+
+    await supabase.auth.admin.updateUserById(user.user_id, { password });
+
+    await supabase
+      .from('users')
+      .update({
+        password,
+        reset_token: null,
+        reset_token_expires: null,
+      })
+      .eq('user_id', user.user_id);
+
+    return c.json({ message: 'Senha redefinida com sucesso.' });
+  } catch (error) {
+    console.error(error);
     return c.json({ error: error.message }, 500);
   }
 };

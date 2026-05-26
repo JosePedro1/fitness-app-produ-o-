@@ -104,7 +104,10 @@ const LoginPage = () => {
           icon={Lock}
           error={errors.password}
         />
-        <span className="text-sm text-[#7001FD] cursor-pointer hover:underline self-start">
+        <span
+          onClick={() => navigate("/forgot-password")}
+          className="text-sm text-[#7001FD] cursor-pointer hover:underline self-start"
+        >
           Esqueceu sua senha?
         </span>
       </AuthLayout>

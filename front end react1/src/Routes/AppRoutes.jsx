@@ -7,19 +7,19 @@ import ProgressPage from "../pages/Progress/ProgressPage";
 import TimerPage from "../pages/Timer/TimerPage";
 import LoginPage from "../pages/Login/LoginPage";
 import SignupPage from "../pages/Signup/SignupPage";
+import ForgotPasswordPage from "../pages/ForgotPassword/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/ResetPassword/ResetPasswordPage";
 import PrivateRoute from "./PrivateRoute";
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Rotas públicas - login e registro */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-
-      {/* Rota raiz: redireciona para /login */}
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
 
-      {/* Rotas protegidas - requerem autenticação */}
       <Route element={<PrivateRoute />}>
         <Route path="/home" element={<HomePage />} />
         <Route path="/tasks" element={<TaskPage />} />
@@ -28,7 +28,6 @@ const AppRoutes = () => {
         <Route path="/timer" element={<TimerPage />} />
       </Route>
 
-      {/* Fallback: qualquer rota desconhecida vai para login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
