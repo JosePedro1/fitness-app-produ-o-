@@ -60,13 +60,8 @@ const LoginPage = () => {
     }
   };
 
-  const handleNavigate = () => {
-    navigate("/signup");
-  };
-
   return (
     <div className="relative">
-      {/* Toast notification */}
       {toast && (
         <div
           className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${
@@ -79,14 +74,14 @@ const LoginPage = () => {
 
       <AuthLayout
         title="Faça login em sua conta"
-        primaryBtnText={loading ? "Entrando..." : "Login Now"}
-        secondaryBtnText="Signup Now"
+        primaryBtnText={loading ? "Entrando..." : "Entrar"}
+        secondaryBtnText="Criar conta"
         onSubmit={handleSubmit}
-        onNavigate={handleNavigate}
+        onNavigate={() => navigate("/signup")}
         disablePrimaryBtn={!isFormValid() || loading}
       >
         <AuthInput
-          label="Email"
+          label="E-mail"
           type="email"
           name="email"
           value={form.email}
@@ -96,7 +91,7 @@ const LoginPage = () => {
           error={errors.email}
         />
         <AuthInput
-          label="Your Password"
+          label="Senha"
           type="password"
           name="password"
           value={form.password}
