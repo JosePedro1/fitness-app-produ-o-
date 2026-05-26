@@ -61,16 +61,17 @@ const AuthLayout = ({
       </section>
 
       {/* Ilustrativa — direita no desktop */}
-      <section className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#7001FD] p-6 overflow-hidden">
-        <h1 className="text-4xl font-bold text-[#1E2772] text-center leading-tight">
-          Você deveria se mover!
-        </h1>
-        <img
-          src={ilustracao}
-          alt="Ilustração"
-          className="mt-6 max-w-[500px] max-h-[70vh] w-full object-contain"
-        />
-      </section>
+{/* Ilustrativa — direita no desktop */}
+<section className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#7001FD] p-6 overflow-hidden">
+  <h1 className="text-4xl font-bold text-white text-center leading-tight">
+    Você deveria se mover!
+  </h1>
+  <img
+    src={ilustracao}
+    alt="Ilustração"
+    className="mt-6 max-w-[500px] max-h-[70vh] w-full object-contain"
+  />
+</section>
 
     </main>
   );
