@@ -19,10 +19,22 @@ export const getCalendarSessions = async () => {
 
 /**
  * Cria ou atualiza (upsert) uma sessão de treino para uma data.
+ * Usado pelo timer ao finalizar um treino novo.
  * @param {{ date: string, label: string, duration_sec: number, notes?: string }}
  */
 export const saveCalendarSession = async ({ date, label, duration_sec, notes = '' }) => {
   const response = await api.post('/calendar', { date, label, duration_sec, notes });
+  return response.data;
+};
+
+/**
+ * Edita campos de uma sessão existente pelo id.
+ * Usado pelo modal de edição manual.
+ * @param {string} id
+ * @param {{ label?: string, duration_sec?: number, notes?: string }} updates
+ */
+export const updateCalendarSession = async (id, updates) => {
+  const response = await api.patch(`/calendar/${id}`, updates);
   return response.data;
 };
 
@@ -42,11 +54,11 @@ export const sessionsToMap = (sessions = []) => {
   const map = {};
   for (const s of sessions) {
     map[s.date] = {
-      id: s.id,
-      label: s.label,
+      id:          s.id,
+      label:       s.label,
       durationSec: s.duration_sec,
       durationMin: Math.round(s.duration_sec / 60),
-      notes: s.notes || '',
+      notes:       s.notes || '',
     };
   }
   return map;
