@@ -17,3 +17,13 @@ export const toggleExerciseCompleted = async (exerciseId, completed) => {
   const response = await api.put(`/exercises/${exerciseId}`, { completed });
   return response.data;
 };
+
+/**
+ * Adiciona um exercício avulso a uma rotina existente.
+ * Usado no modal de finalização do treino.
+ * @param {{ routine_id: string, exercise: string }} payload
+ */
+export const postExerciseToRoutine = async ({ routine_id, exercise }) => {
+  const response = await api.post('/exercises', { routine_id, exercise, completed: false });
+  return response.data;
+};

@@ -1,9 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Play, Pause, Square, Minimize2, Maximize2,
   Dumbbell, Clock, CheckCircle2, X, TrendingUp,
+  BookOpen, Search, ChevronDown, Plus, Star, AlertCircle,
 } from 'lucide-react';
 import { useWorkoutTimer } from '../../context/WorkoutTimerContext';
+import { getRoutines } from '../../services/api-routines';
+import { postExerciseToRoutine } from '../../services/api-exercises';
+
+// ─── Catálogo de exercícios (mesmo do RoutineForm) ────────────────────────────
+const CATALOG = {
+  Peito:   ['Supino Reto','Supino Inclinado','Supino Declinado','Crucifixo','Crossover','Flexão de Braços'],
+  Costas:  ['Barra Fixa','Remada Curvada','Remada Unilateral','Puxada Frontal','Remada Cavalinho','Levantamento Terra'],
+  Pernas:  ['Agachamento Livre','Leg Press','Cadeira Extensora','Mesa Flexora','Avanço','Panturrilha em Pé'],
+  Ombros:  ['Desenvolvimento com Barra','Desenvolvimento Halteres','Elevação Lateral','Elevação Frontal','Remada Alta','Face Pull'],
+  Bíceps:  ['Rosca Direta','Rosca Alternada','Rosca Martelo','Rosca Concentrada','Rosca Scott','Rosca no Cabo'],
+  Tríceps: ['Tríceps Testa','Tríceps Corda','Tríceps Francês','Mergulho no Banco','Tríceps Coice','Tríceps Testa Unilateral'],
+  Abdômen: ['Abdominal Crunch','Prancha','Abdominal Infra','Russian Twist','Abdominal no Cabo','Elevação de Pernas'],
+  Glúteos: ['Hip Thrust','Agachamento Sumô','Stiff','Abdução no Cabo','Glúteo no Cabo','Avanço Reverso'],
+};
+
+const ALL_EXERCISES = Object.entries(CATALOG).flatMap(([group, exercises]) =>
+  exercises.map(name => ({ name, group }))
+);
+
+const TODAY_WEEKDAY = (() => {
+  const map = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
+  return map[new Date().getDay()];
+})();
+
+// ─── Mini ExercisePicker (autocomplete da biblioteca) ─────────────────────────
+const ExercisePicker = ({ value, onChange, placeholder }) => {
+  const [query, setQuery] = useState(value || '');
+  const [open, setOpen]   = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => { setQuery(value || ''); }, [value]);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = query.length > 0
+    ? ALL_EXERCISES.filter(e => e.name.toLowerCase().includes(query.toLowerCase()))
+    : ALL_EXERCISES;
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <div className="flex items-center bg-black/40 rounded-xl border border-gray-700 focus-within:border-indigo-500/60 transition-colors">
+        <Search className="w-4 h-4 text-gray-500 ml-3 shrink-0" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); onChange(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder || 'Buscar exercício na biblioteca…'}
+          className="flex-1 px-3 py-2.5 bg-transparent text-gray-200 text-sm focus:outline-none placeholder-gray-600"
+        />
+        {query && (
+          <button type="button" onClick={() => { setQuery(''); onChange(''); }} className="mr-2 text-gray-500 hover:text-gray-300">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button type="button" onClick={() => setOpen(!open)} className="mr-3 text-gray-500 hover:text-gray-300">
+          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {open && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <p className="text-gray-500 text-xs px-3 py-2">Nenhum exercício encontrado.</p>
+          ) : (
+            Object.entries(CATALOG).map(([group, exercises]) => {
+              const filteredGroup = exercises.filter(n => n.toLowerCase().includes(query.toLowerCase()));
+              if (filteredGroup.length === 0) return null;
+              return (
+                <div key={group}>
+                  <p className="text-gray-500 text-xs px-3 pt-2 pb-1 uppercase tracking-wider">{group}</p>
+                  {filteredGroup.map(name => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => { setQuery(name); onChange(name); setOpen(false); }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600/30 transition-colors"
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ─── Modal de Finalização ─────────────────────────────────────────────────────
 const FinishModal = () => {
@@ -13,33 +108,83 @@ const FinishModal = () => {
     saving, saveError,
   } = useWorkoutTimer();
 
-  const [label, setLabel]           = useState('');
-  const [notes, setNotes]           = useState('');
-  const [postAction, setPostAction] = useState(null); // 'routine' | 'measures' | null
+  const [label, setLabel]                   = useState('');
+  const [notes, setNotes]                   = useState('');
+
+  // Rotinas
+  const [routines, setRoutines]             = useState([]);
+  const [loadingRoutines, setLoadingRoutines] = useState(true);
+  const [todayRoutine, setTodayRoutine]     = useState(null); // rotina do dia ou null
+
+  // Exercício novo
+  const [newExercise, setNewExercise]       = useState('');
+  const [addingExercise, setAddingExercise] = useState(false);
+  const [exerciseAdded, setExerciseAdded]   = useState(false);
+  const [exerciseError, setExerciseError]   = useState(null);
+
+  // Progresso corporal
+  const [goToProgress, setGoToProgress]     = useState(false);
 
   const totalMin = Math.round(elapsed / 60);
 
-  const handleSave = async () => {
-    const saved = await finishAndSave(label, notes);
-    if (saved && postAction) {
-      setTimeout(() => {
-        window.location.href = postAction === 'routine' ? '/routines' : '/progress';
-      }, 150);
+  // Carrega rotinas do usuário ao abrir o modal
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await getRoutines();
+        setRoutines(data);
+        // Encontra rotina que contém o dia de hoje
+        const routine = data.find(r =>
+          Array.isArray(r.week_days) && r.week_days.includes(TODAY_WEEKDAY)
+        );
+        setTodayRoutine(routine || null);
+        // Pré-preenche o label com o nome da rotina do dia
+        if (routine) setLabel(routine.name);
+      } catch (e) {
+        console.error('Erro ao buscar rotinas:', e);
+      } finally {
+        setLoadingRoutines(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleAddExercise = async () => {
+    if (!newExercise.trim() || !todayRoutine) return;
+    setAddingExercise(true);
+    setExerciseError(null);
+    try {
+      await postExerciseToRoutine({ routine_id: todayRoutine.id, exercise: newExercise.trim() });
+      setExerciseAdded(true);
+      setNewExercise('');
+    } catch (e) {
+      setExerciseError('Não foi possível adicionar o exercício. Tente novamente.');
+    } finally {
+      setAddingExercise(false);
     }
   };
+
+  const handleSave = async () => {
+    const saved = await finishAndSave(label, notes);
+    if (saved && goToProgress) {
+      setTimeout(() => { window.location.href = '/progress'; }, 150);
+    }
+  };
+
+  const dayLabel = {
+    segunda: 'segunda-feira', terca: 'terça-feira', quarta: 'quarta-feira',
+    quinta: 'quinta-feira', sexta: 'sexta-feira', sabado: 'sábado', domingo: 'domingo',
+  }[TODAY_WEEKDAY] || 'hoje';
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={cancelFinish}
-      />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={cancelFinish} />
 
-      <div className="relative w-full max-w-md bg-[#1c1c1c] border border-gray-700/60 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-md bg-[#1c1c1c] border border-gray-700/60 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
 
-        {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 px-5 py-4 border-b border-gray-800">
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        <div className="bg-gradient-to-r from-indigo-600/20 to-violet-600/20 px-5 py-4 border-b border-gray-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0">
               <CheckCircle2 className="w-5 h-5 text-indigo-400" />
@@ -52,20 +197,62 @@ const FinishModal = () => {
                 {totalMin > 0 && <span className="text-gray-600"> ({totalMin} min)</span>}
               </p>
             </div>
-            <button
-              onClick={cancelFinish}
-              className="text-gray-600 hover:text-gray-400 transition-colors"
-              title="Retomar treino"
-            >
+            <button onClick={cancelFinish} className="text-gray-600 hover:text-gray-400 transition-colors" title="Retomar treino">
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-4 flex flex-col gap-4">
+        {/* ── Body (scrollável) ───────────────────────────────────────────────── */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 flex flex-col gap-4">
 
-          {/* Nome */}
+          {/* ── Parabéns / Convite para rotina ─────────────────────────────── */}
+          {!loadingRoutines && (
+            todayRoutine ? (
+              /* Tem rotina para hoje */
+              <div className="bg-indigo-600/10 border border-indigo-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
+                <Star className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-indigo-300 font-semibold text-sm">
+                    Parabéns por concluir o treino de {dayLabel}!
+                  </p>
+                  <p className="text-gray-400 text-xs mt-0.5">
+                    Rotina: <span className="text-gray-300 font-medium">{todayRoutine.name}</span>
+                  </p>
+                </div>
+              </div>
+            ) : routines.length === 0 ? (
+              /* Sem nenhuma rotina */
+              <div className="bg-amber-600/10 border border-amber-500/30 rounded-xl px-4 py-3 flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-amber-300 font-semibold text-sm">Você ainda não tem uma rotina!</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Que tal criar sua primeira rotina de treino?{' '}
+                    <a href="/routines" className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300 transition-colors">
+                      Criar rotina
+                    </a>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              /* Tem rotinas mas nenhuma para hoje */
+              <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl px-4 py-3 flex items-start gap-3">
+                <Dumbbell className="w-4 h-4 text-gray-400 mt-0.5 shrink-0 -rotate-45" />
+                <div>
+                  <p className="text-gray-300 font-semibold text-sm">Sem rotina programada para hoje</p>
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    Você não tem rotina para {dayLabel}.{' '}
+                    <a href="/routines" className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300 transition-colors">
+                      Adicionar rotina para este dia?
+                    </a>
+                  </p>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* ── Nome do treino ──────────────────────────────────────────────── */}
           <div>
             <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">
               Nome do treino
@@ -79,7 +266,7 @@ const FinishModal = () => {
             />
           </div>
 
-          {/* Observações */}
+          {/* ── Observações ────────────────────────────────────────────────── */}
           <div>
             <label className="text-xs text-gray-500 uppercase tracking-wider mb-1.5 block">
               Observações&nbsp;<span className="text-gray-700 normal-case">(opcional)</span>
@@ -94,40 +281,87 @@ const FinishModal = () => {
             />
           </div>
 
-          {/* Ação pós-save */}
+          {/* ── Adicionar exercício novo à rotina (só aparece se tem rotina hoje) */}
+          {todayRoutine && (
+            <div className="bg-black/30 border border-gray-800 rounded-xl px-4 py-3 flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Plus className="w-4 h-4 text-indigo-400 shrink-0" />
+                <p className="text-sm text-gray-300 font-medium">
+                  Treinou um exercício novo hoje?
+                </p>
+              </div>
+              <p className="text-xs text-gray-500 -mt-1">
+                Adicione-o à sua rotina de <span className="text-gray-400 font-medium">{todayRoutine.name}</span>.
+              </p>
+
+              {/* Hint da biblioteca */}
+              <div className="flex items-center gap-2 bg-indigo-600/10 border border-indigo-600/20 rounded-lg px-3 py-2">
+                <BookOpen className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <p className="text-xs text-gray-400">
+                  Busque na{' '}
+                  <a href="/exercises-library" className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300 transition-colors">
+                    Biblioteca de Exercícios
+                  </a>
+                  {' '}para descobrir novos movimentos.
+                </p>
+              </div>
+
+              <ExercisePicker
+                value={newExercise}
+                onChange={setNewExercise}
+                placeholder="Buscar exercício na biblioteca…"
+              />
+
+              {exerciseAdded && (
+                <p className="text-green-400 text-xs flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Exercício adicionado à rotina!
+                </p>
+              )}
+              {exerciseError && (
+                <p className="text-red-400 text-xs">{exerciseError}</p>
+              )}
+
+              <button
+                type="button"
+                onClick={handleAddExercise}
+                disabled={!newExercise.trim() || addingExercise || exerciseAdded}
+                className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 text-xs font-medium hover:bg-indigo-600/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {addingExercise ? (
+                  <span className="w-3.5 h-3.5 border-2 border-indigo-300/30 border-t-indigo-300 rounded-full animate-spin" />
+                ) : (
+                  <Plus className="w-3.5 h-3.5" />
+                )}
+                {exerciseAdded ? 'Adicionado!' : 'Adicionar à rotina'}
+              </button>
+            </div>
+          )}
+
+          {/* ── Progresso corporal (opcional) ──────────────────────────────── */}
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-              O que deseja fazer depois?
+              Registrar progresso corporal?&nbsp;
+              <span className="text-gray-700 normal-case">(opcional)</span>
             </p>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                {
-                  id: 'routine',
-                  icon: <Dumbbell className="w-4 h-4 -rotate-45" />,
-                  label: 'Adicionar à rotina de treino',
-                },
-                {
-                  id: 'measures',
-                  icon: <TrendingUp className="w-4 h-4" />,
-                  label: 'Registrar medidas corporais',
-                },
-              ].map(({ id, icon, label: lbl }) => (
-                <button
-                  key={id}
-                  onClick={() => setPostAction(postAction === id ? null : id)}
-                  className={`flex items-start gap-2 p-3 rounded-xl border text-left text-xs transition-all ${
-                    postAction === id
-                      ? 'bg-indigo-600/20 border-indigo-500/60 text-indigo-300'
-                      : 'bg-black/20 border-gray-800 text-gray-400 hover:border-gray-700'
-                  }`}
-                >
-                  <span className={postAction === id ? 'text-indigo-400 mt-0.5 shrink-0' : 'text-gray-600 mt-0.5 shrink-0'}>
-                    {icon}
-                  </span>
-                  {lbl}
-                </button>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => setGoToProgress(!goToProgress)}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left text-sm transition-all ${
+                goToProgress
+                  ? 'bg-indigo-600/20 border-indigo-500/60 text-indigo-300'
+                  : 'bg-black/20 border-gray-800 text-gray-400 hover:border-gray-700'
+              }`}
+            >
+              <TrendingUp className={`w-4 h-4 shrink-0 ${goToProgress ? 'text-indigo-400' : 'text-gray-600'}`} />
+              <div>
+                <span className="font-medium">Registrar medidas corporais</span>
+                <p className="text-xs text-gray-500 mt-0.5 font-normal">
+                  Acompanhe seu progresso após o treino
+                </p>
+              </div>
+              {goToProgress && <CheckCircle2 className="w-4 h-4 ml-auto text-indigo-400 shrink-0" />}
+            </button>
           </div>
 
           {saveError && (
@@ -137,8 +371,8 @@ const FinishModal = () => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-5 pb-5 flex gap-2">
+        {/* ── Footer fixo ─────────────────────────────────────────────────────── */}
+        <div className="px-5 pb-5 pt-3 flex gap-2 border-t border-gray-800/60 shrink-0 bg-[#1c1c1c]">
           <button
             onClick={discardSession}
             className="flex-1 py-2.5 rounded-xl border border-gray-700 text-gray-400 text-sm hover:border-gray-600 hover:text-gray-300 transition-colors"
