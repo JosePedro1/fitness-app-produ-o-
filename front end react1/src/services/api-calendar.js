@@ -8,58 +8,58 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-/**
- * Busca todas as sessões de treino do usuário.
- * Retorna array: [{ id, date, label, duration_sec, notes, created_at }]
- */
+/** Busca todas as sessões do usuário. Retorna array ordenado por date desc. */
 export const getCalendarSessions = async () => {
-  const response = await api.get('/calendar');
-  return response.data;
+  const { data } = await api.get('/calendar');
+  return data;
 };
 
 /**
- * Cria ou atualiza (upsert) uma sessão de treino para uma data.
- * Usado pelo timer ao finalizar um treino novo.
+ * Cria uma nova sessão de treino (INSERT — múltiplas por dia permitidas).
  * @param {{ date: string, label: string, duration_sec: number, notes?: string }}
  */
 export const saveCalendarSession = async ({ date, label, duration_sec, notes = '' }) => {
-  const response = await api.post('/calendar', { date, label, duration_sec, notes });
-  return response.data;
+  const { data } = await api.post('/calendar', { date, label, duration_sec, notes });
+  return data;
 };
 
 /**
- * Edita campos de uma sessão existente pelo id.
- * Usado pelo modal de edição manual.
+ * Edita uma sessão existente.
  * @param {string} id
  * @param {{ label?: string, duration_sec?: number, notes?: string }} updates
  */
 export const updateCalendarSession = async (id, updates) => {
-  const response = await api.patch(`/calendar/${id}`, updates);
-  return response.data;
+  const { data } = await api.patch(`/calendar/${id}`, updates);
+  return data;
 };
 
-/**
- * Remove uma sessão de treino pelo id.
- */
+/** Remove uma sessão pelo id. */
 export const deleteCalendarSession = async (id) => {
-  const response = await api.delete(`/calendar/${id}`);
-  return response.data;
+  const { data } = await api.delete(`/calendar/${id}`);
+  return data;
 };
 
 /**
- * Converte array da API para o mapa usado pelo CalendarPage e pelo contexto.
- * Retorna: { 'YYYY-MM-DD': { id, label, durationSec, durationMin, notes } }
+ * Converte array da API em mapa agrupado por data.
+ * Uma data pode ter múltiplas sessões.
+ *
+ * Retorna: { 'YYYY-MM-DD': [{ id, label, durationSec, notes }] }
  */
 export const sessionsToMap = (sessions = []) => {
   const map = {};
   for (const s of sessions) {
-    map[s.date] = {
+    if (!map[s.date]) map[s.date] = [];
+    map[s.date].push({
       id:          s.id,
       label:       s.label,
       durationSec: s.duration_sec,
       durationMin: Math.round(s.duration_sec / 60),
       notes:       s.notes || '',
-    };
+    });
   }
   return map;
 };
+
+/** Soma a duração total (segundos) de todas as sessões de uma data. */
+export const totalSecForDate = (sessions = []) =>
+  sessions.reduce((acc, s) => acc + s.durationSec, 0);

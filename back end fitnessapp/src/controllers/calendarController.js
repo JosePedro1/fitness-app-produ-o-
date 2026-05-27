@@ -3,6 +3,7 @@ import supabase from '../config/supabase.js';
 /**
  * GET /calendar
  * Retorna todas as sessões de treino do usuário autenticado.
+ * Cada data pode ter múltiplas sessões (sem upsert por data).
  */
 export const getCalendar = async (c) => {
   try {
@@ -12,7 +13,8 @@ export const getCalendar = async (c) => {
       .from('workout_sessions')
       .select('*')
       .eq('user_id', user_id)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) throw new Error(error.message);
 
@@ -24,10 +26,11 @@ export const getCalendar = async (c) => {
 
 /**
  * POST /calendar
- * Cria ou atualiza (upsert) uma sessão de treino para uma data específica.
+ * Cria uma nova sessão de treino para uma data.
+ * Múltiplas sessões no mesmo dia são permitidas.
  * Body: { date, label, duration_sec, notes? }
  */
-export const upsertCalendar = async (c) => {
+export const createCalendar = async (c) => {
   try {
     const user_id = c.get('user_id');
     const { date, label, duration_sec, notes = '' } = await c.req.json();
@@ -38,10 +41,7 @@ export const upsertCalendar = async (c) => {
 
     const { data, error } = await supabase
       .from('workout_sessions')
-      .upsert(
-        { user_id, date, label, duration_sec, notes },
-        { onConflict: 'user_id,date' }
-      )
+      .insert({ user_id, date, label, duration_sec, notes })
       .select()
       .single();
 
@@ -64,7 +64,6 @@ export const patchCalendar = async (c) => {
     const id      = c.req.param('id');
     const body    = await c.req.json();
 
-    // Aceita apenas os campos editáveis — nunca deixa mudar user_id ou date
     const allowed = ['label', 'duration_sec', 'notes'];
     const updates = {};
     for (const key of allowed) {
