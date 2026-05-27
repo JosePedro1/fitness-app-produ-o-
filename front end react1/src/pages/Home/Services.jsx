@@ -1,9 +1,20 @@
-import { Dumbbell, ArrowRight, ClipboardList, LineChart, Timer, BookOpen } from 'lucide-react';
+import { Dumbbell, ArrowRight, ClipboardList, LineChart, Timer, BookOpen, Calendar, Play } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useWorkoutTimer } from '../../context/WorkoutTimerContext';
 
 const Services = () => {
   const navigate = useNavigate();
+  const { isVisible, isRunning, elapsedFormatted, start, resume, setIsMinimized } = useWorkoutTimer();
+
+  const handleStartWorkout = () => {
+    if (isVisible) {
+      setIsMinimized(false);
+      if (!isRunning) resume();
+    } else {
+      start();
+    }
+  };
 
   const services = [
     {
@@ -14,6 +25,7 @@ const Services = () => {
       link: "/tasks",
       icon: <ClipboardList className="w-6 h-6 text-white" />,
       btnText: "Acessar Tarefas",
+      isWorkoutTimer: false,
     },
     {
       id: 2,
@@ -23,6 +35,7 @@ const Services = () => {
       link: "/routines",
       icon: <Dumbbell className="w-6 h-6 text-white" />,
       btnText: "Ver Minhas Rotinas",
+      isWorkoutTimer: false,
     },
     {
       id: 3,
@@ -32,6 +45,7 @@ const Services = () => {
       link: "/progress",
       icon: <LineChart className="w-6 h-6 text-white" />,
       btnText: "Ver Meu Progresso",
+      isWorkoutTimer: false,
     },
     {
       id: 4,
@@ -41,6 +55,7 @@ const Services = () => {
       link: "/timer",
       icon: <Timer className="w-6 h-6 text-white" />,
       btnText: "Iniciar Cronômetro",
+      isWorkoutTimer: false,
     },
     {
       id: 5,
@@ -50,6 +65,27 @@ const Services = () => {
       link: "/exercises-library",
       icon: <BookOpen className="w-6 h-6 text-white" />,
       btnText: "Explorar Exercícios",
+      isWorkoutTimer: false,
+    },
+    {
+      id: 6,
+      serviceImg: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=870&auto=format&fit=crop",
+      title: "Calendário de Treinos",
+      desc: "Veja seu histórico de treinos, streak e registre sessões manualmente quando quiser.",
+      link: "/calendar",
+      icon: <Calendar className="w-6 h-6 text-white" />,
+      btnText: "Ver Calendário",
+      isWorkoutTimer: false,
+    },
+    {
+      id: 7,
+      serviceImg: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=870&auto=format&fit=crop",
+      title: "Treino Geral",
+      desc: "Inicie um cronômetro que acompanha todo o seu treino — fica ativo enquanto você navega e salva no calendário ao finalizar.",
+      link: null,
+      icon: <Play className="w-6 h-6 text-white ml-0.5" />,
+      btnText: null,
+      isWorkoutTimer: true,
     },
   ];
 
@@ -71,7 +107,7 @@ const Services = () => {
               backgroundRepeat: "no-repeat",
             }}
           >
-            <div className="w-full h-full bg-black/80 absolute top-0 left-0 -z-10"></div>
+            <div className="w-full h-full bg-black/80 absolute top-0 left-0 -z-10" />
             <div className="w-full h-full flex items-center justify-center flex-col text-white p-4 z-50">
               <div className="w-14 h-14 rounded-full bg-indigo-600/80 border-4 border-indigo-600 flex items-center justify-center mb-5">
                 {data.icon}
@@ -82,13 +118,37 @@ const Services = () => {
               <p className="text-base text-gray-300 font-normal text-center mb-6">
                 {data.desc}
               </p>
-              <button
-                onClick={() => navigate(data.link)}
-                className="flex items-center gap-x-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-300"
-              >
-                {data.btnText}
-                <ArrowRight className="w-4 h-4" />
-              </button>
+
+              {/* Card especial: cronômetro de treino geral */}
+              {data.isWorkoutTimer ? (
+                <div className="flex flex-col items-center gap-2 w-full">
+                  {isVisible && (
+                    <span className="text-indigo-300 font-bold tabular-nums text-lg">
+                      {elapsedFormatted}
+                    </span>
+                  )}
+                  <button
+                    onClick={handleStartWorkout}
+                    className="flex items-center gap-x-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-300"
+                  >
+                    {isVisible && isRunning ? (
+                      <>Ver treino ativo <ArrowRight className="w-4 h-4" /></>
+                    ) : isVisible ? (
+                      <>Retomar treino <ArrowRight className="w-4 h-4" /></>
+                    ) : (
+                      <>Iniciar treino <Play className="w-4 h-4 ml-0.5" /></>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate(data.link)}
+                  className="flex items-center gap-x-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors duration-300"
+                >
+                  {data.btnText}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}
