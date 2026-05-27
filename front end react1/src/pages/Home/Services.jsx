@@ -17,15 +17,15 @@ const Services = () => {
   };
 
   const services = [
-    {
+     {
       id: 1,
-      serviceImg: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=870&auto=format&fit=crop",
-      title: "Gerenciador de Tarefas",
-      desc: "Organize suas tarefas diárias com facilidade. Crie, edite e acompanhe tudo de forma prática e eficiente.",
-      link: "/tasks",
-      icon: <ClipboardList className="w-6 h-6 text-white" />,
-      btnText: "Acessar Tarefas",
-      isWorkoutTimer: false,
+      serviceImg: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=870&auto=format&fit=crop",
+      title: "Treino Geral",
+      desc: "Inicie um cronômetro que acompanha todo o seu treino — fica ativo enquanto você navega e salva no calendário ao finalizar.",
+      link: null,
+      icon: <Play className="w-6 h-6 text-white ml-0.5" />,
+      btnText: null,
+      isWorkoutTimer: true,
     },
     {
       id: 2,
@@ -77,15 +77,15 @@ const Services = () => {
       btnText: "Ver Calendário",
       isWorkoutTimer: false,
     },
-    {
+       {
       id: 7,
-      serviceImg: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?q=80&w=870&auto=format&fit=crop",
-      title: "Treino Geral",
-      desc: "Inicie um cronômetro que acompanha todo o seu treino — fica ativo enquanto você navega e salva no calendário ao finalizar.",
-      link: null,
-      icon: <Play className="w-6 h-6 text-white ml-0.5" />,
-      btnText: null,
-      isWorkoutTimer: true,
+      serviceImg: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=870&auto=format&fit=crop",
+      title: "Gerenciador de Tarefas",
+      desc: "Organize suas tarefas diárias com facilidade. Crie, edite e acompanhe tudo de forma prática e eficiente.",
+      link: "/tasks",
+      icon: <ClipboardList className="w-6 h-6 text-white" />,
+      btnText: "Acessar Tarefas",
+      isWorkoutTimer: false,
     },
   ];
 
