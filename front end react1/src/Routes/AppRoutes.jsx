@@ -10,27 +10,31 @@ import SignupPage from "../pages/Signup/SignupPage";
 import ForgotPasswordPage from "../pages/ForgotPassword/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/ResetPassword/ResetPasswordPage";
 import PrivateRoute from "./PrivateRoute";
-import ExercisesLibraryPage from '../pages/ExercisesLibrary/ExercisesLibraryPage';
+import ExercisesLibraryPage from "../pages/ExercisesLibrary/ExercisesLibraryPage";
+import CalendarPage from "../pages/Calendar/CalendarPage"; // ← corrigido
 
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      {/* Rotas públicas */}
+      <Route path="/login"            element={<LoginPage />} />
+      <Route path="/signup"           element={<SignupPage />} />
+      <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
+      <Route path="/reset-password"   element={<ResetPasswordPage />} />
+      <Route path="/"                 element={<Navigate to="/login" replace />} />
 
+      {/* Rotas protegidas */}
       <Route element={<PrivateRoute />}>
-      <Route path="/exercises-library" element={<ExercisesLibraryPage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/tasks" element={<TaskPage />} />
-        <Route path="/routines" element={<RoutinePage />} />
-        <Route path="/progress" element={<ProgressPage />} />
-        <Route path="/timer" element={<TimerPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/home"               element={<HomePage />} />
+        <Route path="/tasks"              element={<TaskPage />} />
+        <Route path="/routines"           element={<RoutinePage />} />
+        <Route path="/progress"           element={<ProgressPage />} />
+        <Route path="/timer"              element={<TimerPage />} />
+        <Route path="/exercises-library"  element={<ExercisesLibraryPage />} />
+        <Route path="/calendar"           element={<CalendarPage />} />
       </Route>
 
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
