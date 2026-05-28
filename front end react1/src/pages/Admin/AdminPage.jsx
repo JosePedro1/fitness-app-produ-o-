@@ -231,7 +231,7 @@ function AdminDashboard({ password, onLogout }) {
     <div className="adm-wrap">
       <header className="adm-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span className="adm-logo">Fit<span>Track</span></span>
+          <span className="adm-logo">Fit<span>Ness</span></span>
           <span className="adm-badge">ADMIN</span>
         </div>
         <button className="adm-logout" onClick={onLogout}>Sair</button>
