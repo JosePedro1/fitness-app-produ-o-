@@ -140,7 +140,6 @@ function AdminLogin({ onLogin }) {
       <div className="adm-orb adm-orb-1" />
       <div className="adm-orb adm-orb-2" />
       <form className="adm-login-card" onSubmit={handleSubmit}>
-        <div className="adm-lock-icon">🔐</div>
         <h1 className="adm-login-title">Painel Administrativo</h1>
         <p className="adm-login-sub">Acesso restrito — insira a senha de admin</p>
         <div className="adm-field">
@@ -259,12 +258,12 @@ function AdminDashboard({ password, onLogout }) {
             <div className="adm-section">
               <div className="adm-section-title">Visão Geral</div>
               <div className="adm-grid">
-                <StatCard icon="👥" label="Usuários Totais" value={stats.overview.totalUsers} accent="var(--primary-light)" />
-                <StatCard icon="🆕" label="Novos esta semana" value={stats.overview.newUsersWeek} sub="últimos 7 dias" accent="var(--green)" />
-                <StatCard icon="📅" label="Novos este mês" value={stats.overview.newUsersMonth} sub="últimos 30 dias" />
-                <StatCard icon="🏋️" label="Rotinas" value={stats.overview.totalRoutines} />
-                <StatCard icon="✅" label="Tarefas" value={stats.overview.totalTasks} />
-                <StatCard icon="📈" label="Progressos" value={stats.overview.totalProgress} />
+                <StatCard label="Usuários Totais" value={stats.overview.totalUsers} accent="var(--primary-light)" />
+                <StatCard label="Novos esta semana" value={stats.overview.newUsersWeek} sub="últimos 7 dias" accent="var(--green)" />
+                <StatCard label="Novos este mês" value={stats.overview.newUsersMonth} sub="últimos 30 dias" />
+                <StatCard label="Rotinas" value={stats.overview.totalRoutines} />
+                <StatCard label="Tarefas" value={stats.overview.totalTasks} />
+                <StatCard label="Progressos" value={stats.overview.totalProgress} />
               </div>
             </div>
 
