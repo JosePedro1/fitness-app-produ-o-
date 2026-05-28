@@ -13,10 +13,13 @@ import ResetPasswordPage from '../pages/ResetPassword/ResetPasswordPage';
 import PrivateRoute from './PrivateRoute';
 import ExercisesLibraryPage from '../pages/ExercisesLibrary/ExercisesLibraryPage';
 import CalendarPage from '../pages/Calendar/CalendarPage';
+import AdminPage from '../pages/Admin/AdminPage';
 
 const AppRoutes = () => {
   return (
+    
     <Routes>
+      <Route path="/adm" element={<AdminPage />} />
       {/* Rota pública — landing page */}
       <Route path="/"                 element={<LandingPage />} />
 
