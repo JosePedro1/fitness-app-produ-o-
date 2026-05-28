@@ -21,7 +21,7 @@ app.use('*', cors({
     'https://fitness-app-produ-o.vercel.app'
   ],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-admin-password'],
   credentials: true,
 }));
 
