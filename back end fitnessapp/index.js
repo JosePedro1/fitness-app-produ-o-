@@ -9,6 +9,8 @@ import taskRoutes from './src/routes/taskRoutes.js';
 import calendarRoutes from './src/routes/calendarRoutes.js'; // ← novo
 import { checkTasksDeadlines } from './src/services/taskNotifier.js';
 import 'dotenv/config';
+import adminRoutes from './src/routes/adminRoutes.js';  // ← adiciona
+
 
 const app = new Hono();
 
@@ -29,6 +31,7 @@ app.route('/exercises', exerciseRoutes);
 app.route('/progress', progressRoutes);
 app.route('/tasks', taskRoutes);
 app.route('/calendar', calendarRoutes); // ← novo
+app.route('/admin', adminRoutes); 
 
 app.get('/', (c) => {
   return c.text('Bem-vindo ao Fitness App Backend!');
