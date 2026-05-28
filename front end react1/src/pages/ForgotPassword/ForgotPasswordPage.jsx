@@ -1,72 +1,142 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Mail } from "lucide-react";
-import AuthLayout from "../../components/AuthLayout/AuthLayout";
-import AuthInput from "../../components/AuthLayout/AuthInput";
-import axios from "axios";
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-const api = axios.create({ baseURL: "https://fitness-app-produ-o.onrender.com" });
+const API = 'https://fitness-app-produ-o.onrender.com';
 
-const ForgotPasswordPage = () => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const [toast, setToast] = useState(null);
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = "success") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  };
+  function showToast(msg, type = 'info') {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  }
 
-  const handleSubmit = async () => {
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      setError("Digite um e-mail válido.");
-      return;
-    }
+  async function doForgot(e) {
+    e?.preventDefault();
+    if (!email) { setError('Informe seu e-mail'); return; }
     setLoading(true);
+    setError('');
     try {
-      await api.post("/auth/forgot-password", { email });
-      showToast("Se o e-mail existir, você receberá as instruções em breve.");
-      setTimeout(() => navigate("/login"), 3000);
+      await fetch(API + '/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      setSent(true);
+      showToast('Instruções enviadas!', 'success');
     } catch {
-      showToast("Erro ao enviar. Tente novamente.", "error");
-    } finally {
-      setLoading(false);
+      showToast('Erro ao enviar. Tente novamente.', 'error');
     }
-  };
+    setLoading(false);
+  }
 
   return (
-    <div className="relative">
-      {toast && (
-        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${toast.type === "error" ? "bg-red-500" : "bg-[#7001FD]"}`}>
-          {toast.message}
-        </div>
-      )}
-      <AuthLayout
-        title="Recuperar senha"
-        primaryBtnText={loading ? "Enviando..." : "Enviar instruções"}
-        secondaryBtnText="Voltar ao login"
-        onSubmit={handleSubmit}
-        onNavigate={() => navigate("/login")}
-        disablePrimaryBtn={loading}
-      >
-        <p className="text-sm text-gray-500 text-center -mt-2 mb-1">
-          Digite seu e-mail e enviaremos um link para redefinir sua senha.
-        </p>
-        <AuthInput
-          label="E-mail"
-          type="email"
-          name="email"
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); setError(""); }}
-          placeholder="seu@email.com"
-          icon={Mail}
-          error={error}
-        />
-      </AuthLayout>
-    </div>
-  );
-};
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+        :root{
+          --primary:#5B4FFF;--primary-light:#7B6FFF;--primary-bg:rgba(91,79,255,0.08);
+          --surface:#111118;--surface2:#18181f;--surface3:#1e1e28;
+          --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+          --text:#f0f0f8;--text2:rgba(240,240,248,0.6);--text3:rgba(240,240,248,0.35);
+          --red:#ef4444;--radius-sm:8px;
+        }
+        body{background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif}
+        .auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;background:var(--surface)}
+        .auth-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.15;pointer-events:none}
+        .auth-orb-1{width:500px;height:500px;background:var(--primary);top:-180px;right:-120px}
+        .auth-orb-2{width:350px;height:350px;background:#8B5CF6;bottom:-100px;left:-80px}
+        .auth-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 0%,transparent 100%)}
+        .auth-card{background:var(--surface2);border:1px solid var(--border2);border-radius:24px;padding:36px;width:100%;max-width:420px;position:relative;z-index:1;animation:slideUp .25s ease}
+        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .auth-logo{text-align:center;margin-bottom:24px}
+        .auth-logo-text{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--text)}
+        .auth-logo-text span{color:var(--primary)}
+        .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--primary);display:inline-block;margin-left:2px;animation:pulse 2s ease-in-out infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+        .auth-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;text-align:center;margin-bottom:6px;color:var(--text)}
+        .auth-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px}
+        .field{margin-bottom:16px}
+        .field-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block}
+        .field-input{width:100%;height:46px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:0 14px;font-size:15px;outline:none;transition:border-color .2s;font-family:'DM Sans',sans-serif}
+        .field-input:focus{border-color:var(--primary)}
+        .field-error{font-size:12px;color:var(--red);margin-top:4px}
+        .auth-btn{width:100%;height:48px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;margin-top:8px;font-family:'DM Sans',sans-serif}
+        .auth-btn:hover:not(:disabled){background:var(--primary-light)}
+        .auth-btn:disabled{opacity:0.5;cursor:not-allowed}
+        .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--text3);font-size:13px}
+        .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+        .alt-btn{width:100%;height:48px;background:transparent;color:var(--primary-light);border:1px solid var(--primary);border-radius:var(--radius-sm);font-size:15px;font-weight:500;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;text-decoration:none;display:flex;align-items:center;justify-content:center}
+        .alt-btn:hover{background:var(--primary-bg)}
+        .toast{position:fixed;top:20px;right:20px;z-index:300;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:500;animation:toastIn .3s;max-width:360px}
+        @keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        .toast-success{background:#22c55e;color:#fff}
+        .toast-error{background:#ef4444;color:#fff}
+        .toast-info{background:var(--primary);color:#fff}
+        .back-link{position:absolute;top:20px;left:24px;z-index:2;font-size:13px;color:var(--text3);text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .2s}
+        .back-link:hover{color:var(--text)}
+        .sent-box{text-align:center;padding:20px 0}
+        .sent-icon{font-size:48px;margin-bottom:16px}
+        .sent-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text)}
+        .sent-desc{font-size:14px;color:var(--text2);line-height:1.6}
+      `}</style>
 
-export default ForgotPasswordPage;
+      {toast && <div className={`toast toast-${toast.type}`}>{toast.msg}</div>}
+
+      <div className="auth-page">
+        <div className="auth-orb auth-orb-1" />
+        <div className="auth-orb auth-orb-2" />
+        <div className="auth-grid" />
+
+        <Link to="/login" className="back-link">← Voltar ao login</Link>
+
+        <div className="auth-card">
+          <div className="auth-logo">
+            <span className="auth-logo-text">Fit<span>Track</span><span className="logo-dot" /></span>
+          </div>
+
+          {sent ? (
+            <div className="sent-box">
+              <div className="sent-icon">📬</div>
+              <div className="sent-title">Instruções enviadas!</div>
+              <div className="sent-desc">Se o e-mail estiver cadastrado, você receberá as instruções em instantes.</div>
+              <div className="divider" style={{ marginTop: 24 }}>ou</div>
+              <Link to="/login" className="alt-btn">Voltar ao login</Link>
+            </div>
+          ) : (
+            <>
+              <div className="auth-title">Recuperar senha</div>
+              <div className="auth-sub">Informe seu e-mail e enviaremos as instruções.</div>
+
+              <form onSubmit={doForgot}>
+                <div className="field">
+                  <label className="field-label">E-mail</label>
+                  <input
+                    className="field-input"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                  {error && <div className="field-error">{error}</div>}
+                </div>
+                <button className="auth-btn" type="submit" disabled={loading}>
+                  {loading ? 'Enviando...' : 'Enviar instruções'}
+                </button>
+              </form>
+
+              <div className="divider">ou</div>
+              <Link to="/login" className="alt-btn">Voltar ao login</Link>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

@@ -1,27 +1,30 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "../pages/Home/Home";
-import TaskPage from "../pages/Task/TaskPage";
-import RoutinePage from "../pages/Routine/RoutinePage";
-import ProgressPage from "../pages/Progress/ProgressPage";
-import TimerPage from "../pages/Timer/TimerPage";
-import LoginPage from "../pages/Login/LoginPage";
-import SignupPage from "../pages/Signup/SignupPage";
-import ForgotPasswordPage from "../pages/ForgotPassword/ForgotPasswordPage";
-import ResetPasswordPage from "../pages/ResetPassword/ResetPasswordPage";
-import PrivateRoute from "./PrivateRoute";
-import ExercisesLibraryPage from "../pages/ExercisesLibrary/ExercisesLibraryPage";
-import CalendarPage from "../pages/Calendar/CalendarPage"; // ← corrigido
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from '../pages/Landing/LandingPage';
+import HomePage from '../pages/Home/Home';
+import TaskPage from '../pages/Task/TaskPage';
+import RoutinePage from '../pages/Routine/RoutinePage';
+import ProgressPage from '../pages/Progress/ProgressPage';
+import TimerPage from '../pages/Timer/TimerPage';
+import LoginPage from '../pages/Login/LoginPage';
+import SignupPage from '../pages/Signup/SignupPage';
+import ForgotPasswordPage from '../pages/ForgotPassword/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPassword/ResetPasswordPage';
+import PrivateRoute from './PrivateRoute';
+import ExercisesLibraryPage from '../pages/ExercisesLibrary/ExercisesLibraryPage';
+import CalendarPage from '../pages/Calendar/CalendarPage';
 
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Rotas públicas */}
+      {/* Rota pública — landing page */}
+      <Route path="/"                 element={<LandingPage />} />
+
+      {/* Rotas de autenticação */}
       <Route path="/login"            element={<LoginPage />} />
       <Route path="/signup"           element={<SignupPage />} />
       <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
       <Route path="/reset-password"   element={<ResetPasswordPage />} />
-      <Route path="/"                 element={<Navigate to="/login" replace />} />
 
       {/* Rotas protegidas */}
       <Route element={<PrivateRoute />}>
@@ -35,7 +38,7 @@ const AppRoutes = () => {
       </Route>
 
       {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

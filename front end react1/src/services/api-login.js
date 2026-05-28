@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'https://fitness-app-produ-o.onrender.com';
-
-const api = axios.create({ baseURL: API_URL });
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
+const api = axios.create({ baseURL: BASE_URL });
 
 // Interceptor: adiciona o token em toda requisição automaticamente
 api.interceptors.request.use((config) => {

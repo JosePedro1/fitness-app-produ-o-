@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: 'https://fitness-app-produ-o.onrender.com' });
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
+const api = axios.create({ baseURL: BASE_URL });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');

@@ -1,6 +1,33 @@
-import React from "react";
-import logo from "../../assets/logo.svg";
-import ilustracao from "../../assets/ilustracao.svg";
+import React from 'react';
+
+/* ── Tipografia ── */
+const FontLoader = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+    .auth-root, .auth-root * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
+    .auth-root h1, .auth-root h2, .auth-root .auth-syne { font-family: 'Syne', sans-serif; }
+    .auth-logo-dot { animation: auth-pulse 2s ease-in-out infinite; }
+    @keyframes auth-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.85)} }
+    .auth-card { animation: auth-slide-up .25s ease both; }
+    @keyframes auth-slide-up { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .auth-orb-1 { position:absolute; width:500px; height:500px; background:#5B4FFF; top:-180px; right:-120px; border-radius:50%; filter:blur(80px); opacity:.15; pointer-events:none; }
+    .auth-orb-2 { position:absolute; width:350px; height:350px; background:#8B5CF6; bottom:-100px; left:-80px; border-radius:50%; filter:blur(80px); opacity:.15; pointer-events:none; }
+    .auth-grid {
+      position:absolute; inset:0;
+      background-image: linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px), linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+      pointer-events:none;
+    }
+    .auth-primary-btn { background:#5B4FFF; transition:background .2s; }
+    .auth-primary-btn:hover:not(:disabled) { background:#7B6FFF; }
+    .auth-primary-btn:disabled { opacity:.5; cursor:not-allowed; }
+    .auth-secondary-btn { background:transparent; border:1px solid #5B4FFF; color:#7B6FFF; transition:background .2s; }
+    .auth-secondary-btn:hover { background:rgba(91,79,255,.08); }
+    .auth-back { position:absolute; top:20px; left:24px; z-index:10; font-size:13px; color:rgba(240,240,248,.35); text-decoration:none; display:flex; align-items:center; gap:5px; transition:color .2s; cursor:pointer; background:none; border:none; }
+    .auth-back:hover { color:rgba(240,240,248,.8); }
+  `}</style>
+);
 
 const AuthLayout = ({
   title,
@@ -10,70 +37,102 @@ const AuthLayout = ({
   onNavigate,
   disablePrimaryBtn,
   children,
-}) => {
-  return (
-    <main className="flex flex-col md:flex-row md:h-screen md:overflow-hidden font-['Poppins',sans-serif]">
+}) => (
+  <>
+    <FontLoader />
+    <main
+      className="auth-root"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#111118',
+        color: '#f0f0f8',
+      }}
+    >
+      {/* Background */}
+      <div className="auth-orb-1" />
+      <div className="auth-orb-2" />
+      <div className="auth-grid" />
 
-      {/* Seção ilustrativa — topo em mobile */}
-      <section className="flex md:hidden flex-col items-center justify-center bg-[#7001FD] px-6 py-8">
-        <h1 className="text-2xl font-bold text-white text-center leading-tight mb-4">
-          Você deveria se mover!
-        </h1>
-        <img src={ilustracao} alt="Ilustração" className="max-w-[180px] w-full object-contain" />
-      </section>
-
-      {/* Formulário */}
-      <section className="flex flex-col items-center justify-center px-6 md:px-10 py-8 w-full md:w-[440px] md:min-w-[380px] bg-white md:overflow-y-auto">
-        <div className="mb-5">
-          <img src={logo} alt="Logo" className="w-24 md:w-28 object-contain" />
+      {/* Card */}
+      <div
+        className="auth-card"
+        style={{
+          background: '#18181f',
+          border: '1px solid rgba(255,255,255,.14)',
+          borderRadius: 24,
+          padding: '36px',
+          width: '100%',
+          maxWidth: 420,
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        {/* Logo */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <span className="auth-syne" style={{ fontSize: 22, fontWeight: 800, color: '#f0f0f8' }}>
+            Fit<span style={{ color: '#5B4FFF' }}>Track</span>
+            <span
+              className="auth-logo-dot"
+              style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#5B4FFF', marginLeft: 3, verticalAlign: 'middle' }}
+            />
+          </span>
         </div>
 
-        <h2 className="text-lg md:text-xl font-bold text-[#555555] mb-5 text-center">
+        {/* Title */}
+        <h2 className="auth-syne" style={{ fontSize: 20, fontWeight: 700, textAlign: 'center', marginBottom: 28, color: '#f0f0f8' }}>
           {title}
         </h2>
 
-        <div className="w-full flex flex-col gap-4">
+        {/* Fields */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {children}
         </div>
 
-        <div className="flex flex-col items-center w-full gap-4 mt-6">
+        {/* Buttons */}
+        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
             onClick={onSubmit}
             disabled={disablePrimaryBtn}
-            className="w-full rounded-lg text-base font-medium text-white bg-[#7001FD] px-6 py-3 shadow-[0px_8px_12px_#9440ff33] disabled:opacity-70 disabled:cursor-not-allowed hover:bg-[#5c00d4] transition-colors duration-200"
+            className="auth-primary-btn"
+            style={{
+              width: '100%', height: 48, borderRadius: 8,
+              fontSize: 15, fontWeight: 500, color: '#fff',
+              border: 'none', cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
           >
             {primaryBtnText}
           </button>
 
-          <div className="flex items-center justify-center gap-5 w-full text-sm text-[#EEEEEE] uppercase">
-            <div className="flex-1 h-[2px] bg-[#EEEEEE]" />
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(240,240,248,.35)', fontSize: 13 }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
             <span>ou</span>
-            <div className="flex-1 h-[2px] bg-[#EEEEEE]" />
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.08)' }} />
           </div>
 
           <button
             onClick={onNavigate}
-            className="w-full rounded-lg text-base font-medium text-[#7001FD] border border-[#7001FD] bg-transparent px-6 py-3 hover:bg-[#f3e8ff] transition-colors duration-200"
+            className="auth-secondary-btn"
+            style={{
+              width: '100%', height: 48, borderRadius: 8,
+              fontSize: 15, fontWeight: 500,
+              cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}
           >
             {secondaryBtnText}
           </button>
         </div>
-      </section>
-
-{/* Ilustrativa — direita no desktop */}
-<section className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#7001FD] p-6 overflow-hidden">
-  <h1 className="text-4xl font-bold text-white text-center leading-tight">
-    Você deveria se mover!
-  </h1>
-  <img
-    src={ilustracao}
-    alt="Ilustração"
-    className="mt-6 max-w-[500px] max-h-[70vh] w-full object-contain"
-  />
-</section>
-
+      </div>
     </main>
-  );
-};
+  </>
+);
 
 export default AuthLayout;
