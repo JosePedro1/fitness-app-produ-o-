@@ -122,7 +122,7 @@ const rawText = aiData.choices?.[0]?.message?.content || '';
 
 const jsonMatch = rawText.match(/\{[\s\S]*\}/);
 if (!jsonMatch) return c.json({ error: 'IA retornou formato inválido.' }, 500);
-plan = JSON.parse(jsonMatch[0]);
+const plan = JSON.parse(jsonMatch[0]);
 
     // Salva log
     await supabase.from('nutrition_logs').insert({
