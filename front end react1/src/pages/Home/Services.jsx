@@ -1,4 +1,4 @@
-import { Dumbbell, ArrowRight, LineChart, Timer, BookOpen, Calendar, Play, Calculator } from 'lucide-react';
+import { Dumbbell, ArrowRight, LineChart, Timer, BookOpen, Calendar, Play, Salad } from 'lucide-react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkoutTimer } from '../../context/WorkoutTimerContext';
@@ -23,6 +23,15 @@ const Services = () => {
     },
     {
       id: 2,
+      serviceImg: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&auto=format&fit=crop&q=60',
+      title: 'Nutrição com IA',
+      desc: 'Informe seus ingredientes e objetivo — a IA monta um plano alimentar completo com macros, refeições e lista de compras.',
+      link: '/nutrition',
+      icon: <Salad className="w-6 h-6 text-white" />,
+      btnText: 'Gerar Plano Alimentar',
+    },
+    {
+      id: 3,
       serviceImg: 'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=870&auto=format&fit=crop',
       title: 'Rotinas de Treino',
       desc: 'Crie rotinas personalizadas, adicione exercícios por grupo muscular e organize por dias da semana.',
@@ -31,7 +40,7 @@ const Services = () => {
       btnText: 'Ver Minhas Rotinas',
     },
     {
-      id: 3,
+      id: 4,
       serviceImg: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=870&auto=format&fit=crop',
       title: 'Progresso Corporal',
       desc: 'Registre peso e medidas corporais e visualize sua evolução com gráficos de barras ao longo do tempo.',
@@ -40,7 +49,7 @@ const Services = () => {
       btnText: 'Ver Meu Progresso',
     },
     {
-      id: 4,
+      id: 5,
       serviceImg: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=870&auto=format&fit=crop',
       title: 'Cronômetro HIIT',
       desc: 'Timer com séries e descanso configuráveis, alertas sonoros e presets prontos: Tabata, Força, HIIT.',
@@ -49,7 +58,7 @@ const Services = () => {
       btnText: 'Iniciar Cronômetro',
     },
     {
-      id: 5,
+      id: 6,
       serviceImg: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=870&auto=format&fit=crop',
       title: 'Biblioteca de Exercícios',
       desc: 'Explore vídeos por grupo muscular e adicione exercícios diretamente nas suas rotinas de treino.',
@@ -58,7 +67,7 @@ const Services = () => {
       btnText: 'Explorar Exercícios',
     },
     {
-      id: 6,
+      id: 7,
       serviceImg: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=870&auto=format&fit=crop',
       title: 'Calendário de Treinos',
       desc: 'Heatmap com streak, estatísticas mensais e histórico completo. Registre sessões manualmente.',
