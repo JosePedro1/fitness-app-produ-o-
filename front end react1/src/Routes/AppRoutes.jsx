@@ -14,6 +14,8 @@ import PrivateRoute from './PrivateRoute';
 import ExercisesLibraryPage from '../pages/ExercisesLibrary/ExercisesLibraryPage';
 import CalendarPage from '../pages/Calendar/CalendarPage';
 import AdminPage from '../pages/Admin/AdminPage';
+import NutritionPage from '../pages/Nutrition/NutritionPage';
+
 
 const AppRoutes = () => {
   return (
@@ -38,6 +40,7 @@ const AppRoutes = () => {
         <Route path="/timer"              element={<TimerPage />} />
         <Route path="/exercises-library"  element={<ExercisesLibraryPage />} />
         <Route path="/calendar"           element={<CalendarPage />} />
+        <Route path="/nutrition" element={<NutritionPage />} />
       </Route>
 
       {/* Fallback */}
