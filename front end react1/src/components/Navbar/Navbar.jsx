@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { name: 'Progresso',  link: '/progress',           icon: TrendingUp },
   { name: 'Calendário', link: '/calendar',           icon: Calendar },
   { name: 'Exercícios', link: '/exercises-library',  icon: BookOpen },
+  { name: 'Nutrição', link: '/nutrition', icon: Salad },
 ];
 
 const Navbar = () => {
