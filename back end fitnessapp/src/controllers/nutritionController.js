@@ -174,14 +174,16 @@ export const generatePremium = async (c) => {
     if (!biotype) return c.json({ error: 'Informe o biótipo.' }, 400);
 
     // Valida premium no banco
-    const { data: userData } = await supabase
-      .from('users')
-      .select('is_premium, premium_expires_at')
-      .eq('user_id', user.user_id)
-      .single();
+    // const { data: userData } = await supabase
+    //   .from('users')
+    //   .select('is_premium, premium_expires_at')
+    //   .eq('user_id', user.user_id)
+    //   .single();
 
-    const isPremium = userData?.is_premium &&
-      (!userData.premium_expires_at || new Date(userData.premium_expires_at) > new Date());
+    // const isPremium = userData?.is_premium &&
+    //   (!userData.premium_expires_at || new Date(userData.premium_expires_at) > new Date());
+
+const isPremium = true;
 
     if (!isPremium) {
       return c.json({ error: 'Recurso exclusivo para assinantes Premium.', upgrade: true }, 403);

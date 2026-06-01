@@ -151,7 +151,7 @@ function PremiumBanner() {
           <p className="font-semibold text-gray-100" style={{ fontFamily: 'Syne, sans-serif' }}>Limite diário atingido</p>
           <p className="text-sm text-gray-400 mt-1 mb-4">Assine o <strong className="text-[#7B6FFF]">Premium</strong> para planos ilimitados e personalizados pelo seu treino do dia.</p>
           <div className="bg-[#5B4FFF] text-white text-sm font-semibold px-5 py-2 rounded-lg inline-block cursor-pointer" style={{ fontFamily: 'Syne, sans-serif' }}>
-            🚀 Assinar Premium — R$9,90/mês
+             Assinar Premium — R$9,90/mês
           </div>
           <div className="flex items-center gap-4 mt-3 flex-wrap">
             {['Ilimitado', 'Personalizado por treino', 'Biótipo', 'Histórico'].map(f => (
