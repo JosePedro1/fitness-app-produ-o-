@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Dumbbell, Timer, TrendingUp, Calendar, BookOpen, Home, LogOut } from 'lucide-react';
+import { Menu, X, Dumbbell, Timer, TrendingUp, Calendar, BookOpen, Home, LogOut, Salad } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { logoutUser } from '../../services/api-login';
 
