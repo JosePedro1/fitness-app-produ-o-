@@ -11,50 +11,43 @@ function buildPrompt({ goal, ingredients, restrictions, meals, profile }) {
   const { weight, height, age, gender, activityLevel } = profile || {};
 
   const profileInfo = weight && height && age
-    ? `Perfil do usuário: ${gender === 'f' ? 'Mulher' : 'Homem'}, ${age} anos, ${weight}kg, ${height}cm, nível de atividade: ${activityLevel || 'moderado'}.`
+    ? `Perfil: ${gender === 'f' ? 'Mulher' : 'Homem'}, ${age} anos, ${weight}kg, ${height}cm, atividade: ${activityLevel || 'moderado'}.`
     : '';
 
   const ingredientsList = ingredients?.trim()
     ? `Ingredientes disponíveis: ${ingredients}.`
-    : 'Ingredientes: use alimentos comuns e acessíveis.';
+    : 'Use alimentos comuns e acessíveis do Brasil.';
 
   const restrictionInfo = restrictions?.trim()
-    ? `Restrições alimentares: ${restrictions}.`
+    ? `Restrições: ${restrictions}.`
     : '';
 
-  const mealsInfo = meals ? `Refeições por dia: ${meals}.` : 'Refeições por dia: 3.';
-
   const goalMap = {
-    emagrecer:   'Emagrecimento (déficit calórico, rico em proteína)',
-    massa:       'Ganho de massa muscular (superávit calórico, alto em proteína e carboidratos)',
-    manutencao:  'Manutenção do peso atual (equilíbrio calórico)',
-    saude:       'Alimentação saudável e balanceada',
+    emagrecer:  'Emagrecimento com déficit calórico e alto teor de proteína',
+    massa:      'Ganho de massa com superávit calórico, proteína e carboidratos altos',
+    manutencao: 'Manutenção do peso com equilíbrio calórico',
+    saude:      'Alimentação saudável e balanceada',
   };
 
-  return `Você é um nutricionista especializado em fitness. Crie um plano alimentar COMPLETO e PERSONALIZADO.
+  const numMeals = parseInt(meals) || 3;
+
+  return `Você é nutricionista fitness. Crie um plano alimentar personalizado em JSON.
 
 ${profileInfo}
 Objetivo: ${goalMap[goal] || 'Alimentação saudável'}.
 ${ingredientsList}
 ${restrictionInfo}
-${mealsInfo}
+Número de refeições: ${numMeals}.
 
-Responda SOMENTE em JSON válido, sem markdown, sem texto fora do JSON, neste formato exato:
-{
-  "objetivo": "string com o objetivo e calorias diárias estimadas",
-  "macros": { "proteina_g": número, "carbo_g": número, "gordura_g": número, "calorias": número },
-  "refeicoes": [
-    {
-      "nome": "Café da manhã",
-      "horario": "07:00",
-      "itens": ["item 1 com quantidade", "item 2 com quantidade"],
-      "calorias_aprox": número,
-      "dica": "dica rápida e prática"
-    }
-  ],
-  "dicas_gerais": ["dica 1", "dica 2", "dica 3"],
-  "lista_compras": ["item 1", "item 2"]
-}`;
+REGRAS OBRIGATÓRIAS:
+- Responda APENAS com JSON puro, sem markdown, sem blocos de código, sem texto antes ou depois
+- Todos os valores numéricos devem ser números inteiros reais (ex: 2000, 150, 60), NUNCA strings
+- Use nomes de alimentos reais em português brasileiro
+
+Formato exato:
+{"objetivo":"descrição do objetivo com estimativa calórica","macros":{"proteina_g":150,"carbo_g":200,"gordura_g":60,"calorias":2000},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["2 ovos mexidos","1 fatia de pão integral","1 banana"],"calorias_aprox":350,"dica":"Prefira ovos cozidos para mais saciedade"}],"dicas_gerais":["Beba 2L de água por dia","Evite ultraprocessados","Durma bem para recuperação"],"lista_compras":["Ovos","Pão integral","Banana","Frango","Arroz"]}
+
+Gere exatamente ${numMeals} refeições no array refeicoes.`;
 }
 
 // ── POST /nutrition/generate ───────────────────────────────
@@ -66,7 +59,7 @@ export const generate = async (c) => {
 
     if (!goal) return c.json({ error: 'Informe o objetivo.' }, 400);
 
-    // Verifica is_premium do banco (não confia no frontend)
+    // Verifica is_premium do banco
     const { data: userData } = await supabase
       .from('users')
       .select('is_premium, premium_expires_at')
@@ -94,35 +87,62 @@ export const generate = async (c) => {
       }
     }
 
-   const groqKey = process.env.GROQ_API_KEY;
-if (!groqKey) return c.json({ error: 'Chave da IA não configurada.' }, 500);
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) return c.json({ error: 'Chave da IA não configurada.' }, 500);
 
-const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${groqKey}`,
-  },
-  body: JSON.stringify({
-    model: 'llama-3.1-8b-instant',
-    max_tokens: 2000,
-    temperature: 0.7,
-    messages: [{ role: 'user', content: buildPrompt({ goal, ingredients, restrictions, meals, profile }) }],
-  }),
-});
+    const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${groqKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        max_tokens: 2000,
+        temperature: 0.3,
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um nutricionista. Responda SEMPRE e SOMENTE com JSON puro válido, sem markdown, sem texto adicional.',
+          },
+          {
+            role: 'user',
+            content: buildPrompt({ goal, ingredients, restrictions, meals, profile }),
+          },
+        ],
+      }),
+    });
 
-if (!aiRes.ok) {
-  const err = await aiRes.json().catch(() => ({}));
-  console.error('Groq error:', err);
-  return c.json({ error: 'Erro ao gerar plano com IA.' }, 500);
-}
+    if (!aiRes.ok) {
+      const err = await aiRes.json().catch(() => ({}));
+      console.error('Groq error:', err);
+      return c.json({ error: 'Erro ao gerar plano com IA.' }, 500);
+    }
 
-const aiData = await aiRes.json();
-const rawText = aiData.choices?.[0]?.message?.content || '';
+    const aiData = await aiRes.json();
+    let rawText = aiData.choices?.[0]?.message?.content || '';
 
-const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-if (!jsonMatch) return c.json({ error: 'IA retornou formato inválido.' }, 500);
-const plan = JSON.parse(jsonMatch[0]);
+    // Limpa qualquer markdown que o modelo possa ter incluído
+    rawText = rawText
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
+
+    // Extrai o JSON da resposta
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error('Resposta sem JSON válido:', rawText);
+      return c.json({ error: 'IA retornou formato inválido. Tente novamente.' }, 500);
+    }
+
+    let plan;
+    try {
+      plan = JSON.parse(jsonMatch[0]);
+    } catch (parseErr) {
+      console.error('JSON parse error:', parseErr.message);
+      console.error('Raw text:', rawText.slice(0, 300));
+      return c.json({ error: 'Erro ao interpretar resposta da IA. Tente novamente.' }, 500);
+    }
 
     // Salva log
     await supabase.from('nutrition_logs').insert({
