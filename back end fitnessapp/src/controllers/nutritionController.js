@@ -144,14 +144,14 @@ export const generate = async (c) => {
       return c.json({ error: 'Erro ao interpretar resposta da IA. Tente novamente.' }, 500);
     }
 
-    // Salva log
-    await supabase.from('nutrition_logs').insert({
-      user_id: user.user_id,
-      date: todayStr(),
-      goal,
-      is_premium: isPremium,
-      plan: JSON.stringify(plan),
-    }).catch((e) => console.error('Erro ao salvar nutrition_log:', e.message));
+const { error: logError } = await supabase.from('nutrition_logs').insert({
+  user_id: user.user_id,
+  date: todayStr(),
+  goal,
+  is_premium: isPremium,
+  plan: JSON.stringify(plan),
+});
+if (logError) console.error('Erro ao salvar nutrition_log:', logError.message);
 
     return c.json({ plan, isPremium });
   } catch (error) {
