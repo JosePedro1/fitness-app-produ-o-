@@ -94,34 +94,35 @@ export const generate = async (c) => {
       }
     }
 
-    // Chama Gemini
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) return c.json({ error: 'Chave da IA não configurada.' }, 500);
+   const groqKey = process.env.GROQ_API_KEY;
+if (!groqKey) return c.json({ error: 'Chave da IA não configurada.' }, 500);
 
-    const aiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt({ goal, ingredients, restrictions, meals, profile }) }] }],
-          generationConfig: { maxOutputTokens: 2000, temperature: 0.7 },
-        }),
-      }
-    );
+const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${groqKey}`,
+  },
+  body: JSON.stringify({
+    model: 'llama-3.1-8b-instant',
+    max_tokens: 2000,
+    temperature: 0.7,
+    messages: [{ role: 'user', content: buildPrompt({ goal, ingredients, restrictions, meals, profile }) }],
+  }),
+});
 
-    if (!aiRes.ok) {
-      const err = await aiRes.json().catch(() => ({}));
-      console.error('Gemini error:', err);
-      return c.json({ error: 'Erro ao gerar plano com IA.' }, 500);
-    }
+if (!aiRes.ok) {
+  const err = await aiRes.json().catch(() => ({}));
+  console.error('Groq error:', err);
+  return c.json({ error: 'Erro ao gerar plano com IA.' }, 500);
+}
 
-    const aiData = await aiRes.json();
-    const rawText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return c.json({ error: 'IA retornou formato inválido.' }, 500);
+const aiData = await aiRes.json();
+const rawText = aiData.choices?.[0]?.message?.content || '';
 
-    const plan = JSON.parse(jsonMatch[0]);
+const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+if (!jsonMatch) return c.json({ error: 'IA retornou formato inválido.' }, 500);
+plan = JSON.parse(jsonMatch[0]);
 
     // Salva log
     await supabase.from('nutrition_logs').insert({
