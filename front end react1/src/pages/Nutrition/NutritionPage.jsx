@@ -625,9 +625,6 @@ function FreeForm({ onGenerate, loading, error, usage }) {
 
 // ── Página principal ───────────────────────────────────────
 const NutritionPage = () => {
-
-// ── Página principal ───────────────────────────────────────
-const NutritionPage = () => {
   const [isPremium, setIsPremium] = useState(false);
   const [usage, setUsage] = useState({ used: 0, limit: DAILY_LIMIT });
   const [loadingMe, setLoadingMe] = useState(true);
@@ -749,5 +746,5 @@ const NutritionPage = () => {
     </div>
   );
 };
-}
+
 export default NutritionPage;
