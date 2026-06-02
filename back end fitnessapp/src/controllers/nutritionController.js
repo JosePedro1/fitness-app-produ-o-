@@ -1,4 +1,3 @@
-
 import supabase from '../config/supabase.js';
 
 const DAILY_FREE_LIMIT = 3;
@@ -288,6 +287,39 @@ export const getHistory = async (c) => {
     return c.json({ history: data || [] });
   } catch (error) {
     console.error('getHistory error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+};
+
+
+// ── GET /nutrition/me ─────────────────────────────────────
+export const getMe = async (c) => {
+  try {
+    const user = c.get('user');
+
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_premium, premium_expires_at')
+      .eq('user_id', user.user_id)
+      .single();
+
+    const isPremium = userData?.is_premium === true &&
+      (!userData.premium_expires_at || new Date(userData.premium_expires_at) > new Date());
+
+    const { count: usedToday } = await supabase
+      .from('nutrition_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.user_id)
+      .eq('date', todayStr());
+
+    return c.json({
+      isPremium,
+      premiumExpiresAt: userData?.premium_expires_at || null,
+      used: usedToday || 0,
+      limit: DAILY_FREE_LIMIT,
+    });
+  } catch (error) {
+    console.error('getMe error:', error);
     return c.json({ error: error.message }, 500);
   }
 };

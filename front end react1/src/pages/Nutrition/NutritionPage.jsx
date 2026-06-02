@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Salad, Zap, ShoppingCart, ChevronDown, ChevronUp,
@@ -626,8 +625,12 @@ function FreeForm({ onGenerate, loading, error, usage }) {
 
 // ── Página principal ───────────────────────────────────────
 const NutritionPage = () => {
-  const isPremium = localStorage.getItem('is_premium') === 'true';
+
+// ── Página principal ───────────────────────────────────────
+const NutritionPage = () => {
+  const [isPremium, setIsPremium] = useState(false);
   const [usage, setUsage] = useState({ used: 0, limit: DAILY_LIMIT });
+  const [loadingMe, setLoadingMe] = useState(true);
   const [plan, setPlan] = useState(null);
   const [planIsPremium, setPlanIsPremium] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -636,8 +639,17 @@ const NutritionPage = () => {
   const [allExercises, setAllExercises] = useState([]);
 
   useEffect(() => {
-    api.get('/nutrition/usage').then(r => setUsage(r.data)).catch(() => {});
-    if (isPremium) getRoutines().then(setRoutines).catch(() => {});
+    // Busca status premium e uso do dia direto do banco via backend
+    api.get('/nutrition/me')
+      .then(r => {
+        setIsPremium(r.data.isPremium);
+        setUsage({ used: r.data.used, limit: r.data.limit });
+        if (r.data.isPremium) {
+          getRoutines().then(setRoutines).catch(() => {});
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMe(false));
   }, []);
 
   async function handleFreeGenerate(params) {
@@ -662,7 +674,6 @@ const NutritionPage = () => {
       const { data } = await api.post('/nutrition/generate-premium', params);
       setPlan(data.plan);
       setPlanIsPremium(true);
-      // Coleta todos exercícios para oferecer "adicionar à rotina"
       const exs = [];
       params.workout?.routinesDone?.forEach(r => r.exercises?.forEach(e => exs.push(e)));
       params.workout?.manualExercises?.forEach(e => exs.push(e));
@@ -679,6 +690,17 @@ const NutritionPage = () => {
     } catch (err) {
       console.error('addToRoutine error:', err.message);
     }
+  }
+
+  if (loadingMe) {
+    return (
+      <div className="w-full min-h-screen bg-[#171717] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-[#5B4FFF]/30 border-t-[#5B4FFF] rounded-full animate-spin" style={{ borderWidth: 3 }} />
+          <span className="text-gray-500 text-sm">Carregando...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -727,5 +749,5 @@ const NutritionPage = () => {
     </div>
   );
 };
-
+}
 export default NutritionPage;
