@@ -1,6 +1,6 @@
 import supabase from '../config/supabase.js';
 
-const DAILY_FREE_LIMIT = 3;
+const DAILY_FREE_LIMIT = 1; // CORREÇÃO produto: era 3, reduzido para 1 plano/dia
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -18,7 +18,9 @@ function buildFreePrompt({ goal, ingredients, restrictions, meals }) {
 
   const numMeals = parseInt(meals) || 3;
 
-  return `Você é nutricionista fitness. Crie um plano alimentar semanal genérico em JSON.
+  // CORREÇÃO CRÍTICA (produto): o prompt pedia "plano semanal genérico" mas a UI mostra
+  // "Refeições de hoje". Alinhado para plano DIÁRIO, mantendo consistência com a UI.
+  return `Você é nutricionista fitness. Crie um plano alimentar para HOJE em JSON.
 Objetivo: ${goalMap[goal] || 'Alimentação saudável'}.
 ${ingredients?.trim() ? `Ingredientes disponíveis: ${ingredients}.` : 'Use alimentos comuns do Brasil.'}
 ${restrictions?.trim() ? `Restrições: ${restrictions}.` : ''}
@@ -57,7 +59,6 @@ function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restr
   let profileDesc = '';
   if (weight && height && age) {
     const genderStr = gender === 'f' ? 'Feminino' : 'Masculino';
-    // TMB Harris-Benedict
     const w = parseFloat(weight), h = parseFloat(height), a = parseInt(age);
     const tmb = gender === 'f'
       ? 655 + (9.563 * w) + (1.85 * h) - (4.676 * a)
@@ -73,7 +74,7 @@ TMB estimado: ${Math.round(tmb)} kcal | TDEE (gasto diário total): ${tdee} kcal
     ? selectedMeals.join(', ')
     : 'Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar, Ceia';
 
-  // Treino
+  // Treino — agora inclui exercícios completos de cada rotina
   let workoutDesc = '';
   if (workout?.routinesDone?.length > 0) {
     workoutDesc += 'Rotinas realizadas hoje:\n';
@@ -167,7 +168,7 @@ export const generate = async (c) => {
       if ((count || 0) >= DAILY_FREE_LIMIT) {
         return c.json({
           error: 'limite_atingido',
-          message: `Você usou seus ${DAILY_FREE_LIMIT} planos gratuitos de hoje. Assine o Premium para uso ilimitado.`,
+          message: `Você usou seu plano gratuito de hoje. Assine o Premium para uso ilimitado.`,
           used: count,
           limit: DAILY_FREE_LIMIT,
         }, 429);
@@ -203,24 +204,25 @@ export const generatePremium = async (c) => {
     if (!goal)    return c.json({ error: 'Informe o objetivo.' }, 400);
     if (!biotype) return c.json({ error: 'Informe o biótipo.' }, 400);
 
-    // Valida premium no banco
-    // const { data: userData } = await supabase
-    //   .from('users')
-    //   .select('is_premium, premium_expires_at')
-    //   .eq('user_id', user.user_id)
-    //   .single();
+    // ✅ CORREÇÃO CRÍTICA: validação de premium restaurada (estava comentada/hardcoded)
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_premium, premium_expires_at')
+      .eq('user_id', user.user_id)
+      .single();
 
-    // const isPremium = userData?.is_premium &&
-    //   (!userData.premium_expires_at || new Date(userData.premium_expires_at) > new Date());
-
-const isPremium = true;
+    const isPremium = userData?.is_premium === true &&
+      (!userData.premium_expires_at || new Date(userData.premium_expires_at) > new Date());
 
     if (!isPremium) {
       return c.json({ error: 'Recurso exclusivo para assinantes Premium.', upgrade: true }, 403);
     }
 
     const { profile, selectedMeals } = body;
-    const plan = await callGroq(buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }), 3000);
+    const plan = await callGroq(
+      buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }),
+      3000
+    );
     if (!plan) return c.json({ error: 'Erro ao gerar plano. Tente novamente.' }, 500);
 
     const { error: logError } = await supabase.from('nutrition_logs').insert({
@@ -248,7 +250,6 @@ export const addToRoutine = async (c) => {
 
     if (!exercises?.length) return c.json({ error: 'Nenhum exercício informado.' }, 400);
 
-    // Se routineId informado, adiciona na rotina existente
     if (routineId) {
       const exercisesToInsert = exercises.map(e => ({
         exercise: e.name,
@@ -261,7 +262,6 @@ export const addToRoutine = async (c) => {
       return c.json({ message: 'Exercícios adicionados à rotina.' });
     }
 
-    // Cria nova rotina com o dia de hoje
     const today = new Date();
     const weekDay = today.toLocaleDateString('pt-BR', { weekday: 'long' });
     const { data: routine, error: routineError } = await supabase
@@ -311,7 +311,7 @@ export const getHistory = async (c) => {
     const user = c.get('user');
     const { data } = await supabase
       .from('nutrition_logs')
-      .select('id, date, goal, created_at, plan')
+      .select('id, date, goal, is_premium, created_at, plan')
       .eq('user_id', user.user_id)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -322,7 +322,6 @@ export const getHistory = async (c) => {
     return c.json({ error: error.message }, 500);
   }
 };
-
 
 // ── GET /nutrition/me ─────────────────────────────────────
 export const getMe = async (c) => {
