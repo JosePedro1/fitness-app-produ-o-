@@ -18,21 +18,17 @@ function buildFreePrompt({ goal, ingredients, restrictions, meals }) {
 
   const numMeals = parseInt(meals) || 3;
 
-  return `Você é nutricionista fitness. Crie um plano alimentar semanal genérico em JSON.
+  return `Você é nutricionista fitness. Crie um plano alimentar diário em JSON.
 Objetivo: ${goalMap[goal] || 'Alimentação saudável'}.
 ${ingredients?.trim() ? `Ingredientes disponíveis: ${ingredients}.` : 'Use alimentos comuns do Brasil.'}
 ${restrictions?.trim() ? `Restrições: ${restrictions}.` : ''}
 Refeições por dia: ${numMeals}.
 
-REGRAS CRÍTICAS:
-- Responda APENAS com JSON puro válido, sem markdown, sem texto antes ou depois
-- Valores numéricos REAIS (nunca strings como "150g", use apenas 150)
-- Mantenha cada campo curto para não truncar o JSON
-- Use nomes de itens curtos (máx 50 chars cada)
+REGRAS: JSON puro apenas, sem markdown. Valores numéricos REAIS (nunca strings).
 
-{"objetivo":"descrição breve","macros":{"proteina_g":150,"carbo_g":200,"gordura_g":60,"calorias":2000},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["2 ovos mexidos","1 pão integral","1 banana"],"calorias_aprox":350,"dica":"dica curta"}],"dicas_gerais":["dica 1","dica 2","dica 3"],"lista_compras":["item 1","item 2"]}
+{"objetivo":"descrição + estimativa calórica","macros":{"proteina_g":150,"carbo_g":200,"gordura_g":60,"calorias":2000},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["2 ovos mexidos","1 fatia de pão integral","1 banana"],"calorias_aprox":350,"dica":"dica prática"}],"dicas_gerais":["dica 1","dica 2","dica 3"],"lista_compras":["item 1","item 2"]}
 
-Gere exatamente ${numMeals} refeições. Seja conciso nos textos.`;
+Gere exatamente ${numMeals} refeições com itens detalhados e porções precisas.`;
 }
 
 function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }) {
@@ -74,45 +70,74 @@ function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restr
   // Refeições escolhidas
   const mealsToGenerate = selectedMeals?.length > 0
     ? selectedMeals.join(', ')
-    : 'Café da manhã, Almoço, Lanche da tarde, Jantar';
+    : 'Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar, Ceia';
 
-  const numMeals = selectedMeals?.length || 4;
+  const numMeals = selectedMeals?.length || 6;
 
-  // Treino (resumido para economizar tokens)
-  let workoutDesc = 'Descanso.';
-  const routineNames = workout?.routinesDone?.map(r => r.name) || [];
-  const manualNames  = workout?.manualExercises?.map(e => e.name) || [];
-  const allExNames   = [...routineNames, ...manualNames];
-  if (allExNames.length > 0) {
-    workoutDesc = allExNames.join(', ');
+  // Treino detalhado
+  let workoutDesc = '';
+  if (workout?.routinesDone?.length > 0) {
+    workoutDesc += 'Rotinas realizadas hoje:\n';
+    workout.routinesDone.forEach(r => {
+      workoutDesc += `- ${r.name}\n`;
+      if (r.exercises?.length > 0) {
+        r.exercises.forEach(e => {
+          const d = [];
+          if (e.sets)   d.push(`${e.sets} séries`);
+          if (e.weight) d.push(`${e.weight}kg`);
+          if (e.rest)   d.push(`descanso ${e.rest}s`);
+          workoutDesc += `  • ${e.name}${d.length ? ` (${d.join(', ')})` : ''}\n`;
+        });
+      }
+    });
   }
+  if (workout?.manualExercises?.length > 0) {
+    workoutDesc += 'Exercícios avulsos:\n';
+    workout.manualExercises.forEach(e => {
+      const d = [];
+      if (e.sets)   d.push(`${e.sets} séries`);
+      if (e.weight) d.push(`${e.weight}kg`);
+      if (e.rest)   d.push(`descanso ${e.rest}s`);
+      workoutDesc += `- ${e.name}${d.length ? ` (${d.join(', ')})` : ''}\n`;
+    });
+  }
+  if (!workoutDesc) workoutDesc = 'Dia de descanso (sem treino registrado).';
 
   const cardioDesc = (cardio?.value > 0)
-    ? `Cardio: ${cardio.value}${cardio.type === 'km' ? 'km' : 'min'}.`
+    ? `Cardio: ${cardio.value} ${cardio.type === 'km' ? 'km percorridos' : 'minutos de atividade cardiovascular'}.`
     : '';
 
-  // Cálculo de hidratação
-  const waterMl = weight ? Math.round(parseFloat(weight) * 35 + (cardio?.value > 0 ? 500 : 0)) : 2500;
-  const waterCopos = Math.round(waterMl / 250);
-
-  return `Nutricionista fitness. Plano alimentar PERSONALIZADO para hoje. Responda SOMENTE JSON puro válido.
+  return `Você é nutricionista fitness especializado em periodização nutricional. Crie um plano alimentar PERSONALIZADO e PRECISO para HOJE.
 
 ${profileDesc}
 Biótipo: ${biotypeMap[biotype] || 'Mesomorfo'}
 Objetivo: ${goalMap[goal] || 'Saúde geral'}
-${ingredients?.trim() ? `Ingredientes: ${ingredients}.` : ''}
-${restrictions?.trim() ? `Restrições: ${restrictions}.` : ''}
-Treino hoje: ${workoutDesc}
+${ingredients?.trim() ? `Ingredientes disponíveis: ${ingredients}.` : 'Use alimentos comuns e acessíveis do Brasil.'}
+${restrictions?.trim() ? `Restrições alimentares: ${restrictions}.` : ''}
+
+TREINO DE HOJE:
+${workoutDesc}
 ${cardioDesc}
-Refeições (gere EXATAMENTE ${numMeals}, nesta ordem): ${mealsToGenerate}
 
-REGRAS CRÍTICAS:
-- JSON puro apenas, sem markdown, sem texto adicional
-- Todos os valores numéricos devem ser inteiros reais (nunca strings)
-- Textos CURTOS: objetivo máx 100 chars, dicas máx 80 chars cada, itens máx 40 chars cada
-- Gere exatamente ${numMeals} refeições no array refeicoes
+REFEIÇÕES DO DIA (gere EXATAMENTE estas ${numMeals} refeições, nesta ordem):
+${mealsToGenerate}
 
-{"objetivo":"descrição curta com TDEE ${tdee}kcal e meta do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":${tdee}},"gasto_treino_kcal":400,"agua":{"ml":${waterMl},"copos":${waterCopos},"obs":"obs curta"},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["item curto","item curto"],"calorias_aprox":500,"dica":"dica curta"}],"dicas_gerais":["dica 1","dica 2"],"lista_compras_diaria":[{"item":"Frango","quantidade":"200g"}]}`;
+INSTRUÇÕES OBRIGATÓRIAS:
+- Use o TDEE informado como base calórica e ajuste pelo gasto do treino
+- Distribua as calorias proporcionalmente entre as refeições escolhidas
+- Ajuste os macros pelo biótipo: ectomorfo (+carbo), endomorfo (-carbo +proteína), mesomorfo (equilibrado)
+- Em treino pesado: +15-20% carboidratos, proteína alta pós-treino
+- Em descanso: -10% calorias, manter proteína
+- Calcule a hidratação: 35ml por kg de peso + 500ml por hora de treino
+- Lista de compras DIÁRIA com quantidades exatas para 1 dia (ex: "Frango — 200g", "Ovos — 3 unidades")
+- Cada refeição deve ter ao menos 3 itens detalhados com porções (ex: "3 ovos mexidos", "200g de frango grelhado")
+- As dicas devem ser específicas para o treino e objetivo do usuário
+
+REGRAS: JSON puro apenas, sem markdown. Todos os valores numéricos devem ser números inteiros reais.
+
+{"objetivo":"descrição com TDEE, gasto do treino e meta calórica do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":2400},"gasto_treino_kcal":450,"agua":{"ml":3200,"copos":13,"obs":"Beba 1 copo extra a cada 30min de treino"},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["3 ovos mexidos","2 fatias de pão integral com pasta de amendoim","1 banana média","1 copo de leite desnatado (200ml)"],"calorias_aprox":520,"dica":"Refeição pré-treino: carboidratos de baixo IG + proteína"}],"dicas_gerais":["dica específica baseada no treino de hoje","dica sobre timing de nutrientes","dica sobre recuperação muscular"],"lista_compras_diaria":[{"item":"Peito de frango","quantidade":"200g"},{"item":"Ovos","quantidade":"3 unidades"},{"item":"Arroz integral","quantidade":"100g cru"},{"item":"Brócolis","quantidade":"150g"}]}
+
+Gere exatamente ${numMeals} refeições no array refeicoes.`;
 }
 
 // ── POST /nutrition/generate (FREE) ───────────────────────
