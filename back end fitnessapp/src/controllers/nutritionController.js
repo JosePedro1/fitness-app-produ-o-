@@ -31,7 +31,7 @@ REGRAS: JSON puro apenas, sem markdown. Valores numéricos REAIS (nunca strings)
 Gere exatamente ${numMeals} refeições.`;
 }
 
-function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions }) {
+function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }) {
   const goalMap = {
     emagrecer:  'Emagrecimento — perder gordura preservando massa muscular',
     massa:      'Ganho de massa muscular — superávit calórico com proteína alta',
@@ -45,7 +45,35 @@ function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restr
     endomorfo:  'Endomorfo (metabolismo lento, tende a acumular gordura — carboidratos controlados, proteína alta)',
   };
 
-  // Monta descrição do treino
+  const activityMap = {
+    sedentario: 'Sedentário',
+    leve:       'Levemente ativo (1-3x/semana)',
+    moderado:   'Moderadamente ativo (3-5x/semana)',
+    intenso:    'Muito ativo (6-7x/semana)',
+  };
+
+  // Perfil físico
+  const { weight, height, age, gender, activityLevel } = profile || {};
+  let profileDesc = '';
+  if (weight && height && age) {
+    const genderStr = gender === 'f' ? 'Feminino' : 'Masculino';
+    // TMB Harris-Benedict
+    const w = parseFloat(weight), h = parseFloat(height), a = parseInt(age);
+    const tmb = gender === 'f'
+      ? 655 + (9.563 * w) + (1.85 * h) - (4.676 * a)
+      : 66 + (13.756 * w) + (5.003 * h) - (6.755 * a);
+    const actFactor = { sedentario: 1.2, leve: 1.375, moderado: 1.55, intenso: 1.725 }[activityLevel] || 1.55;
+    const tdee = Math.round(tmb * actFactor);
+    profileDesc = `Perfil: ${genderStr}, ${a} anos, ${w}kg, ${h}cm, atividade: ${activityMap[activityLevel] || 'Moderado'}.
+TMB estimado: ${Math.round(tmb)} kcal | TDEE (gasto diário total): ${tdee} kcal.`;
+  }
+
+  // Refeições escolhidas
+  const mealsToGenerate = selectedMeals?.length > 0
+    ? selectedMeals.join(', ')
+    : 'Café da manhã, Lanche da manhã, Almoço, Lanche da tarde, Jantar, Ceia';
+
+  // Treino
   let workoutDesc = '';
   if (workout?.routinesDone?.length > 0) {
     workoutDesc += 'Rotinas realizadas hoje:\n';
@@ -53,59 +81,62 @@ function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restr
       workoutDesc += `- ${r.name}\n`;
       if (r.exercises?.length > 0) {
         r.exercises.forEach(e => {
-          const details = [];
-          if (e.sets)  details.push(`${e.sets} séries`);
-          if (e.weight) details.push(`${e.weight}kg`);
-          if (e.rest)  details.push(`descanso ${e.rest}s`);
-          workoutDesc += `  • ${e.name}${details.length ? ` (${details.join(', ')})` : ''}\n`;
+          const d = [];
+          if (e.sets)   d.push(`${e.sets} séries`);
+          if (e.weight) d.push(`${e.weight}kg`);
+          if (e.rest)   d.push(`descanso ${e.rest}s`);
+          workoutDesc += `  • ${e.name}${d.length ? ` (${d.join(', ')})` : ''}\n`;
         });
       }
     });
   }
-
   if (workout?.manualExercises?.length > 0) {
     workoutDesc += 'Exercícios avulsos:\n';
     workout.manualExercises.forEach(e => {
-      const details = [];
-      if (e.sets)   details.push(`${e.sets} séries`);
-      if (e.weight) details.push(`${e.weight}kg`);
-      if (e.rest)   details.push(`descanso ${e.rest}s`);
-      workoutDesc += `- ${e.name}${details.length ? ` (${details.join(', ')})` : ''}\n`;
+      const d = [];
+      if (e.sets)   d.push(`${e.sets} séries`);
+      if (e.weight) d.push(`${e.weight}kg`);
+      if (e.rest)   d.push(`descanso ${e.rest}s`);
+      workoutDesc += `- ${e.name}${d.length ? ` (${d.join(', ')})` : ''}\n`;
     });
   }
-
   if (!workoutDesc) workoutDesc = 'Dia de descanso (sem treino registrado).';
 
-  let cardioDesc = '';
-  if (cardio?.type && (cardio?.value > 0)) {
-    cardioDesc = `Cardio: ${cardio.value} ${cardio.type === 'km' ? 'km percorridos' : 'minutos de cardio'}.`;
-  }
+  const cardioDesc = (cardio?.value > 0)
+    ? `Cardio: ${cardio.value} ${cardio.type === 'km' ? 'km percorridos' : 'minutos de atividade cardiovascular'}.`
+    : '';
 
-  return `Você é nutricionista fitness especializado em periodização nutricional. Crie um plano alimentar PERSONALIZADO para HOJE baseado no treino realizado.
+  const numMeals = selectedMeals?.length || 6;
 
+  return `Você é nutricionista fitness especializado em periodização nutricional. Crie um plano alimentar PERSONALIZADO e PRECISO para HOJE.
+
+${profileDesc}
 Biótipo: ${biotypeMap[biotype] || 'Mesomorfo'}
 Objetivo: ${goalMap[goal] || 'Saúde geral'}
-${ingredients?.trim() ? `Ingredientes disponíveis: ${ingredients}.` : 'Use alimentos comuns do Brasil.'}
+${ingredients?.trim() ? `Ingredientes disponíveis: ${ingredients}.` : 'Use alimentos comuns e acessíveis do Brasil.'}
 ${restrictions?.trim() ? `Restrições alimentares: ${restrictions}.` : ''}
 
 TREINO DE HOJE:
 ${workoutDesc}
 ${cardioDesc}
 
-INSTRUÇÕES:
-- Calcule o gasto calórico aproximado do treino e ajuste a ingestão calórica do dia
-- Ajuste os macros considerando o biótipo e o treino realizado
-- Em dias de treino pesado: aumente carboidratos pós-treino
-- Em dias de descanso: reduza calorias e carboidratos
-- Para ectomorfo: priorize carboidratos mesmo no déficit
-- Para endomorfo: priorize proteína, carboidratos moderados
-- Sugira timing das refeições em relação ao treino
+REFEIÇÕES DO DIA (gere EXATAMENTE estas ${numMeals} refeições, nesta ordem):
+${mealsToGenerate}
 
-REGRAS: JSON puro apenas, sem markdown. Valores numéricos REAIS.
+INSTRUÇÕES OBRIGATÓRIAS:
+- Use o TDEE informado como base calórica e ajuste pelo gasto do treino
+- Distribua as calorias proporcionalmente entre as refeições escolhidas
+- Ajuste os macros pelo biótipo: ectomorfo (+carbo), endomorfo (-carbo +proteína), mesomorfo (equilibrado)
+- Em treino pesado: +15-20% carboidratos, proteína alta pós-treino
+- Em descanso: -10% calorias, manter proteína
+- Calcule a hidratação: 35ml por kg de peso + 500ml por hora de treino
+- Lista de compras DIÁRIA com quantidades exatas para 1 dia (ex: "Frango — 200g", "Ovos — 3 unidades")
 
-{"objetivo":"descrição personalizada com gasto calórico estimado do treino e meta do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":2400},"gasto_treino_kcal":450,"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["3 ovos mexidos","2 fatias de pão integral","1 banana","1 copo de leite"],"calorias_aprox":480,"dica":"Refeição pré-treino: priorize carboidratos de baixo IG"}],"dicas_gerais":["dica específica para o treino de hoje","dica 2","dica 3"],"lista_compras":["item 1","item 2"]}
+REGRAS: JSON puro apenas, sem markdown. Todos os valores numéricos devem ser números inteiros reais.
 
-Gere 6 refeições (café, lanche manhã, almoço, lanche tarde, jantar, ceia) com timing relacionado ao treino.`;
+{"objetivo":"descrição com TDEE, gasto do treino e meta calórica do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":2400},"gasto_treino_kcal":450,"agua":{"ml":3200,"copos":13,"obs":"Beba 1 copo extra a cada 30min de treino"},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["3 ovos mexidos","2 fatias de pão integral com pasta de amendoim","1 banana média","1 copo de leite desnatado (200ml)"],"calorias_aprox":520,"dica":"Refeição pré-treino: carboidratos de baixo IG + proteína"}],"dicas_gerais":["dica específica baseada no treino de hoje","dica sobre timing de nutrientes","dica sobre recuperação muscular"],"lista_compras_diaria":[{"item":"Peito de frango","quantidade":"200g"},{"item":"Ovos","quantidade":"3 unidades"},{"item":"Arroz integral","quantidade":"100g cru"},{"item":"Brócolis","quantidade":"150g"}]}
+
+Gere exatamente ${numMeals} refeições no array refeicoes.`;
 }
 
 // ── POST /nutrition/generate (FREE) ───────────────────────
@@ -188,7 +219,8 @@ const isPremium = true;
       return c.json({ error: 'Recurso exclusivo para assinantes Premium.', upgrade: true }, 403);
     }
 
-    const plan = await callGroq(buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions }), 3000);
+    const { profile, selectedMeals } = body;
+    const plan = await callGroq(buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }), 3000);
     if (!plan) return c.json({ error: 'Erro ao gerar plano. Tente novamente.' }, 500);
 
     const { error: logError } = await supabase.from('nutrition_logs').insert({

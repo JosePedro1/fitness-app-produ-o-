@@ -242,8 +242,30 @@ function PlanResult({ plan, isPremium, allExercises, routines, onReset, onAddToR
         </div>
       )}
 
-      {/* Lista de compras */}
-      {plan.lista_compras?.length > 0 && (
+      {/* Água */}
+      {plan.agua && (
+        <div className="bg-[#06b6d4]/10 border border-[#06b6d4]/20 rounded-xl p-4">
+          <p className="text-xs text-[#06b6d4] font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            💧 Hidratação do dia
+          </p>
+          <div className="flex items-center gap-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[#06b6d4]" style={{ fontFamily: 'Syne, sans-serif' }}>{plan.agua.ml}<span className="text-sm font-normal ml-1">ml</span></p>
+              <p className="text-xs text-gray-500 mt-0.5">total diário</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[#06b6d4]" style={{ fontFamily: 'Syne, sans-serif' }}>{plan.agua.copos}<span className="text-sm font-normal ml-1">copos</span></p>
+              <p className="text-xs text-gray-500 mt-0.5">de 250ml</p>
+            </div>
+            {plan.agua.obs && (
+              <p className="text-xs text-gray-400 flex-1 border-l border-white/10 pl-4">{plan.agua.obs}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lista de compras diária */}
+      {(plan.lista_compras_diaria?.length > 0 || plan.lista_compras?.length > 0) && (
         <div className="bg-black/20 border border-white/5 rounded-xl overflow-hidden">
           <button onClick={() => setShowShopping(!showShopping)}
             className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/[0.02] transition-colors">
@@ -254,13 +276,30 @@ function PlanResult({ plan, isPremium, allExercises, routines, onReset, onAddToR
           </button>
           {showShopping && (
             <div className="px-4 pb-4 border-t border-white/5">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
-                {plan.lista_compras.map((item, i) => (
-                  <p key={i} className="text-sm text-gray-300 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#5B4FFF] shrink-0" />{item}
-                  </p>
-                ))}
-              </div>
+              {/* Lista diária com quantidades (premium) */}
+              {plan.lista_compras_diaria?.length > 0 ? (
+                <div className="mt-3 space-y-1.5">
+                  {plan.lista_compras_diaria.map((it, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="text-gray-300 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#5B4FFF] shrink-0" />
+                        {it.item || it}
+                      </span>
+                      {it.quantidade && (
+                        <span className="text-[#7B6FFF] font-semibold text-xs bg-[#5B4FFF]/10 px-2 py-0.5 rounded-md">{it.quantidade}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-3">
+                  {plan.lista_compras.map((item, i) => (
+                    <p key={i} className="text-sm text-gray-300 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#5B4FFF] shrink-0" />{item}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -320,12 +359,23 @@ function PlanResult({ plan, isPremium, allExercises, routines, onReset, onAddToR
 }
 
 // ── Wizard Premium ─────────────────────────────────────────
+const ALL_MEALS = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'];
+const MEAL_ICONS = { 'Café da manhã': '🌅', 'Lanche da manhã': '🍎', 'Almoço': '🥗', 'Lanche da tarde': '☕', 'Jantar': '🌆', 'Ceia': '🌙' };
+const ACTIVITY_OPTS = [
+  { value: 'sedentario', label: 'Sedentário', desc: 'Pouco ou nenhum exercício' },
+  { value: 'leve',       label: 'Levemente ativo', desc: '1–3x por semana' },
+  { value: 'moderado',   label: 'Moderadamente ativo', desc: '3–5x por semana' },
+  { value: 'intenso',    label: 'Muito ativo', desc: '6–7x por semana' },
+];
+
 function PremiumWizard({ onGenerate, loading, error }) {
-  const [step, setStep] = useState(0); // 0=biótipo+objetivo, 1=treino, 2=cardio+extras
+  const [step, setStep] = useState(0); // 0=objetivo+biótipo, 1=perfil+refeições, 2=treino, 3=cardio+extras
   const [goal, setGoal] = useState('');
   const [biotype, setBiotype] = useState('');
+  const [profile, setProfile] = useState({ weight: '', height: '', age: '', gender: 'm', activityLevel: 'moderado' });
+  const [selectedMeals, setSelectedMeals] = useState([...ALL_MEALS]);
   const [routines, setRoutines] = useState([]);
-  const [selectedRoutines, setSelectedRoutines] = useState({}); // { id: true/false }
+  const [selectedRoutines, setSelectedRoutines] = useState({});
   const [manualExercises, setManualExercises] = useState([]);
   const [newExercise, setNewExercise] = useState({ name: '', sets: '', weight: '', rest: '' });
   const [cardio, setCardio] = useState({ type: 'min', value: '' });
@@ -338,6 +388,12 @@ function PremiumWizard({ onGenerate, loading, error }) {
 
   function toggleRoutine(id) {
     setSelectedRoutines(prev => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function toggleMeal(meal) {
+    setSelectedMeals(prev =>
+      prev.includes(meal) ? prev.filter(m => m !== meal) : [...prev, meal]
+    );
   }
 
   function addManualExercise() {
@@ -355,8 +411,12 @@ function PremiumWizard({ onGenerate, loading, error }) {
       .filter(r => selectedRoutines[r.id])
       .map(r => ({ name: r.name, exercises: [] }));
 
+    // Ordena refeições na ordem padrão
+    const orderedMeals = ALL_MEALS.filter(m => selectedMeals.includes(m));
+
     onGenerate({
-      goal, biotype,
+      goal, biotype, profile,
+      selectedMeals: orderedMeals,
       workout: { routinesDone, manualExercises },
       cardio: { type: cardio.type, value: parseInt(cardio.value) || 0 },
       ingredients, restrictions,
@@ -364,11 +424,12 @@ function PremiumWizard({ onGenerate, loading, error }) {
   }
 
   const canNext0 = goal && biotype;
-  const canGenerate = canNext0;
+  const canNext1 = selectedMeals.length >= 1;
+  const canGenerate = canNext0 && canNext1;
 
   return (
     <div>
-      <StepIndicator current={step} total={3} />
+      <StepIndicator current={step} total={4} />
 
       {/* Step 0: Objetivo + Biótipo */}
       {step === 0 && (
@@ -403,8 +464,90 @@ function PremiumWizard({ onGenerate, loading, error }) {
         </div>
       )}
 
-      {/* Step 1: Treino do dia */}
+      {/* Step 1: Perfil físico + refeições */}
       {step === 1 && (
+        <div className="space-y-5">
+          {/* Perfil físico */}
+          <div>
+            <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
+              📊 Seu perfil físico <span className="text-gray-600 font-normal">(para cálculo preciso)</span>
+            </p>
+            <div className="bg-black/20 border border-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
+              {[
+                { key: 'weight', label: 'Peso (kg)', placeholder: '70' },
+                { key: 'height', label: 'Altura (cm)', placeholder: '175' },
+                { key: 'age',    label: 'Idade',      placeholder: '25' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className="text-xs text-gray-500 mb-1 block">{label}</label>
+                  <input type="number" value={profile[key]} placeholder={placeholder}
+                    onChange={e => setProfile(p => ({ ...p, [key]: e.target.value }))}
+                    className="w-full bg-black/30 border border-white/10 rounded-lg text-gray-300 placeholder-gray-600 text-sm px-3 py-2 outline-none focus:border-[#5B4FFF]/50 transition-colors" />
+                </div>
+              ))}
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Sexo</label>
+                <select value={profile.gender} onChange={e => setProfile(p => ({ ...p, gender: e.target.value }))}
+                  className="w-full bg-black/30 border border-white/10 rounded-lg text-gray-300 text-sm px-3 py-2 outline-none focus:border-[#5B4FFF]/50 transition-colors">
+                  <option value="m">Masculino</option>
+                  <option value="f">Feminino</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs text-gray-500 mb-2 block">Nível de atividade</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {ACTIVITY_OPTS.map(a => (
+                    <button key={a.value} onClick={() => setProfile(p => ({ ...p, activityLevel: a.value }))}
+                      className={`text-left px-3 py-2 rounded-lg border text-xs transition-all ${profile.activityLevel === a.value ? 'bg-[#5B4FFF]/15 border-[#5B4FFF]/40 text-[#7B6FFF]' : 'border-white/10 text-gray-400 hover:border-white/20'}`}>
+                      <p className="font-semibold">{a.label}</p>
+                      <p className="text-gray-600 mt-0.5">{a.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Seleção de refeições */}
+          <div>
+            <p className="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-1.5">
+              🍽️ Quais refeições você fará hoje?
+            </p>
+            <p className="text-xs text-gray-500 mb-3">Selecione as refeições que você conseguirá fazer</p>
+            <div className="grid grid-cols-2 gap-2">
+              {ALL_MEALS.map(meal => {
+                const selected = selectedMeals.includes(meal);
+                return (
+                  <button key={meal} onClick={() => toggleMeal(meal)}
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-sm transition-all ${
+                      selected ? 'bg-[#5B4FFF]/15 border-[#5B4FFF]/40 text-[#7B6FFF]' : 'bg-black/20 border-white/5 text-gray-400 hover:border-white/15'
+                    }`}>
+                    <span className="text-base">{MEAL_ICONS[meal]}</span>
+                    <span className="font-medium text-xs">{meal}</span>
+                    {selected && <CheckCircle className="w-3.5 h-3.5 ml-auto shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-600 mt-2">{selectedMeals.length} refeição(ões) selecionada(s)</p>
+          </div>
+
+          <div className="flex gap-2">
+            <button onClick={() => setStep(0)}
+              className="flex items-center gap-1.5 px-4 h-11 border border-white/10 text-gray-400 text-sm rounded-xl hover:border-white/20 transition-all">
+              <ArrowLeft className="w-4 h-4" /> Voltar
+            </button>
+            <button onClick={() => setStep(2)} disabled={!canNext1}
+              className="flex-1 h-11 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+              style={{ fontFamily: 'Syne, sans-serif' }}>
+              Próximo <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Treino do dia */}
+      {step === 2 && (
         <div className="space-y-5">
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-1.5">
@@ -482,11 +625,11 @@ function PremiumWizard({ onGenerate, loading, error }) {
           </div>
 
           <div className="flex gap-2">
-            <button onClick={() => setStep(0)}
+            <button onClick={() => setStep(1)}
               className="flex items-center gap-1.5 px-4 h-11 border border-white/10 text-gray-400 text-sm rounded-xl hover:border-white/20 transition-all">
               <ArrowLeft className="w-4 h-4" /> Voltar
             </button>
-            <button onClick={() => setStep(2)}
+            <button onClick={() => setStep(3)}
               className="flex-1 h-11 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
               style={{ fontFamily: 'Syne, sans-serif' }}>
               Próximo <ArrowRight className="w-4 h-4" />
@@ -495,8 +638,8 @@ function PremiumWizard({ onGenerate, loading, error }) {
         </div>
       )}
 
-      {/* Step 2: Cardio + extras */}
-      {step === 2 && (
+      {/* Step 3: Cardio + extras */}
+      {step === 3 && (
         <div className="space-y-5">
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
@@ -539,21 +682,34 @@ function PremiumWizard({ onGenerate, loading, error }) {
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>
           )}
 
-          <div className="flex gap-2">
-            <button onClick={() => setStep(1)}
-              className="flex items-center gap-1.5 px-4 h-12 border border-white/10 text-gray-400 text-sm rounded-xl hover:border-white/20 transition-all">
-              <ArrowLeft className="w-4 h-4" /> Voltar
-            </button>
-            <button onClick={handleGenerate} disabled={loading || !canGenerate}
-              className="flex-1 h-12 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
-              style={{ fontFamily: 'Syne, sans-serif' }}>
-              {loading ? (
-                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Gerando plano…</>
-              ) : (
-                <><Sparkles className="w-4 h-4" />Gerar meu plano de hoje</>
-              )}
-            </button>
-          </div>
+       <div className="flex gap-2">
+  <button
+    onClick={() => setStep(2)}
+    className="flex items-center gap-1.5 px-4 h-12 border border-white/10 text-gray-400 text-sm rounded-xl hover:border-white/20 transition-all"
+  >
+    <ArrowLeft className="w-4 h-4" />
+    Voltar
+  </button>
+
+  <button
+    onClick={generatePlan}
+    disabled={loading}
+    className="flex-1 h-12 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+    style={{ fontFamily: 'Syne, sans-serif' }}
+  >
+    {loading ? (
+      <>
+        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        Gerando plano…
+      </>
+    ) : (
+      <>
+        <Sparkles className="w-4 h-4" />
+        Gerar meu plano de hoje
+      </>
+    )}
+  </button>
+</div>
         </div>
       )}
     </div>
