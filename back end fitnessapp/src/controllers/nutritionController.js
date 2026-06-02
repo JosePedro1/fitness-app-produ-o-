@@ -150,7 +150,7 @@ export const generate = async (c) => {
       }
     }
 
-    const plan = await callGroq(buildFreePrompt({ goal, ingredients, restrictions, meals }), 1500);
+    const plan = await callGroq(buildFreePrompt({ goal, ingredients, restrictions, meals }), 1500, false);
     if (!plan) return c.json({ error: 'Erro ao gerar plano. Tente novamente.' }, 500);
 
     const { error: logError } = await supabase.from('nutrition_logs').insert({
@@ -195,7 +195,8 @@ export const generatePremium = async (c) => {
 
     const plan = await callGroq(
       buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }),
-      4000  // ← aumentado: plano premium tem mais campos
+      4000,  // tokens suficientes para plano completo de 6 refeições
+      true   // usa llama-3.3-70b-versatile
     );
     if (!plan) return c.json({ error: 'Erro ao gerar plano. Tente novamente.' }, 500);
 
@@ -391,10 +392,18 @@ function repairTruncatedJSON(raw) {
   }
 }
 
+// Modelos Groq ativos (junho 2026)
+// Free:    llama-3.1-8b-instant   — rápido, leve, rate limit menor
+// Premium: llama-3.3-70b-versatile — qualidade, JSON mais estável
+const GROQ_MODEL_FREE    = 'llama-3.1-8b-instant';
+const GROQ_MODEL_PREMIUM = 'llama-3.3-70b-versatile';
+
 // ── Helper: chama Groq ────────────────────────────────────
-async function callGroq(prompt, maxTokens = 2000) {
+async function callGroq(prompt, maxTokens = 2000, isPremium = false) {
   const groqKey = process.env.GROQ_API_KEY;
   if (!groqKey) throw new Error('Chave da IA não configurada.');
+
+  const model = isPremium ? GROQ_MODEL_PREMIUM : GROQ_MODEL_FREE;
 
   const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -403,7 +412,7 @@ async function callGroq(prompt, maxTokens = 2000) {
       'Authorization': `Bearer ${groqKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.1-70b-versatile',  // modelo maior = JSON mais estável
+      model,
       max_tokens: maxTokens,
       temperature: 0.2,                   // menos criatividade = JSON mais previsível
       messages: [
