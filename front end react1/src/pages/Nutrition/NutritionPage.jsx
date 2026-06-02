@@ -276,7 +276,6 @@ function PlanResult({ plan, isPremium, allExercises, routines, onReset, onAddToR
           </button>
           {showShopping && (
             <div className="px-4 pb-4 border-t border-white/5">
-              {/* Lista diária com quantidades (premium) */}
               {plan.lista_compras_diaria?.length > 0 ? (
                 <div className="mt-3 space-y-1.5">
                   {plan.lista_compras_diaria.map((it, i) => (
@@ -362,14 +361,14 @@ function PlanResult({ plan, isPremium, allExercises, routines, onReset, onAddToR
 const ALL_MEALS = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'];
 const MEAL_ICONS = { 'Café da manhã': '🌅', 'Lanche da manhã': '🍎', 'Almoço': '🥗', 'Lanche da tarde': '☕', 'Jantar': '🌆', 'Ceia': '🌙' };
 const ACTIVITY_OPTS = [
-  { value: 'sedentario', label: 'Sedentário', desc: 'Pouco ou nenhum exercício' },
-  { value: 'leve',       label: 'Levemente ativo', desc: '1–3x por semana' },
+  { value: 'sedentario', label: 'Sedentário',          desc: 'Pouco ou nenhum exercício' },
+  { value: 'leve',       label: 'Levemente ativo',     desc: '1–3x por semana' },
   { value: 'moderado',   label: 'Moderadamente ativo', desc: '3–5x por semana' },
-  { value: 'intenso',    label: 'Muito ativo', desc: '6–7x por semana' },
+  { value: 'intenso',    label: 'Muito ativo',         desc: '6–7x por semana' },
 ];
 
 function PremiumWizard({ onGenerate, loading, error }) {
-  const [step, setStep] = useState(0); // 0=objetivo+biótipo, 1=perfil+refeições, 2=treino, 3=cardio+extras
+  const [step, setStep] = useState(0);
   const [goal, setGoal] = useState('');
   const [biotype, setBiotype] = useState('');
   const [profile, setProfile] = useState({ weight: '', height: '', age: '', gender: 'm', activityLevel: 'moderado' });
@@ -406,12 +405,12 @@ function PremiumWizard({ onGenerate, loading, error }) {
     setManualExercises(prev => prev.filter(e => e.id !== id));
   }
 
+  // ✅ CORREÇÃO 1: renomeado de generatePlan para handleGenerate
   function handleGenerate() {
     const routinesDone = routines
       .filter(r => selectedRoutines[r.id])
       .map(r => ({ name: r.name, exercises: [] }));
 
-    // Ordena refeições na ordem padrão
     const orderedMeals = ALL_MEALS.filter(m => selectedMeals.includes(m));
 
     onGenerate({
@@ -425,7 +424,6 @@ function PremiumWizard({ onGenerate, loading, error }) {
 
   const canNext0 = goal && biotype;
   const canNext1 = selectedMeals.length >= 1;
-  const canGenerate = canNext0 && canNext1;
 
   return (
     <div>
@@ -467,7 +465,6 @@ function PremiumWizard({ onGenerate, loading, error }) {
       {/* Step 1: Perfil físico + refeições */}
       {step === 1 && (
         <div className="space-y-5">
-          {/* Perfil físico */}
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
               📊 Seu perfil físico <span className="text-gray-600 font-normal">(para cálculo preciso)</span>
@@ -508,7 +505,6 @@ function PremiumWizard({ onGenerate, loading, error }) {
             </div>
           </div>
 
-          {/* Seleção de refeições */}
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-1.5">
               🍽️ Quais refeições você fará hoje?
@@ -573,7 +569,6 @@ function PremiumWizard({ onGenerate, loading, error }) {
             )}
           </div>
 
-          {/* Exercícios manuais */}
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-3">➕ Adicionar exercício avulso</p>
             <div className="bg-black/20 border border-white/5 rounded-xl p-4 space-y-3">
@@ -682,34 +677,31 @@ function PremiumWizard({ onGenerate, loading, error }) {
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>
           )}
 
-       <div className="flex gap-2">
-  <button
-    onClick={() => setStep(2)}
-    className="flex items-center gap-1.5 px-4 h-12 border border-white/10 text-gray-400 text-sm rounded-xl hover:border-white/20 transition-all"
-  >
-    <ArrowLeft className="w-4 h-4" />
-    Voltar
-  </button>
+          <div className="flex gap-2">
+            <button onClick={() => setStep(2)}
+              className="flex items-center gap-1.5 px-4 h-12 border border-white/10 text-gray-400 text-sm rounded-xl hover:border-white/20 transition-all">
+              <ArrowLeft className="w-4 h-4" /> Voltar
+            </button>
 
-  <button
-    onClick={generatePlan}
-    disabled={loading}
-    className="flex-1 h-12 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
-    style={{ fontFamily: 'Syne, sans-serif' }}
-  >
-    {loading ? (
-      <>
-        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        Gerando plano…
-      </>
-    ) : (
-      <>
-        <Sparkles className="w-4 h-4" />
-        Gerar meu plano de hoje
-      </>
-    )}
-  </button>
-</div>
+            {/* ✅ CORREÇÃO 1: era onClick={generatePlan}, função inexistente */}
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              className="flex-1 h-12 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
+              style={{ fontFamily: 'Syne, sans-serif' }}>
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Gerando plano…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Gerar meu plano de hoje
+                </>
+              )}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -792,7 +784,6 @@ const NutritionPage = () => {
   const [allExercises, setAllExercises] = useState([]);
 
   useEffect(() => {
-    // Busca status premium e uso do dia direto do banco via backend
     api.get('/nutrition/me')
       .then(r => {
         setIsPremium(r.data.isPremium);
@@ -849,7 +840,8 @@ const NutritionPage = () => {
     return (
       <div className="w-full min-h-screen bg-[#171717] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-[#5B4FFF]/30 border-t-[#5B4FFF] rounded-full animate-spin" style={{ borderWidth: 3 }} />
+          {/* ✅ CORREÇÃO 2: era "border-3" (inválido no Tailwind), corrigido para "border-[3px]" */}
+          <div className="w-8 h-8 border-[3px] border-[#5B4FFF]/30 border-t-[#5B4FFF] rounded-full animate-spin" />
           <span className="text-gray-500 text-sm">Carregando...</span>
         </div>
       </div>
