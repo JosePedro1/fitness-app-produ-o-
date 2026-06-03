@@ -1,25 +1,41 @@
-import axios from 'axios';
+import api from './api.js';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
-const api = axios.create({ baseURL: BASE_URL });
+// ── Programa Semanal ──────────────────────────────────────────────────────────
+export const getWeeklyProgram  = async ()       => (await api.get('/routines/program')).data;
+export const updateProgramName = async (name)   => (await api.patch('/routines/program', { name })).data;
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// ── Dias da Semana ────────────────────────────────────────────────────────────
+export const getDayByWeekday  = async (weekday)         => (await api.get(`/routines/day/${weekday}`)).data;
+export const saveDay          = async (weekday, data)   => (await api.put(`/routines/day/${weekday}`, data)).data;
+export const addExerciseToDay = async (weekday, exercise) => (await api.post(`/routines/day/${weekday}/exercise`, exercise)).data;
+export const completeDay      = async (weekday, payload)  => (await api.post(`/routines/day/${weekday}/complete`, payload)).data;
 
-export const getRoutines = async () => {
-  const response = await api.get('/routines');
-  return response.data;
-};
+// ── Exercícios ────────────────────────────────────────────────────────────────
+export const updateExercise = async (id, updates) => (await api.patch(`/routines/exercise/${id}`, updates)).data;
+export const deleteExercise = async (id)          => (await api.delete(`/routines/exercise/${id}`)).data;
 
+// ── Exercícios Customizados ───────────────────────────────────────────────────
+export const getCustomExercises    = async ()       => (await api.get('/routines/custom-exercises')).data;
+export const createCustomExercise  = async (payload) => (await api.post('/routines/custom-exercises', payload)).data;
+export const deleteCustomExercise  = async (id)      => (await api.delete(`/routines/custom-exercises/${id}`)).data;
+
+// ── Retrocompatibilidade ──────────────────────────────────────────────────────
+/** Retorna lista de rotinas no formato legado (usado por NutritionPage) */
+export const getRoutines = async () => (await api.get('/routines')).data;
+
+/** @deprecated — use saveDay() */
 export const createRoutine = async (routine) => {
-  const response = await api.post('/routines', routine);
-  return response.data;
+  const days  = ['domingo','segunda','terca','quarta','quinta','sexta','sabado'];
+  const today = days[new Date().getDay()];
+  return (await api.put(`/routines/day/${today}`, {
+    workout_name: routine.name,
+    exercises: (routine.exercises || []).map(e => ({
+      exercise_name: typeof e === 'string' ? e : e.name,
+      is_custom: false,
+    })),
+    is_rest_day: false,
+  })).data;
 };
 
-export const deleteRoutine = async (id) => {
-  const response = await api.delete(`/routines/${id}`);
-  return response.data;
-};
+/** @deprecated */
+export const deleteRoutine = async (id) => (await api.delete(`/routines/${id}`)).data;

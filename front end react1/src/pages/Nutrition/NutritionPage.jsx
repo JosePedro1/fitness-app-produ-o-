@@ -136,7 +136,7 @@ function PremiumWizard({ onGenerate, loading, error }) {
   function handleGenerate() {
     const routinesDone = routines
       .filter(r => selectedRoutines[r.id])
-      .map(r => ({ name: r.name, exercises: [] }));
+      .map(r => ({ name: r.name, exercises: (r.exercises || []) }));
 
     const orderedMeals = ALL_MEALS.filter(m => selectedMeals.includes(m));
 

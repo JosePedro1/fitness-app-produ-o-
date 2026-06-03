@@ -103,9 +103,18 @@ function buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restr
   }
   if (!workoutDesc) workoutDesc = 'Dia de descanso (sem treino registrado).';
 
-  const cardioDesc = (cardio?.value > 0)
-    ? `Cardio: ${cardio.value} ${cardio.type === 'km' ? 'km percorridos' : 'minutos de atividade cardiovascular'}.`
-    : '';
+  const cardioDesc = (() => {
+    if (!cardio || !cardio.value || cardio.value <= 0) {
+      return 'Sem cardio hoje — dia de treino de força apenas.';
+    }
+    if (cardio.type === 'km') {
+      const kcal = Math.round(cardio.value * 60); // ~60 kcal/km correndo
+      return `Cardio: ${cardio.value} km corridos (gasto estimado: ~${kcal} kcal). Inclua este gasto no cálculo calórico total do dia.`;
+    } else {
+      const kcal = Math.round(cardio.value * 8); // ~8 kcal/min cardio moderado
+      return `Cardio: ${cardio.value} minutos de atividade cardiovascular (gasto estimado: ~${kcal} kcal). Inclua este gasto no cálculo calórico total do dia.`;
+    }
+  })();
 
   return `Você é nutricionista fitness especializado em periodização nutricional. Crie um plano alimentar PERSONALIZADO e PRECISO para HOJE.
 
@@ -123,7 +132,7 @@ REFEIÇÕES DO DIA (gere EXATAMENTE estas ${numMeals} refeições, nesta ordem):
 ${mealsToGenerate}
 
 INSTRUÇÕES OBRIGATÓRIAS:
-- Use o TDEE informado como base calórica e ajuste pelo gasto do treino
+- Calcule o gasto calórico do treino baseado nos exercícios listados: pesos, séries, repetições e descanso determinam a intensidade. Quanto maior o volume (séries × peso × reps), maior o gasto estimado. Registre em gasto_treino_kcal o valor calculado.
 - Distribua as calorias proporcionalmente entre as refeições escolhidas
 - Ajuste os macros pelo biótipo: ectomorfo (+carbo), endomorfo (-carbo +proteína), mesomorfo (equilibrado)
 - Em treino pesado: +15-20% carboidratos, proteína alta pós-treino
@@ -135,7 +144,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
 
 REGRAS: JSON puro apenas, sem markdown. Todos os valores numéricos devem ser números inteiros reais.
 
-{"objetivo":"descrição com TDEE, gasto do treino e meta calórica do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":2400},"gasto_treino_kcal":450,"agua":{"ml":3200,"copos":13,"obs":"Beba 1 copo extra a cada 30min de treino"},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["3 ovos mexidos","2 fatias de pão integral com pasta de amendoim","1 banana média","1 copo de leite desnatado (200ml)"],"calorias_aprox":520,"dica":"Refeição pré-treino: carboidratos de baixo IG + proteína"}],"dicas_gerais":["dica específica baseada no treino de hoje","dica sobre timing de nutrientes","dica sobre recuperação muscular"],"lista_compras_diaria":[{"item":"Peito de frango","quantidade":"200g"},{"item":"Ovos","quantidade":"3 unidades"},{"item":"Arroz integral","quantidade":"100g cru"},{"item":"Brócolis","quantidade":"150g"}]}
+{"objetivo":"descrição com TDEE, gasto do treino e meta calórica do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":2400},"gasto_treino_kcal":450,"lista_compras_diaria":[{"item":"Peito de frango","quantidade":"200g"},{"item":"Ovos","quantidade":"3 unidades"},{"item":"Arroz integral","quantidade":"100g cru"},{"item":"Brócolis","quantidade":"150g"},{"item":"Azeite","quantidade":"30ml"},{"item":"Banana","quantidade":"2 unidades"}],"agua":{"ml":3200,"copos":13,"obs":"Beba 1 copo extra a cada 30min de treino"},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["3 ovos mexidos","2 fatias de pão integral com pasta de amendoim","1 banana média","1 copo de leite desnatado (200ml)"],"calorias_aprox":520,"dica":"Refeição pré-treino: carboidratos de baixo IG + proteína"}],"dicas_gerais":["dica específica baseada no treino de hoje","dica sobre timing de nutrientes","dica sobre recuperação muscular"]}
 
 Gere exatamente ${numMeals} refeições no array refeicoes.`;
 }
@@ -220,7 +229,7 @@ export const generatePremium = async (c) => {
 
     const plan = await callGroq(
       buildPremiumPrompt({ goal, biotype, workout, cardio, ingredients, restrictions, profile, selectedMeals }),
-      4000,  // tokens suficientes para plano completo de 6 refeições
+      6000, // tokens suficientes para plano completo com lista de compras
       true   // usa llama-3.3-70b-versatile
     );
     if (!plan) return c.json({ error: 'Erro ao gerar plano. Tente novamente.' }, 500);

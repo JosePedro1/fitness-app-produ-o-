@@ -1,35 +1,5 @@
-import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
-const api = axios.create({ baseURL: BASE_URL });
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-export const getTasks = async () => {
-  const response = await api.get('/tasks');
-  return response.data;
-};
-
-export const getTaskById = async (id) => {
-  const response = await api.get(`/tasks/${id}`);
-  return response.data;
-};
-
-export const createTask = async (task) => {
-  const response = await api.post('/tasks', task);
-  return response.data;
-};
-
-export const updateTask = async (id, task) => {
-  const response = await api.put(`/tasks/${id}`, task);
-  return response.data;
-};
-
-export const deleteTask = async (id) => {
-  const response = await api.delete(`/tasks/${id}`);
-  return response.data;
-};
+import api from './api.js';
+export const getTasks    = async ()       => (await api.get('/tasks')).data;
+export const createTask  = async (task)   => (await api.post('/tasks', task)).data;
+export const updateTask  = async (id, t)  => (await api.put(`/tasks/${id}`, t)).data;
+export const deleteTask  = async (id)     => (await api.delete(`/tasks/${id}`)).data;

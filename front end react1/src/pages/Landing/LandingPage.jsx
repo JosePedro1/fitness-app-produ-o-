@@ -189,7 +189,7 @@ const LandingPage = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-[14px] py-[6px] rounded-full text-[13px] mb-7 border" style={{ background: 'rgba(91,79,255,.08)', borderColor: '#5B4FFF', color: '#7B6FFF' }}>
             <span className="lp-logo-dot inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#5B4FFF' }} />
-            Novo · Calendário de Treinos com Heatmap
+            Novo · Plano Alimentar Inteligente
           </div>
 
           <h1 className="font-black leading-[1.05] mb-6" style={{ fontSize: 'clamp(40px,7vw,72px)', color: '#f0f0f8', letterSpacing: '-0.02em' }}>

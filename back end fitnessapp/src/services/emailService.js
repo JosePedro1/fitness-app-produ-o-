@@ -6,15 +6,13 @@ const oauth2Client = new google.auth.OAuth2(
   'https://developers.google.com/oauthplayground'
 );
 
-oauth2Client.setCredentials({
-  refresh_token: process.env.GMAIL_REFRESH_TOKEN,
-});
+oauth2Client.setCredentials({ refresh_token: process.env.GMAIL_REFRESH_TOKEN });
 
 const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-const makeEmailBody = (to, subject, text) => {
+const buildRawEmail = (to, subject, text) => {
   const subjectEncoded = `=?UTF-8?B?${Buffer.from(subject).toString('base64')}?=`;
-  const message = [
+  const raw = [
     `To: ${to}`,
     `Subject: ${subjectEncoded}`,
     'MIME-Version: 1.0',
@@ -23,20 +21,14 @@ const makeEmailBody = (to, subject, text) => {
     '',
     Buffer.from(text).toString('base64'),
   ].join('\r\n');
-
-  return Buffer.from(message).toString('base64url');
+  return Buffer.from(raw).toString('base64url');
 };
 
 export const sendEmail = async (to, subject, text) => {
-  try {
-    const raw = makeEmailBody(to, subject, text);
-    const result = await gmail.users.messages.send({
-      userId: 'me',
-      requestBody: { raw },
-    });
-    console.log(`E-mail enviado para ${to} — ID: ${result.data.id}`);
-  } catch (err) {
-    console.error('Erro ao enviar e-mail:', err.message);
-    throw err;
-  }
+  const raw = buildRawEmail(to, subject, text);
+  const result = await gmail.users.messages.send({
+    userId: 'me',
+    requestBody: { raw },
+  });
+  console.log(`E-mail enviado para ${to} — ID: ${result.data.id}`);
 };
