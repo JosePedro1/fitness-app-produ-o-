@@ -296,7 +296,7 @@ const ExerciseCard = ({ exercise, index, onChange, onDelete }) => {
  *   onSave     {fn}       callback({ updatedDay, exercises })
  *   onClose    {fn}       fechar sem salvar
  */
-const DayEditor = ({ weekday, initialData: dayData, onSave, onClose, onCancel }) => {
+const DayEditor = ({ weekday, initialData: dayData, imcPrefill, onSave, onClose, onCancel }) => {
   // support both onClose and onCancel prop names
   onClose = onClose || onCancel;
   const [workoutName,          setWorkoutName]          = useState('');
@@ -331,6 +331,47 @@ const DayEditor = ({ weekday, initialData: dayData, onSave, onClose, onCancel })
       .catch(() => {})
       .finally(() => setLoadingCustom(false));
   }, []);
+
+  // ── Aplica dados do IMC quando recebidos ──────────────────────────────────
+  useEffect(() => {
+    if (!imcPrefill) return;
+
+    // imcPrefill.exercises é array de strings (nomes de exercícios)
+    const rawExercises = imcPrefill.exercises || [];
+
+    // Determina grupo muscular pelo nome do exercício a partir do catálogo
+    const getGroup = (name) => {
+      for (const [group, exList] of Object.entries(CATALOG)) {
+        if (exList.some(ex => ex.toLowerCase() === name.toLowerCase())) return group;
+      }
+      return '';
+    };
+
+    const converted = rawExercises.map(ex => {
+      const name = typeof ex === 'string' ? ex : (ex.exercise_name || ex.name || '');
+      return {
+        exercise_name:       name,
+        muscle_group:        getGroup(name),
+        is_custom:           false,
+        library_exercise_id: null,
+        sets:                4,
+        reps:                '12',
+        weight_kg:           0,
+        rest_seconds:        60,
+        execution_time_sec:  null,
+        observations:        '',
+        rpe:                 null,
+        completed:           false,
+      };
+    });
+
+    setWorkoutName(imcPrefill.nome || '');
+    setGoal(imcPrefill.objetivo || '');
+    setObservations('');
+    setEstimatedDuration('');
+    setIsRestDay(false);
+    setExercises(converted);
+  }, [imcPrefill]);
 
   // ── Handlers exercícios ───────────────────────────────────────────────────
   const handleAddExercise = (picked) => {
