@@ -159,11 +159,7 @@ const CalendarPage = () => {
   }
 
   const handleDeleteSession = async (id, date) => {
-    const ok = await confirm({
-      title: 'Remover treino',
-      message: `Remover o treino registrado em ${date}?`,
-      confirmLabel: 'Remover',
-    });
+    const ok = await confirm(`Remover o treino registrado em ${date}?`);
     if (!ok) return;
     try { await deleteCalendarSession(id); showToast('Treino removido'); loadData(); }
     catch { showToast('Erro ao remover', 'error'); }

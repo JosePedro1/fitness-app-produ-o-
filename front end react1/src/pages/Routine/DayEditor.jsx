@@ -296,7 +296,9 @@ const ExerciseCard = ({ exercise, index, onChange, onDelete }) => {
  *   onSave     {fn}       callback({ updatedDay, exercises })
  *   onClose    {fn}       fechar sem salvar
  */
-const DayEditor = ({ weekday, dayData, onSave, onClose }) => {
+const DayEditor = ({ weekday, initialData: dayData, onSave, onClose, onCancel }) => {
+  // support both onClose and onCancel prop names
+  onClose = onClose || onCancel;
   const [workoutName,          setWorkoutName]          = useState('');
   const [goal,                 setGoal]                 = useState('');
   const [observations,         setObservations]         = useState('');
@@ -365,7 +367,7 @@ const DayEditor = ({ weekday, dayData, onSave, onClose }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(weekday, {
+      await onSave({
         workout_name:            workoutName || (isRestDay ? 'Descanso' : 'Treino'),
         goal:                    goal || null,
         observations:            observations || null,
