@@ -1,17 +1,6 @@
 /**
- * adminRoutes.js  (versão 2 — com gestão de academias e aprovações)
- *
- * Novas rotas adicionadas:
- *   GET  /admin/academies              — lista academias com contagem de membros
- *   POST /admin/academies              — cria academia
- *   DELETE /admin/academies/:id        — desativa academia
- *   GET  /admin/requests               — lista todas solicitações (pendentes, aprovadas, rejeitadas)
- *   POST /admin/requests/:id/approve   — aprova solicitação (move user para academia)
- *   POST /admin/requests/:id/reject    — rejeita solicitação
- *
- * Rotas existentes mantidas:
- *   POST /admin/login
- *   GET  /admin/stats
+ * adminRoutes.js
+ * MUDANÇA: removido totalTasks das estatísticas — módulo de tarefas descontinuado.
  */
 
 import { Hono } from 'hono';
@@ -46,25 +35,21 @@ adminRoutes.get('/stats', async (c) => {
       { count: newUsersWeek },
       { count: newUsersMonth },
       { count: totalRoutines },
-      { count: totalTasks },
       { count: totalProgress },
       { count: totalAcademies },
       { data: recentUsers },
       { data: userGrowth },
       { data: topByRoutines },
-      { data: topByTasks },
     ] = await Promise.all([
       supabase.from('users').select('*', { count: 'exact', head: true }),
       supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
       supabase.from('users').select('*', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo),
       supabase.from('routines').select('*', { count: 'exact', head: true }),
-      supabase.from('tasks').select('*', { count: 'exact', head: true }),
       supabase.from('progress').select('*', { count: 'exact', head: true }),
       supabase.from('academies').select('*', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('users').select('email, created_at').order('created_at', { ascending: false }).limit(10),
       supabase.from('users').select('created_at').gte('created_at', thirtyDaysAgo).order('created_at', { ascending: true }),
       supabase.from('routines').select('user_id, users(email)').order('user_id'),
-      supabase.from('tasks').select('user_id, users(email)'),
     ]);
 
     const groupByUser = (rows) => {
@@ -86,16 +71,14 @@ adminRoutes.get('/stats', async (c) => {
 
     return c.json({
       overview: {
-        totalUsers:    totalUsers    || 0,
-        newUsersWeek:  newUsersWeek  || 0,
-        newUsersMonth: newUsersMonth || 0,
-        totalRoutines: totalRoutines || 0,
-        totalTasks:    totalTasks    || 0,
-        totalProgress: totalProgress || 0,
+        totalUsers:     totalUsers     || 0,
+        newUsersWeek:   newUsersWeek   || 0,
+        newUsersMonth:  newUsersMonth  || 0,
+        totalRoutines:  totalRoutines  || 0,
+        totalProgress:  totalProgress  || 0,
         totalAcademies: totalAcademies || 0,
       },
       topRoutineUsers: groupByUser(topByRoutines),
-      topTaskUsers:    groupByUser(topByTasks),
       recentUsers:     recentUsers || [],
       growthSeries,
     });
@@ -110,7 +93,6 @@ adminRoutes.get('/academies', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
   try {
-    // Busca academias
     const { data: academies, error } = await supabase
       .from('academies')
       .select('id, name, slug, city, logo_url, is_active, created_at')
@@ -118,7 +100,6 @@ adminRoutes.get('/academies', async (c) => {
 
     if (error) throw new Error(error.message);
 
-    // Conta membros por academia
     const { data: memberCounts } = await supabase
       .from('users')
       .select('academy_id')
@@ -152,7 +133,10 @@ adminRoutes.post('/academies', async (c) => {
       return c.json({ error: 'Nome e slug são obrigatórios.' }, 400);
     }
 
-    const slugClean = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+    const slugClean = slug.toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
 
     const { data, error } = await supabase
       .from('academies')
@@ -182,7 +166,6 @@ adminRoutes.delete('/academies/:id', async (c) => {
 });
 
 // ── GET /admin/requests ───────────────────────────────────────────────────────
-// Lista TODAS as solicitações de entrada em academias (pendentes e recentes)
 adminRoutes.get('/requests', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -211,7 +194,6 @@ adminRoutes.post('/requests/:id/approve', async (c) => {
   const id = c.req.param('id');
 
   try {
-    // Busca a solicitação
     const { data: req, error: reqErr } = await supabase
       .from('academy_join_requests')
       .select('user_id, academy_id')
@@ -220,7 +202,6 @@ adminRoutes.post('/requests/:id/approve', async (c) => {
 
     if (reqErr || !req) return c.json({ error: 'Solicitação não encontrada.' }, 404);
 
-    // Atualiza academy_id do usuário
     const { error: userErr } = await supabase
       .from('users')
       .update({ academy_id: req.academy_id })
@@ -228,7 +209,6 @@ adminRoutes.post('/requests/:id/approve', async (c) => {
 
     if (userErr) throw new Error(userErr.message);
 
-    // Marca como aprovado
     await supabase
       .from('academy_join_requests')
       .update({ status: 'approved', reviewed_at: new Date().toISOString() })
