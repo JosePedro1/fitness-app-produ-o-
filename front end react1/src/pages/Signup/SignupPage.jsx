@@ -1,17 +1,16 @@
 /**
- * SignupPage.jsx — versão atualizada
+ * SignupPage.jsx — corrigido
  *
- * MUDANÇAS:
- *   1. Lê ?academy=slug da URL e persiste em localStorage
- *   2. Envia academy_slug no POST /auth/register
- *   3. Todo o visual e comportamento original preservados
+ * CORREÇÃO: auto-login após cadastro agora salva user_id separado no
+ * localStorage, igual ao loginUser() em api-login.js.
+ * Isso garante que o upload de avatar funcione imediatamente após o cadastro.
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { persistAcademySlug, consumeAcademySlug } from '../../services/api-profile';
 
-const API = 'https://fitness-app-produ-o.onrender.com';
+const API = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -48,7 +47,7 @@ export default function SignupPage() {
     setLoading(true);
     setErrors({});
 
-    // Lê (e consome) o slug pendente
+    // Lê (e consome) o slug pendente do localStorage
     const academy_slug = consumeAcademySlug();
 
     try {
@@ -62,7 +61,7 @@ export default function SignupPage() {
         throw new Error(e.error || 'Erro ao criar conta');
       }
 
-      const suffix = academy_slug ? ` Você foi associado à academia!` : '';
+      const suffix = academy_slug ? ' Você foi associado à academia!' : '';
       showToast(`Conta criada!${suffix} Fazendo login...`, 'success');
 
       // Auto-login
@@ -74,8 +73,13 @@ export default function SignupPage() {
             body: JSON.stringify({ email, password: pass }),
           });
           const data = await lr.json();
+
+          // ── CORRIGIDO: salva user_id separado (igual ao api-login.js loginUser) ──
           localStorage.setItem('auth_token', data.token);
-          localStorage.setItem('ft_user', JSON.stringify({ email: data.user?.email || email, id: data.user?.user_id }));
+          localStorage.setItem('user_id',    data.user?.user_id || '');
+          localStorage.setItem('email',      data.user?.email   || email);
+          // ─────────────────────────────────────────────────────────────────────────
+
           navigate('/home');
         } catch {
           navigate('/login');
