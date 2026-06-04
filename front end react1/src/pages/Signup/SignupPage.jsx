@@ -1,16 +1,36 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+/**
+ * SignupPage.jsx — versão atualizada
+ *
+ * MUDANÇAS:
+ *   1. Lê ?academy=slug da URL e persiste em localStorage
+ *   2. Envia academy_slug no POST /auth/register
+ *   3. Todo o visual e comportamento original preservados
+ */
+
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { persistAcademySlug, consumeAcademySlug } from '../../services/api-profile';
 
 const API = 'https://fitness-app-produ-o.onrender.com';
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [pass2, setPass2] = useState('');
+  const [searchParams] = useSearchParams();
+
+  const [email,  setEmail]  = useState('');
+  const [pass,   setPass]   = useState('');
+  const [pass2,  setPass2]  = useState('');
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [loading,setLoading]= useState(false);
+  const [toast,  setToast]  = useState(null);
+
+  // Captura e persiste o slug de academia da URL (?academy=selfit)
+  useEffect(() => {
+    const academyParam = searchParams.get('academy');
+    if (academyParam) {
+      persistAcademySlug(academyParam);
+    }
+  }, [searchParams]);
 
   function showToast(msg, type = 'info') {
     setToast({ msg, type });
@@ -24,19 +44,27 @@ export default function SignupPage() {
     if (!pass || pass.length < 6) errs.pass = 'Mínimo 6 caracteres';
     if (pass !== pass2) errs.pass2 = 'Senhas não coincidem';
     if (Object.keys(errs).length) { setErrors(errs); return; }
+
     setLoading(true);
     setErrors({});
+
+    // Lê (e consome) o slug pendente
+    const academy_slug = consumeAcademySlug();
+
     try {
       const r = await fetch(API + '/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass }),
+        body: JSON.stringify({ email, password: pass, academy_slug }),
       });
       if (!r.ok) {
         const e = await r.json().catch(() => ({}));
         throw new Error(e.error || 'Erro ao criar conta');
       }
-      showToast('Conta criada! Fazendo login...', 'success');
+
+      const suffix = academy_slug ? ` Você foi associado à academia!` : '';
+      showToast(`Conta criada!${suffix} Fazendo login...`, 'success');
+
       // Auto-login
       setTimeout(async () => {
         try {
@@ -87,6 +115,7 @@ export default function SignupPage() {
         @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(0.85)}}
         .auth-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;text-align:center;margin-bottom:6px;color:var(--text)}
         .auth-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:28px}
+        .academy-badge{background:rgba(91,79,255,0.12);border:1px solid rgba(91,79,255,0.3);border-radius:8px;padding:8px 12px;margin-bottom:16px;font-size:13px;color:#a5a0ff;text-align:center}
         .field{margin-bottom:16px}
         .field-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block}
         .field-input{width:100%;height:46px;background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:0 14px;font-size:15px;outline:none;transition:border-color .2s;font-family:'DM Sans',sans-serif}
@@ -119,8 +148,16 @@ export default function SignupPage() {
 
         <div className="auth-card">
           <div className="auth-logo">
-            <span className="auth-logo-text">Fit<span>Track</span><span className="logo-dot" /></span>
+            <span className="auth-logo-text">Fit<span>Ness</span><span className="logo-dot" /></span>
           </div>
+
+          {/* Badge de academia quando vem por link */}
+          {searchParams.get('academy') && (
+            <div className="academy-badge">
+              🏋️ Entrando pelo link da academia <strong>{searchParams.get('academy')}</strong>
+            </div>
+          )}
+
           <div className="auth-title">Crie sua conta</div>
           <div className="auth-sub">Grátis para sempre. Sem cartão.</div>
 

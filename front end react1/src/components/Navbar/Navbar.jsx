@@ -1,5 +1,15 @@
+/**
+ * Navbar.jsx — versão atualizada
+ *
+ * MUDANÇA: adicionado item "Perfil" com ícone UserCircle2 no menu
+ * Todo o resto do visual original foi preservado.
+ */
+
 import React, { useState } from 'react';
-import { Menu, X, Dumbbell, Timer, TrendingUp, Calendar, BookOpen, Home, LogOut, Salad } from 'lucide-react';
+import {
+  Menu, X, Dumbbell, Timer, TrendingUp, Calendar,
+  BookOpen, Home, LogOut, Salad, UserCircle2
+} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { logoutUser } from '../../services/api-login';
 
@@ -10,7 +20,8 @@ const NAV_ITEMS = [
   { name: 'Progresso',  link: '/progress',           icon: TrendingUp },
   { name: 'Calendário', link: '/calendar',           icon: Calendar },
   { name: 'Exercícios', link: '/exercises-library',  icon: BookOpen },
-  { name: 'Nutrição', link: '/nutrition', icon: Salad },
+  { name: 'Nutrição',   link: '/nutrition',          icon: Salad },
+  { name: 'Perfil',     link: '/profile',            icon: UserCircle2 }, // ← NOVO
 ];
 
 const Navbar = () => {

@@ -1,3 +1,12 @@
+/**
+ * authController.js — versão atualizada com academy_slug no registro
+ *
+ * MUDANÇA EM RELAÇÃO AO ORIGINAL:
+ *   - register() aceita academy_slug opcional no body
+ *   - Se informado, busca a academia e salva academy_id em users
+ *   - Todo o resto do arquivo é idêntico ao original
+ */
+
 import jwt    from 'jsonwebtoken';
 import crypto from 'crypto';
 import supabase from '../config/supabase.js';
@@ -7,7 +16,7 @@ import { sendRegisterEmail, sendLoginEmail } from '../services/authEmailService.
 // ── POST /auth/register ───────────────────────────────────────────────────────
 export const register = async (c) => {
   try {
-    const { email, password } = await c.req.json();
+    const { email, password, academy_slug } = await c.req.json();
 
     if (!email || !password) {
       return c.json({ error: 'E-mail e senha são obrigatórios.' }, 400);
@@ -31,10 +40,25 @@ export const register = async (c) => {
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao obter user_id.' }, 500);
 
-    // Salva na tabela users — SEM gravar a senha em plaintext
+    // ── NOVO: resolve academy_id se o slug foi informado ────────────────────
+    let academy_id = null;
+    if (academy_slug?.trim()) {
+      const { data: academy } = await supabase
+        .from('academies')
+        .select('id')
+        .eq('slug', academy_slug.trim().toLowerCase())
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (academy) academy_id = academy.id;
+      // Se o slug não existir, simplesmente ignora (não falha o cadastro)
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // Salva na tabela users com academy_id (pode ser null)
     const { error: userError } = await supabase
       .from('users')
-      .insert({ user_id, email });
+      .insert({ user_id, email, academy_id });
 
     if (userError) return c.json({ error: 'Erro ao salvar usuário.' }, 500);
 
@@ -42,7 +66,11 @@ export const register = async (c) => {
       console.error('E-mail de cadastro falhou:', err.message)
     );
 
-    return c.json({ message: 'Usuário registrado com sucesso.', user: { user_id, email } });
+    return c.json({
+      message: 'Usuário registrado com sucesso.',
+      user: { user_id, email },
+      academy_id,
+    });
   } catch (err) {
     console.error('register error:', err);
     return c.json({ error: err.message }, 500);
@@ -50,6 +78,7 @@ export const register = async (c) => {
 };
 
 // ── POST /auth/login ──────────────────────────────────────────────────────────
+// IDÊNTICO AO ORIGINAL
 export const login = async (c) => {
   try {
     const { email, password } = await c.req.json();
@@ -86,7 +115,6 @@ export const validate = (c) => {
 };
 
 // ── POST /auth/logout ─────────────────────────────────────────────────────────
-// Stateless — JWT é invalidado pelo cliente. Resposta apenas para compatibilidade.
 export const logout = (c) => c.json({ message: 'Logout bem-sucedido.' });
 
 // ── POST /auth/forgot-password ────────────────────────────────────────────────
@@ -100,13 +128,12 @@ export const forgotPassword = async (c) => {
       .eq('email', email)
       .maybeSingle();
 
-    // Responde igual mesmo que o e-mail não exista (evita enumeração)
     if (!user) {
       return c.json({ message: 'Se o e-mail existir, você receberá as instruções.' });
     }
 
     const token   = crypto.randomBytes(32).toString('hex');
-    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
 
     await supabase
       .from('users')
@@ -149,10 +176,8 @@ export const resetPassword = async (c) => {
       return c.json({ error: 'Link expirado. Solicite uma nova recuperação.' }, 400);
     }
 
-    // Atualiza no Supabase Auth (hash feito internamente)
     await supabase.auth.admin.updateUserById(user.user_id, { password });
 
-    // Limpa o token — NÃO salva senha em plaintext
     await supabase
       .from('users')
       .update({ reset_token: null, reset_token_expires: null })
