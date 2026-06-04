@@ -1,25 +1,19 @@
 /**
- * academyController.js
- * Backend: Hono + Supabase
+ * academyController.js  (versão 2 — com sistema de aprovação)
  *
- * Rotas:
- *   GET  /ranking/:slug          — público, sem auth
- *   GET  /profile                — protegido, retorna perfil do usuário
- *   PUT  /profile                — protegido, atualiza perfil do usuário
- *   POST /profile/join/:slug     — protegido, associa usuário a academia
- *   GET  /academies              — protegido, lista academias ativas
- *   POST /admin/academies        — admin, cria academia
+ * Mudanças em relação à v1:
+ *   - getProfile: inclui pending_request no retorno
+ *   - joinAcademy: agora cria solicitação pendente (sem aprovação auto)
+ *     Exceto quando chamado com header x-auto-join=true (fluxo do cadastro via QR)
  */
 
 import supabase from '../config/supabase.js';
 
 // ── GET /ranking/:slug ────────────────────────────────────────────────────────
-// Rota PÚBLICA — não precisa de token. Usada pela tela de ranking da academia.
 export const getRanking = async (c) => {
   try {
     const slug = c.req.param('slug');
 
-    // Busca a academia pelo slug
     const { data: academy, error: acadErr } = await supabase
       .from('academies')
       .select('id, name, slug, logo_url, city')
@@ -31,7 +25,6 @@ export const getRanking = async (c) => {
       return c.json({ error: 'Academia não encontrada.' }, 404);
     }
 
-    // Busca ranking usando a view
     const { data: ranking, error: rankErr } = await supabase
       .from('ranking_view')
       .select('*')
@@ -57,33 +50,28 @@ export const getProfile = async (c) => {
   try {
     const user = c.get('user');
 
+    // Perfil com academia atual
     const { data, error } = await supabase
       .from('users')
       .select(`
-        user_id,
-        email,
-        display_name,
-        avatar_url,
-        bio,
-        show_in_ranking,
-        academy_id,
-        is_premium,
-        premium_expires_at,
-        created_at,
-        academies (
-          id,
-          name,
-          slug,
-          logo_url,
-          city
-        )
+        user_id, email, display_name, avatar_url, bio,
+        show_in_ranking, academy_id, is_premium, premium_expires_at, created_at,
+        academies(id, name, slug, logo_url, city)
       `)
       .eq('user_id', user.user_id)
       .single();
 
     if (error) throw new Error(error.message);
 
-    return c.json(data);
+    // Solicitação pendente ou rejeitada (para mostrar estado no frontend)
+    const { data: pendingReq } = await supabase
+      .from('academy_join_requests')
+      .select('id, status, created_at, academies(id, name, slug, city)')
+      .eq('user_id', user.user_id)
+      .in('status', ['pending', 'rejected'])
+      .maybeSingle();
+
+    return c.json({ ...data, pending_request: pendingReq || null });
   } catch (err) {
     console.error('getProfile error:', err);
     return c.json({ error: err.message }, 500);
@@ -96,7 +84,6 @@ export const updateProfile = async (c) => {
     const user = c.get('user');
     const body = await c.req.json();
 
-    // Campos editáveis pelo usuário
     const allowed = ['display_name', 'bio', 'avatar_url', 'show_in_ranking'];
     const updates = {};
     for (const key of allowed) {
@@ -106,13 +93,9 @@ export const updateProfile = async (c) => {
     if (Object.keys(updates).length === 0) {
       return c.json({ error: 'Nenhum campo válido para atualizar.' }, 400);
     }
-
-    // Validação: display_name máx 40 chars
     if (updates.display_name && updates.display_name.length > 40) {
       return c.json({ error: 'Nome de exibição deve ter no máximo 40 caracteres.' }, 400);
     }
-
-    // Validação: bio máx 160 chars
     if (updates.bio && updates.bio.length > 160) {
       return c.json({ error: 'Bio deve ter no máximo 160 caracteres.' }, 400);
     }
@@ -121,16 +104,7 @@ export const updateProfile = async (c) => {
       .from('users')
       .update(updates)
       .eq('user_id', user.user_id)
-      .select(`
-        user_id,
-        email,
-        display_name,
-        avatar_url,
-        bio,
-        show_in_ranking,
-        academy_id,
-        academies ( id, name, slug )
-      `)
+      .select('user_id, email, display_name, avatar_url, bio, show_in_ranking, academy_id, academies(id, name, slug)')
       .single();
 
     if (error) throw new Error(error.message);
@@ -142,11 +116,14 @@ export const updateProfile = async (c) => {
 };
 
 // ── POST /profile/join/:slug ──────────────────────────────────────────────────
-// Associa (ou reassocia) o usuário a uma academia pelo slug
+// Comportamento:
+//   - Header "x-auto-join: true" → fluxo do QR/cadastro → aprovação automática
+//   - Sem header → manual pelo perfil → cria solicitação pendente
 export const joinAcademy = async (c) => {
   try {
-    const user = c.get('user');
-    const slug = c.req.param('slug');
+    const user   = c.get('user');
+    const slug   = c.req.param('slug');
+    const isAuto = c.req.header('x-auto-join') === 'true';
 
     const { data: academy, error: acadErr } = await supabase
       .from('academies')
@@ -159,18 +136,41 @@ export const joinAcademy = async (c) => {
       return c.json({ error: 'Academia não encontrada.' }, 404);
     }
 
-    const { data, error } = await supabase
-      .from('users')
-      .update({ academy_id: academy.id })
-      .eq('user_id', user.user_id)
-      .select('user_id, academy_id, academies(name, slug)')
-      .single();
+    // ── Fluxo automático (QR / cadastro) ─────────────────────────────────────
+    if (isAuto) {
+      const { data, error } = await supabase
+        .from('users')
+        .update({ academy_id: academy.id })
+        .eq('user_id', user.user_id)
+        .select('user_id, academy_id, academies(name, slug)')
+        .single();
 
-    if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message);
+
+      return c.json({
+        message: `Bem-vindo à ${academy.name}!`,
+        status: 'approved',
+        user: data,
+      });
+    }
+
+    // ── Fluxo manual → solicitação pendente ──────────────────────────────────
+    const { error: upsertErr } = await supabase
+      .from('academy_join_requests')
+      .upsert({
+        user_id:    user.user_id,
+        academy_id: academy.id,
+        status:     'pending',
+        created_at: new Date().toISOString(),
+        reviewed_at: null,
+      }, { onConflict: 'user_id' });
+
+    if (upsertErr) throw new Error(upsertErr.message);
 
     return c.json({
-      message: `Você foi associado à ${academy.name}!`,
-      user: data,
+      message: `Solicitação enviada para ${academy.name}. Aguarde a aprovação do administrador.`,
+      status:  'pending',
+      academy: { id: academy.id, name: academy.name, slug },
     });
   } catch (err) {
     console.error('joinAcademy error:', err);
@@ -179,7 +179,6 @@ export const joinAcademy = async (c) => {
 };
 
 // ── GET /academies ────────────────────────────────────────────────────────────
-// Lista todas as academias ativas (para o select no perfil do usuário)
 export const listAcademies = async (c) => {
   try {
     const { data, error } = await supabase
@@ -196,7 +195,6 @@ export const listAcademies = async (c) => {
 };
 
 // ── POST /admin/academies ─────────────────────────────────────────────────────
-// Cria nova academia (só admin)
 export const createAcademy = async (c) => {
   try {
     const body = await c.req.json();
@@ -206,7 +204,6 @@ export const createAcademy = async (c) => {
       return c.json({ error: 'Nome e slug são obrigatórios.' }, 400);
     }
 
-    // Slug: apenas letras minúsculas, números e hífen
     const slugClean = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
 
     const { data, error } = await supabase
