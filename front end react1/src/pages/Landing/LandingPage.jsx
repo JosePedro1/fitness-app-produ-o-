@@ -137,7 +137,7 @@ const LandingPage = () => {
         style={{ height: 64, background: 'rgba(17,17,24,.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,.08)' }}
       >
         <div className="syne flex items-center gap-2 text-[20px] font-black" style={{ color: '#f0f0f8' }}>
-          GYM<span style={{ color: '#5B4FFF' }}>Track</span>
+          Fit<span style={{ color: '#5B4FFF' }}>Track</span>
           <span className="lp-logo-dot inline-block w-2 h-2 rounded-full ml-0.5" style={{ background: '#5B4FFF' }} />
         </div>
 
@@ -241,7 +241,7 @@ const LandingPage = () => {
             Tudo que você precisa<br />para evoluir
           </h2>
           <p className="mx-auto text-[16px]" style={{ color: 'rgba(240,240,248,.6)', maxWidth: 560 }}>
-            De rotinas personalizadas a heatmap de treinos — o GYMTrack centraliza sua jornada fitness em um só lugar.
+            De rotinas personalizadas a heatmap de treinos — o FitTrack centraliza sua jornada fitness em um só lugar.
           </p>
         </div>
 
@@ -355,7 +355,7 @@ const LandingPage = () => {
 
       {/* ── FOOTER ── */}
       <footer className="flex items-center justify-between flex-wrap gap-4 px-[5vw] py-10" style={{ borderTop: '1px solid rgba(255,255,255,.08)' }}>
-        <div className="syne text-[18px] font-black">GYM<span style={{ color: '#5B4FFF' }}>Track</span></div>
+        <div className="syne text-[18px] font-black">Fit<span style={{ color: '#5B4FFF' }}>Track</span></div>
         <div className="flex gap-5">
           {[
             { label: 'Funcionalidades', action: () => scrollTo('features') },
@@ -367,7 +367,7 @@ const LandingPage = () => {
             </span>
           ))}
         </div>
-        <div className="text-[12px]" style={{ color: 'rgba(240,240,248,.35)' }}>© 2025 GYMTrack</div>
+        <div className="text-[12px]" style={{ color: 'rgba(240,240,248,.35)' }}>© 2025 FitTrack</div>
       </footer>
     </div>
   );
