@@ -323,7 +323,7 @@ const LandingPage = () => {
       </section>
 
       {/* ── DEPOIMENTOS ── */}
-      <section id="depoimentos" style={{ padding: '80px 5vw' }}>
+      {/* <section id="depoimentos" style={{ padding: '80px 5vw' }}>
         <div className="text-center mb-14">
           <div className="inline-block px-[14px] py-1 rounded-full text-[12px] font-medium uppercase tracking-[.06em] mb-[14px]" style={{ background: 'rgba(91,79,255,.08)', color: '#7B6FFF' }}>
             Depoimentos
@@ -336,7 +336,7 @@ const LandingPage = () => {
           <Testimonial stars={5} text="O cronômetro HIIT com alertas sonoros é perfeito para treinos intensos. Uso o preset Tabata todo dia." initials="CS" name="Camila S." role="Usuária há 1 mês" />
           <Testimonial stars={4} text="A calculadora de IMC que gera treino personalizado é surpreendentemente boa. Economizei dinheiro de personal." initials="RP" name="Rafael P." role="Usuário há 3 semanas" />
         </div>
-      </section>
+      </section> */}
 
       {/* ── CTA FINAL ── */}
       <section style={{ padding: '100px 5vw', textAlign: 'center' }}>

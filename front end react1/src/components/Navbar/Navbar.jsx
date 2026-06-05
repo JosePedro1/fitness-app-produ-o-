@@ -34,7 +34,7 @@ const Navbar = () => {
         {/* Logo */}
         <Link to="/home" className="flex items-center gap-1.5 shrink-0">
           <span className="text-xl font-black text-white tracking-tight" style={{ fontFamily: 'Syne, sans-serif' }}>
-            Fit<span className="text-[#5B4FFF]">Ness</span>
+            Fit<span className="text-[#5B4FFF]">Track</span>
           </span>
           <span className="w-2 h-2 rounded-full bg-[#5B4FFF] animate-pulse" />
         </Link>

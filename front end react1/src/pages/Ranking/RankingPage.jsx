@@ -245,7 +245,7 @@ export default function RankingPage() {
 
         {/* Footer discreto */}
         <p className="text-center text-xs text-gray-700 mt-8">
-          Powered by <span className="text-indigo-600 font-semibold">FitNess</span>
+          Powered by <span className="text-indigo-600 font-semibold">FitTrack</span>
         </p>
       </div>
     </div>
