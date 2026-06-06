@@ -1,18 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import About    from './About';
 import IMC      from './IMC';
 import Services from './Services';
 import Footer   from './Footer';
 import WorkoutBanner from '../../components/WorkoutTimer/WorkoutBanner';
+import { getProfile } from '../../services/api-profile';
 
 /**
  * Home — dashboard interno do app (rota /home, protegida).
  * A landing pública está em /pages/Landing/LandingPage.jsx (rota /).
  */
 const Home = () => {
-  const email = localStorage.getItem('email') || '';
-  const name  = email.split('@')[0];
-  const greeting = name ? name.charAt(0).toUpperCase() + name.slice(1) : 'Atleta';
+  const [greeting, setGreeting] = useState('Atleta');
+
+  useEffect(() => {
+    getProfile()
+      .then(data => {
+        if (data?.display_name?.trim()) {
+          setGreeting(data.display_name.trim());
+        }
+        // Se não tiver display_name, mantém 'Atleta'
+      })
+      .catch(() => {
+        // Falha silenciosa — mantém 'Atleta'
+      });
+  }, []);
 
   return (
     <div className="bg-[#171717] min-h-screen">
