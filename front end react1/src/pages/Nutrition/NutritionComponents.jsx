@@ -153,11 +153,19 @@ export function MealCard({ meal, index }) {
       {open && (
         <div className="px-4 pb-4 border-t border-white/5">
           <ul className="mt-3 space-y-1.5">
-            {meal.itens?.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                <span className="text-[#5B4FFF] mt-0.5">•</span>{item}
-              </li>
-            ))}
+            {meal.itens?.map((item, i) => {
+              // A IA às vezes retorna objetos em vez de strings — trata os dois casos
+              const label = typeof item === 'string'
+                ? item
+                : item?.nome
+                  ? `${item.nome}${item.porcao ? ' — ' + item.porcao : ''}`
+                  : item?.item ?? JSON.stringify(item);
+              return (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                  <span className="text-[#5B4FFF] mt-0.5">•</span>{label}
+                </li>
+              );
+            })}
           </ul>
           {meal.dica && (
             <div className="mt-3 bg-[#5B4FFF]/10 border border-[#5B4FFF]/20 rounded-lg px-3 py-2">

@@ -24,7 +24,7 @@ ${ingredients?.trim() ? `Ingredientes disponíveis: ${ingredients}.` : 'Use alim
 ${restrictions?.trim() ? `Restrições: ${restrictions}.` : ''}
 Refeições por dia: ${numMeals}.
 
-REGRAS: JSON puro apenas, sem markdown. Valores numéricos REAIS (nunca strings).
+REGRAS: JSON puro apenas, sem markdown. Valores numéricos REAIS (nunca strings). O campo "itens" deve ser SEMPRE um array de strings simples como "200g de frango grelhado", NUNCA um array de objetos.
 
 {"objetivo":"descrição + estimativa calórica","macros":{"proteina_g":150,"carbo_g":200,"gordura_g":60,"calorias":2000},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["2 ovos mexidos","1 fatia de pão integral","1 banana"],"calorias_aprox":350,"dica":"dica prática"}],"dicas_gerais":["dica 1","dica 2","dica 3"],"lista_compras":["item 1","item 2"]}
 
@@ -142,7 +142,7 @@ INSTRUÇÕES OBRIGATÓRIAS:
 - Cada refeição deve ter ao menos 3 itens detalhados com porções (ex: "3 ovos mexidos", "200g de frango grelhado")
 - As dicas devem ser específicas para o treino e objetivo do usuário
 
-REGRAS: JSON puro apenas, sem markdown. Todos os valores numéricos devem ser números inteiros reais.
+REGRAS: JSON puro apenas, sem markdown. Todos os valores numéricos devem ser números inteiros reais. O campo "itens" deve ser SEMPRE um array de strings simples (ex: "200g de frango grelhado"), NUNCA um array de objetos.
 
 {"objetivo":"descrição com TDEE, gasto do treino e meta calórica do dia","macros":{"proteina_g":180,"carbo_g":250,"gordura_g":65,"calorias":2400},"gasto_treino_kcal":450,"lista_compras_diaria":[{"item":"Peito de frango","quantidade":"200g"},{"item":"Ovos","quantidade":"3 unidades"},{"item":"Arroz integral","quantidade":"100g cru"},{"item":"Brócolis","quantidade":"150g"},{"item":"Azeite","quantidade":"30ml"},{"item":"Banana","quantidade":"2 unidades"}],"agua":{"ml":3200,"copos":13,"obs":"Beba 1 copo extra a cada 30min de treino"},"refeicoes":[{"nome":"Café da manhã","horario":"07:00","itens":["3 ovos mexidos","2 fatias de pão integral com pasta de amendoim","1 banana média","1 copo de leite desnatado (200ml)"],"calorias_aprox":520,"dica":"Refeição pré-treino: carboidratos de baixo IG + proteína"}],"dicas_gerais":["dica específica baseada no treino de hoje","dica sobre timing de nutrientes","dica sobre recuperação muscular"]}
 
@@ -184,7 +184,7 @@ export const generate = async (c) => {
       }
     }
 
-    const plan = await callGroq(buildFreePrompt({ goal, ingredients, restrictions, meals }), 1500, false);
+    const plan = await callGroq(buildFreePrompt({ goal, ingredients, restrictions, meals }), 2000, false);
     if (!plan) return c.json({ error: 'Erro ao gerar plano. Tente novamente.' }, 500);
 
     const { error: logError } = await supabase.from('nutrition_logs').insert({
@@ -433,7 +433,18 @@ const GROQ_MODEL_FREE    = 'llama-3.1-8b-instant';
 const GROQ_MODEL_PREMIUM = 'llama-3.3-70b-versatile';
 
 // ── Helper: chama Groq ────────────────────────────────────
+// Wrapper com 1 retry automático caso o JSON não seja válido ou a API falhe.
 async function callGroq(prompt, maxTokens = 2000, isPremium = false) {
+  const result = await callGroqOnce(prompt, maxTokens, isPremium);
+  if (result) return result;
+
+  // Primeira tentativa falhou: aguarda 800 ms e tenta novamente
+  console.warn('[callGroq] Primeira tentativa retornou null. Retentando em 800 ms…');
+  await new Promise(r => setTimeout(r, 800));
+  return callGroqOnce(prompt, maxTokens, isPremium);
+}
+
+async function callGroqOnce(prompt, maxTokens, isPremium) {
   const groqKey = process.env.GROQ_API_KEY;
   if (!groqKey) throw new Error('Chave da IA não configurada.');
 
