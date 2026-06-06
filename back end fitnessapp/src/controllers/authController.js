@@ -1,17 +1,8 @@
-/**
- * authController.js — versão atualizada com academy_slug no registro
- *
- * MUDANÇA EM RELAÇÃO AO ORIGINAL:
- *   - register() aceita academy_slug opcional no body
- *   - Se informado, busca a academia e salva academy_id em users
- *   - Todo o resto do arquivo é idêntico ao original
- */
-
 import jwt    from 'jsonwebtoken';
 import crypto from 'crypto';
-import supabase from '../config/supabase.js';
-import { sendEmail }         from '../services/emailService.js';
-import { sendRegisterEmail, sendLoginEmail } from '../services/authEmailService.js';
+import supabase, { supabaseAdmin } from '../config/supabase.js';
+import { sendEmail }                              from '../services/emailService.js';
+import { sendRegisterEmail, sendLoginEmail }      from '../services/authEmailService.js';
 
 // ── POST /auth/register ───────────────────────────────────────────────────────
 export const register = async (c) => {
@@ -23,7 +14,7 @@ export const register = async (c) => {
     }
 
     // Verifica duplicata antes de criar no Auth
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from('users')
       .select('user_id')
       .eq('email', email)
@@ -40,10 +31,10 @@ export const register = async (c) => {
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao obter user_id.' }, 500);
 
-    // ── NOVO: resolve academy_id se o slug foi informado ────────────────────
+    // Resolve academy_id se o slug foi informado
     let academy_id = null;
     if (academy_slug?.trim()) {
-      const { data: academy } = await supabase
+      const { data: academy } = await supabaseAdmin
         .from('academies')
         .select('id')
         .eq('slug', academy_slug.trim().toLowerCase())
@@ -51,17 +42,22 @@ export const register = async (c) => {
         .maybeSingle();
 
       if (academy) academy_id = academy.id;
-      // Se o slug não existir, simplesmente ignora (não falha o cadastro)
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    // Salva na tabela users com academy_id (pode ser null)
-    const { error: userError } = await supabase
+    // Salva na tabela users usando supabaseAdmin para bypassar RLS
+    const insertPayload = { user_id, email };
+    if (academy_id) insertPayload.academy_id = academy_id;
+
+    const { error: userError } = await supabaseAdmin
       .from('users')
-      .insert({ user_id, email, academy_id });
+      .insert(insertPayload);
 
-    if (userError) return c.json({ error: 'Erro ao salvar usuário.' }, 500);
+    if (userError) {
+      console.error('Erro no insert de users:', userError.message);
+      return c.json({ error: 'Erro ao salvar usuário.' }, 500);
+    }
 
+    // E-mail de boas-vindas — fire-and-forget, erro não quebra o cadastro
     sendRegisterEmail(email).catch((err) =>
       console.error('E-mail de cadastro falhou:', err.message)
     );
@@ -78,7 +74,6 @@ export const register = async (c) => {
 };
 
 // ── POST /auth/login ──────────────────────────────────────────────────────────
-// IDÊNTICO AO ORIGINAL
 export const login = async (c) => {
   try {
     const { email, password } = await c.req.json();
@@ -122,7 +117,7 @@ export const forgotPassword = async (c) => {
   try {
     const { email } = await c.req.json();
 
-    const { data: user } = await supabase
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('user_id')
       .eq('email', email)
@@ -135,18 +130,23 @@ export const forgotPassword = async (c) => {
     const token   = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000);
 
-    await supabase
+    await supabaseAdmin
       .from('users')
       .update({ reset_token: token, reset_token_expires: expires.toISOString() })
       .eq('user_id', user.user_id);
 
     const resetLink = `${process.env.FRONTEND_URL || 'https://fitness-app-produ-o.vercel.app'}/reset-password?token=${token}`;
 
-    await sendEmail(
-      email,
-      'Redefinição de senha — Fitness App',
-      `Olá!\n\nClique no link abaixo para criar uma nova senha (válido por 1 hora):\n\n${resetLink}\n\nSe você não solicitou isso, ignore este e-mail.\n\nEquipe Fitness App`
-    );
+    // E-mail isolado — se falhar, endpoint ainda retorna sucesso (usuário tenta de novo)
+    try {
+      await sendEmail(
+        email,
+        'Redefinição de senha — Fitness App',
+        `Olá!\n\nClique no link abaixo para criar uma nova senha (válido por 1 hora):\n\n${resetLink}\n\nSe você não solicitou isso, ignore este e-mail.\n\nEquipe Fitness App`
+      );
+    } catch (emailErr) {
+      console.error('E-mail de recuperação falhou:', emailErr.message);
+    }
 
     return c.json({ message: 'Se o e-mail existir, você receberá as instruções.' });
   } catch (err) {
@@ -164,7 +164,7 @@ export const resetPassword = async (c) => {
       return c.json({ error: 'Token e nova senha são obrigatórios.' }, 400);
     }
 
-    const { data: user } = await supabase
+    const { data: user } = await supabaseAdmin
       .from('users')
       .select('user_id, reset_token_expires')
       .eq('reset_token', token)
@@ -176,9 +176,18 @@ export const resetPassword = async (c) => {
       return c.json({ error: 'Link expirado. Solicite uma nova recuperação.' }, 400);
     }
 
-    await supabase.auth.admin.updateUserById(user.user_id, { password });
+    // auth.admin.updateUserById exige service_role — supabaseAdmin já usa essa key
+    const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+      user.user_id,
+      { password }
+    );
 
-    await supabase
+    if (updateErr) {
+      console.error('Erro ao redefinir senha no Auth:', updateErr.message);
+      return c.json({ error: 'Erro ao redefinir senha.' }, 500);
+    }
+
+    await supabaseAdmin
       .from('users')
       .update({ reset_token: null, reset_token_expires: null })
       .eq('user_id', user.user_id);
