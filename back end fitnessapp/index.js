@@ -1,8 +1,3 @@
-/**
- * index.js
- * MUDANÇA: removido taskRoutes (módulo de tarefas descontinuado)
- */
-
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
@@ -31,7 +26,7 @@ const app = new Hono();
 app.use('*', cors({
   origin: ALLOWED_ORIGINS,
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'x-admin-password'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-admin-password', 'x-auto-join'],
   credentials: true,
 }));
 
