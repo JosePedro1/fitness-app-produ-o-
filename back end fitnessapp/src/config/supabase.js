@@ -19,20 +19,30 @@ export const supabaseAdmin = serviceRoleKey
   ? createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
-  : supabase; // fallback — remove quando adicionar a variável no Render
+  : null;
 
 if (!serviceRoleKey) {
-  console.warn('[supabase] SUPABASE_SERVICE_ROLE_KEY não definida — INSERT na tabela users pode falhar (RLS).');
+  console.error('[supabase] SUPABASE_SERVICE_ROLE_KEY não definida — cadastro e reset de senha vão falhar.');
+  process.exit(1); // obrigatória: sem ela o cadastro nunca vai funcionar
 }
 
-// Valida conexão na inicialização
+// Valida conexão na inicialização usando supabaseAdmin (bypassa RLS)
 (async () => {
-  const { error } = await supabase.from('users').select('user_id').limit(1);
-  if (error) {
-    console.error('Falha na conexão com o Supabase:', error.message);
+  try {
+    const { error } = await supabaseAdmin
+      .from('users')
+      .select('user_id')
+      .limit(1);
+
+    if (error) {
+      console.error('Falha na conexão com o Supabase:', error.message);
+      process.exit(1);
+    }
+    console.log('Conexão com o Supabase estabelecida com sucesso.');
+  } catch (err) {
+    console.error('Erro inesperado ao testar conexão Supabase:', err.message);
     process.exit(1);
   }
-  console.log('Conexão com o Supabase estabelecida com sucesso.');
 })();
 
 export default supabase;

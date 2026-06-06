@@ -1,14 +1,18 @@
 /**
- * SignupPage.jsx — corrigido
+ * SignupPage.jsx — corrigido v2
  *
- * CORREÇÃO: auto-login após cadastro agora salva user_id separado no
- * localStorage, igual ao loginUser() em api-login.js.
- * Isso garante que o upload de avatar funcione imediatamente após o cadastro.
+ * CORREÇÕES:
+ * 1. Após auto-login, chama autoJoinAcademy(slug) com o token já salvo,
+ *    garantindo que o usuário seja associado à academia imediatamente.
+ *    (Antes o academy_slug era enviado no register, mas se o INSERT falhava
+ *    silenciosamente, o usuário ficava sem academia.)
+ * 2. Dupla garantia: academy_id vem pelo backend (register) E pelo
+ *    autoJoinAcademy (frontend) — o que chegar primeiro vale.
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { persistAcademySlug, consumeAcademySlug } from '../../services/api-profile';
+import { persistAcademySlug, consumeAcademySlug, autoJoinAcademy } from '../../services/api-profile';
 
 const API = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
 
@@ -51,43 +55,59 @@ export default function SignupPage() {
     const academy_slug = consumeAcademySlug();
 
     try {
+      // 1. Registra — já tenta salvar academy_id no backend
       const r = await fetch(API + '/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass, academy_slug }),
       });
+
       if (!r.ok) {
         const e = await r.json().catch(() => ({}));
         throw new Error(e.error || 'Erro ao criar conta');
       }
 
-      const suffix = academy_slug ? ' Você foi associado à academia!' : '';
-      showToast(`Conta criada!${suffix} Fazendo login...`, 'success');
+      showToast('Conta criada! Fazendo login...', 'success');
 
-      // Auto-login
-      setTimeout(async () => {
+      // 2. Auto-login
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const lr = await fetch(API + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass }),
+      });
+
+      if (!lr.ok) {
+        navigate('/login');
+        return;
+      }
+
+      const data = await lr.json();
+
+      // Salva token e dados do usuário
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('user_id',    data.user?.user_id || '');
+      localStorage.setItem('email',      data.user?.email   || email);
+
+      // 3. Associa à academia via autoJoinAcademy (com token já salvo)
+      //    Isso é a garantia dupla: mesmo se o backend falhou no INSERT,
+      //    o usuário vai ser associado agora.
+      if (academy_slug) {
         try {
-          const lr = await fetch(API + '/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password: pass }),
-          });
-          const data = await lr.json();
-
-          // ── CORRIGIDO: salva user_id separado (igual ao api-login.js loginUser) ──
-          localStorage.setItem('auth_token', data.token);
-          localStorage.setItem('user_id',    data.user?.user_id || '');
-          localStorage.setItem('email',      data.user?.email   || email);
-          // ─────────────────────────────────────────────────────────────────────────
-
-          navigate('/home');
-        } catch {
-          navigate('/login');
+          await autoJoinAcademy(academy_slug);
+          showToast(`Conta criada! Você foi associado à academia ${academy_slug}.`, 'success');
+        } catch (joinErr) {
+          // Não bloqueia o cadastro — academia pode ser associada depois no perfil
+          console.warn('autoJoinAcademy falhou:', joinErr.message);
         }
-      }, 800);
+      }
+
+      navigate('/home');
     } catch (err) {
       setErrors({ email: err.message || 'Erro ao criar conta' });
     }
+
     setLoading(false);
   }
 

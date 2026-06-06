@@ -24,6 +24,7 @@ export const register = async (c) => {
       return c.json({ error: 'Este e-mail já está registrado.' }, 400);
     }
 
+    // Cria usuário no Supabase Auth
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) return c.json({ error: error.message }, 400);
@@ -34,17 +35,24 @@ export const register = async (c) => {
     // Resolve academy_id se o slug foi informado
     let academy_id = null;
     if (academy_slug?.trim()) {
-      const { data: academy } = await supabaseAdmin
+      const { data: academy, error: acadErr } = await supabaseAdmin
         .from('academies')
         .select('id')
         .eq('slug', academy_slug.trim().toLowerCase())
         .eq('is_active', true)
         .maybeSingle();
 
-      if (academy) academy_id = academy.id;
+      if (acadErr) {
+        console.error('Erro ao buscar academia:', acadErr.message);
+      } else if (academy) {
+        academy_id = academy.id;
+      } else {
+        console.warn(`Academia com slug "${academy_slug}" não encontrada ou inativa.`);
+      }
     }
 
     // Salva na tabela users usando supabaseAdmin para bypassar RLS
+    // academy_id já vem preenchido aqui → usuário JÁ sai cadastrado na academia
     const insertPayload = { user_id, email };
     if (academy_id) insertPayload.academy_id = academy_id;
 
@@ -53,7 +61,9 @@ export const register = async (c) => {
       .insert(insertPayload);
 
     if (userError) {
-      console.error('Erro no insert de users:', userError.message);
+      console.error('Erro no insert de users:', userError.message, userError.details);
+      // Tenta remover o usuário criado no Auth para não deixar órfão
+      await supabaseAdmin.auth.admin.deleteUser(user_id).catch(() => {});
       return c.json({ error: 'Erro ao salvar usuário.' }, 500);
     }
 
@@ -137,7 +147,7 @@ export const forgotPassword = async (c) => {
 
     const resetLink = `${process.env.FRONTEND_URL || 'https://fitness-app-produ-o.vercel.app'}/reset-password?token=${token}`;
 
-    // E-mail isolado — se falhar, endpoint ainda retorna sucesso (usuário tenta de novo)
+    // E-mail isolado — se falhar, endpoint ainda retorna sucesso
     try {
       await sendEmail(
         email,
