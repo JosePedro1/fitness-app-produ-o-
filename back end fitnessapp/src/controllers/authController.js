@@ -32,7 +32,7 @@ export const register = async (c) => {
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao obter user_id.' }, 500);
 
-    // Resolve academy_id se o slug foi informado
+    // Resolve academy_id pelo slug (supabaseAdmin bypassa RLS)
     let academy_id = null;
     if (academy_slug?.trim()) {
       const { data: academy, error: acadErr } = await supabaseAdmin
@@ -46,28 +46,38 @@ export const register = async (c) => {
         console.error('Erro ao buscar academia:', acadErr.message);
       } else if (academy) {
         academy_id = academy.id;
+        console.log(`register: academy_slug="${academy_slug}" → academy_id=${academy_id}`);
       } else {
-        console.warn(`Academia com slug "${academy_slug}" não encontrada ou inativa.`);
+        console.warn(`register: academia "${academy_slug}" não encontrada ou inativa.`);
       }
     }
 
-    // Salva na tabela users usando supabaseAdmin para bypassar RLS
-    // academy_id já vem preenchido aqui → usuário JÁ sai cadastrado na academia
-    const insertPayload = { user_id, email };
-    if (academy_id) insertPayload.academy_id = academy_id;
+    // UPSERT em vez de INSERT para sobreviver a triggers do Supabase que
+    // já inserem o usuário em public.users ao criar em auth.users.
+    // onConflict: 'user_id' — se já existe, atualiza email + academy_id.
+    const upsertPayload = { user_id, email };
+    if (academy_id) upsertPayload.academy_id = academy_id;
 
-    const { error: userError } = await supabaseAdmin
+    const { error: upsertError } = await supabaseAdmin
       .from('users')
-      .insert(insertPayload);
+      .upsert(upsertPayload, { onConflict: 'user_id' });
 
-    if (userError) {
-      console.error('Erro no insert de users:', userError.message, userError.details);
-      // Tenta remover o usuário criado no Auth para não deixar órfão
+    if (upsertError) {
+      console.error('Erro no upsert de users:', upsertError.message, upsertError.details);
       await supabaseAdmin.auth.admin.deleteUser(user_id).catch(() => {});
       return c.json({ error: 'Erro ao salvar usuário.' }, 500);
     }
 
-    // E-mail de boas-vindas — fire-and-forget, erro não quebra o cadastro
+    // Se houver academy_id mas o upsert não salvou (trigger inseriu sem o campo),
+    // garante que o academy_id foi de fato persistido com um UPDATE explícito.
+    if (academy_id) {
+      await supabaseAdmin
+        .from('users')
+        .update({ academy_id })
+        .eq('user_id', user_id);
+      console.log(`register: academy_id=${academy_id} gravado para user ${user_id}`);
+    }
+
     sendRegisterEmail(email).catch((err) =>
       console.error('E-mail de cadastro falhou:', err.message)
     );
@@ -147,7 +157,6 @@ export const forgotPassword = async (c) => {
 
     const resetLink = `${process.env.FRONTEND_URL || 'https://fitness-app-produ-o.vercel.app'}/reset-password?token=${token}`;
 
-    // E-mail isolado — se falhar, endpoint ainda retorna sucesso
     try {
       await sendEmail(
         email,
@@ -186,7 +195,6 @@ export const resetPassword = async (c) => {
       return c.json({ error: 'Link expirado. Solicite uma nova recuperação.' }, 400);
     }
 
-    // auth.admin.updateUserById exige service_role — supabaseAdmin já usa essa key
     const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
       user.user_id,
       { password }
