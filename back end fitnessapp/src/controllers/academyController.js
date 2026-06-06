@@ -1,20 +1,21 @@
 /**
- * academyController.js  (versão 2 — com sistema de aprovação)
+ * academyController.js  (versão 3 — supabaseAdmin em todas as queries)
  *
- * Mudanças em relação à v1:
- *   - getProfile: inclui pending_request no retorno
- *   - joinAcademy: agora cria solicitação pendente (sem aprovação auto)
- *     Exceto quando chamado com header x-auto-join=true (fluxo do cadastro via QR)
+ * CORREÇÃO CRÍTICA:
+ *   Todas as queries de banco usam agora `supabaseAdmin` (service_role key),
+ *   que bypassa RLS. O backend já faz sua própria autenticação via JWT,
+ *   então não faz sentido usar a anon key aqui — ela não tem sessão de usuário
+ *   e o RLS bloqueava silenciosamente os UPDATEs na tabela `users`.
  */
 
-import supabase from '../config/supabase.js';
+import { supabaseAdmin } from '../config/supabase.js';
 
 // ── GET /ranking/:slug ────────────────────────────────────────────────────────
 export const getRanking = async (c) => {
   try {
     const slug = c.req.param('slug');
 
-    const { data: academy, error: acadErr } = await supabase
+    const { data: academy, error: acadErr } = await supabaseAdmin
       .from('academies')
       .select('id, name, slug, logo_url, city')
       .eq('slug', slug)
@@ -25,7 +26,7 @@ export const getRanking = async (c) => {
       return c.json({ error: 'Academia não encontrada.' }, 404);
     }
 
-    const { data: ranking, error: rankErr } = await supabase
+    const { data: ranking, error: rankErr } = await supabaseAdmin
       .from('ranking_view')
       .select('*')
       .eq('academy_slug', slug)
@@ -50,8 +51,7 @@ export const getProfile = async (c) => {
   try {
     const user = c.get('user');
 
-    // Perfil com academia atual
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .select(`
         user_id, email, display_name, avatar_url, bio,
@@ -63,8 +63,7 @@ export const getProfile = async (c) => {
 
     if (error) throw new Error(error.message);
 
-    // Solicitação pendente ou rejeitada (para mostrar estado no frontend)
-    const { data: pendingReq } = await supabase
+    const { data: pendingReq } = await supabaseAdmin
       .from('academy_join_requests')
       .select('id, status, created_at, academies(id, name, slug, city)')
       .eq('user_id', user.user_id)
@@ -100,7 +99,7 @@ export const updateProfile = async (c) => {
       return c.json({ error: 'Bio deve ter no máximo 160 caracteres.' }, 400);
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .update(updates)
       .eq('user_id', user.user_id)
@@ -116,16 +115,13 @@ export const updateProfile = async (c) => {
 };
 
 // ── POST /profile/join/:slug ──────────────────────────────────────────────────
-// Comportamento:
-//   - Header "x-auto-join: true" → fluxo do QR/cadastro → aprovação automática
-//   - Sem header → manual pelo perfil → cria solicitação pendente
 export const joinAcademy = async (c) => {
   try {
     const user   = c.get('user');
     const slug   = c.req.param('slug');
     const isAuto = c.req.header('x-auto-join') === 'true';
 
-    const { data: academy, error: acadErr } = await supabase
+    const { data: academy, error: acadErr } = await supabaseAdmin
       .from('academies')
       .select('id, name')
       .eq('slug', slug)
@@ -133,12 +129,13 @@ export const joinAcademy = async (c) => {
       .single();
 
     if (acadErr || !academy) {
+      console.warn(`joinAcademy: academia "${slug}" não encontrada. acadErr:`, acadErr?.message);
       return c.json({ error: 'Academia não encontrada.' }, 404);
     }
 
     // ── Fluxo automático (QR / cadastro) ─────────────────────────────────────
     if (isAuto) {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('users')
         .update({ academy_id: academy.id })
         .eq('user_id', user.user_id)
@@ -146,6 +143,8 @@ export const joinAcademy = async (c) => {
         .single();
 
       if (error) throw new Error(error.message);
+
+      console.log(`autoJoinAcademy: user ${user.user_id} → academy ${academy.id} (${slug})`);
 
       return c.json({
         message: `Bem-vindo à ${academy.name}!`,
@@ -155,7 +154,7 @@ export const joinAcademy = async (c) => {
     }
 
     // ── Fluxo manual → solicitação pendente ──────────────────────────────────
-    const { error: upsertErr } = await supabase
+    const { error: upsertErr } = await supabaseAdmin
       .from('academy_join_requests')
       .upsert({
         user_id:    user.user_id,
@@ -181,7 +180,7 @@ export const joinAcademy = async (c) => {
 // ── GET /academies ────────────────────────────────────────────────────────────
 export const listAcademies = async (c) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('academies')
       .select('id, name, slug, city, logo_url')
       .eq('is_active', true)
@@ -206,7 +205,7 @@ export const createAcademy = async (c) => {
 
     const slugClean = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('academies')
       .insert({ name: name.trim(), slug: slugClean, city, logo_url })
       .select()
@@ -230,7 +229,7 @@ export const createAcademy = async (c) => {
 export const deleteAcademy = async (c) => {
   try {
     const id = c.req.param('id');
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('academies')
       .update({ is_active: false })
       .eq('id', id);

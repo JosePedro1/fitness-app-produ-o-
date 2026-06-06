@@ -1,5 +1,12 @@
+/**
+ * authMiddleware.js
+ *
+ * CORREÇÃO: usa supabaseAdmin (service_role) para buscar o usuário,
+ * evitando que RLS da anon key bloqueie silenciosamente o lookup.
+ */
+
 import jwt from 'jsonwebtoken';
-import supabase from '../config/supabase.js';
+import { supabaseAdmin } from '../config/supabase.js';
 
 export const authenticate = async (c, next) => {
   const authHeader = c.req.header('Authorization');
@@ -19,7 +26,7 @@ export const authenticate = async (c, next) => {
     return c.json({ error: 'Token inválido.' }, 401);
   }
 
-  const { data: user, error } = await supabase
+  const { data: user, error } = await supabaseAdmin
     .from('users')
     .select('user_id, email')
     .eq('user_id', decoded.sub)
