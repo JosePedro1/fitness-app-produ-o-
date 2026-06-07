@@ -19,10 +19,10 @@ const CATALOG = {
     { name: 'Supino Declinado',   imgs: img('Decline_Barbell_Bench_Press'),               muscles: 'Peitoral inferior, Tríceps',                     equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Define a porção inferior do peitoral. Cuidado com o pescoço.' },
     { name: 'Crucifixo',         imgs: img('Dumbbell_Flyes'),                             muscles: 'Peitoral maior (estiramento)',                   equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
     { name: 'Crossover no Cabo',  imgs: img('Cable_Crossover'),                           muscles: 'Peitoral maior, Serrátil anterior',              equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cruze as mãos ao final para contração máxima.' },
-    { name: 'Flexão de Braços',   imgs: img('Push-Up'),                                   muscles: 'Peitoral, Tríceps, Core',                        equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
+    { name: 'Flexão de Braços',   imgs: img('Clock_Push-Up'),                                   muscles: 'Peitoral, Tríceps, Core',                        equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
   ],
   Costas: [
-    { name: 'Barra Fixa',         imgs: img('Pull-Up'),                     muscles: 'Latíssimo, Bíceps, Romboides',                  equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
+    { name: 'Barra Fixa',         imgs: img('Band_Assisted_Pull-Up'),                                   muscles: 'Latíssimo, Bíceps, Romboides',                  equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
     { name: 'Remada Curvada',     imgs: img('Bent_Over_Barbell_Row'),                     muscles: 'Latíssimo, Trapézio médio, Romboides',          equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
     { name: 'Remada Unilateral',  imgs: img('One-Arm_Dumbbell_Row'),                      muscles: 'Latíssimo, Romboides, Bíceps',                  equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
     { name: 'Puxada Frontal',     imgs: img('Wide-Grip_Lat_Pulldown'),                    muscles: 'Latíssimo, Bíceps, Teres maior',                equipment: 'Pulley',         difficulty: 'Iniciante',     tip: 'Puxe à frente do rosto. Ligeira inclinação do tronco para trás.' },
@@ -85,11 +85,11 @@ const CATALOG = {
   ],
   Glúteos: [
     { name: 'Hip Thrust',         imgs: img('Barbell_Hip_Thrust'),         muscles: 'Glúteo máximo (isolamento)',              equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Aperte os glúteos no topo. Quadril paralelo ao chão.' },
-    { name: 'Agachamento Sumô',   imgs: img('Sumo_Squat'),                 muscles: 'Glúteos, Adutores, Quadríceps',           equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
+    { name: 'Agachamento Sumô',   imgs: img('Plie_Dumbbell_Squat'),                 muscles: 'Glúteos, Adutores, Quadríceps',           equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
     { name: 'Stiff para Glúteos', imgs: img('Romanian_Deadlift'),          muscles: 'Glúteos, Isquiotibiais',                  equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Empurre o quadril para trás na descida. Sinta o glúteo alongar.' },
-    { name: 'Abdução no Cabo',    imgs: img('Cable_Hip_Abduction'),        muscles: 'Glúteo médio e mínimo',                   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
+    { name: 'Abdução no Cabo',    imgs: img('Side_Leg_Raises'),        muscles: 'Glúteo médio e mínimo',                   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
     { name: 'Glúteo no Cabo',     imgs: img('One-Legged_Cable_Kickback'),  muscles: 'Glúteo máximo (unilateral)',              equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Tronco levemente inclinado. Extensão completa do quadril.' },
-    { name: 'Avanço Reverso',     imgs: img('Reverse_Lunge'),              muscles: 'Glúteos, Quadríceps (menos carga no joelho)',equipment: 'Halteres',    difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
+    { name: 'Avanço Reverso',     imgs: img('Crossover_Reverse_Lunge'),              muscles: 'Glúteos, Quadríceps (menos carga no joelho)',equipment: 'Halteres',    difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
   ],
 };
 
