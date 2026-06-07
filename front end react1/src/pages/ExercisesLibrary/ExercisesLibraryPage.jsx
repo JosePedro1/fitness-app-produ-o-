@@ -30,14 +30,14 @@ const CATALOG = {
     { name: 'Supino Reto',        searchName: 'barbell bench press',                 muscles: 'Peitoral maior, Tríceps, Deltóide anterior',  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Escápulas retraídas, lombar levemente arqueada. Cotovelos a 75°.' },
     { name: 'Supino Inclinado',   searchName: 'barbell incline bench press',          muscles: 'Peitoral superior, Tríceps',                  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Banco a 30–45°. Foco no feixe clavicular do peitoral.' },
     { name: 'Supino Declinado',   searchName: 'decline barbell bench press',          muscles: 'Peitoral inferior, Tríceps',                  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Define a porção inferior do peitoral. Cuidado com o pescoço.' },
-    { name: 'Crucifixo',          searchName: 'dumbbell flyes',                       muscles: 'Peitoral maior (estiramento)',                equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
+    { name: 'Crucifixo',          searchName: 'dumbbell fly',                         muscles: 'Peitoral maior (estiramento)',                equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
     { name: 'Crossover no Cabo',  searchName: 'cable crossover',                      muscles: 'Peitoral maior, Serrátil anterior',           equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cruze as mãos ao final para contração máxima.' },
     { name: 'Flexão de Braços',   searchName: 'push up',                              muscles: 'Peitoral, Tríceps, Core',                    equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
   ],
   Costas: [
     { name: 'Barra Fixa',         searchName: 'pull up',                              muscles: 'Latíssimo, Bíceps, Romboides',                equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
-    { name: 'Remada Curvada',     searchName: 'bent over barbell row',                muscles: 'Latíssimo, Trapézio médio, Romboides',       equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
-    { name: 'Remada Unilateral',  searchName: 'one arm dumbbell row',                 muscles: 'Latíssimo, Romboides, Bíceps',               equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
+    { name: 'Remada Curvada',     searchName: 'barbell bent over row',                muscles: 'Latíssimo, Trapézio médio, Romboides',       equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
+    { name: 'Remada Unilateral',  searchName: 'dumbbell one arm row',                 muscles: 'Latíssimo, Romboides, Bíceps',               equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
     { name: 'Puxada Frontal',     searchName: 'wide grip lat pulldown',               muscles: 'Latíssimo, Bíceps, Teres maior',             equipment: 'Pulley',         difficulty: 'Iniciante',     tip: 'Puxe à frente do rosto. Ligeira inclinação do tronco para trás.' },
     { name: 'Remada Cavalinho',   searchName: 't bar row',                            muscles: 'Latíssimo, Trapézio, Lombares',              equipment: 'Barra T',        difficulty: 'Intermediário', tip: 'Excelente para espessura de costas. Mantenha lombar neutra.' },
     { name: 'Levantamento Terra', searchName: 'barbell deadlift',                     muscles: 'Lombares, Glúteos, Isquiotibiais, Trapézio', equipment: 'Barra',          difficulty: 'Avançado',      tip: 'Barra rente à perna, quadril empurra para trás na descida.' },
@@ -61,7 +61,7 @@ const CATALOG = {
   Panturrilha: [
     { name: 'Panturrilha em Pé',        searchName: 'standing calf raise',            muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Barra/Máquina',  difficulty: 'Iniciante', tip: 'Desça o calcanhar abaixo da plataforma para amplitude total.' },
     { name: 'Panturrilha Sentado',      searchName: 'seated calf raise',              muscles: 'Sóleo (joelho dobrado)',                    equipment: 'Máquina',        difficulty: 'Iniciante', tip: 'Joelho a 90° enfatiza o sóleo, músculo mais profundo da panturrilha.' },
-    { name: 'Panturrilha no Leg Press', searchName: 'calf press leg press',           muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Leg Press',      difficulty: 'Iniciante', tip: 'Apenas os dedos dos pés na plataforma. Movimento completo.' },
+    { name: 'Panturrilha no Leg Press', searchName: 'calf press on leg press',         muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Leg Press',      difficulty: 'Iniciante', tip: 'Apenas os dedos dos pés na plataforma. Movimento completo.' },
     { name: 'Panturrilha Unilateral',   searchName: 'donkey calf raise',              muscles: 'Gastrocnêmio (unilateral)',                 equipment: 'Peso corporal',  difficulty: 'Iniciante', tip: 'Excelente para corrigir assimetrias entre as pernas.' },
   ],
   Ombros: [
@@ -74,7 +74,7 @@ const CATALOG = {
   ],
   Bíceps: [
     { name: 'Rosca Direta',       searchName: 'barbell curl',                         muscles: 'Bíceps braquial, Braquial',                 equipment: 'Barra',         difficulty: 'Iniciante',     tip: 'Cotovelos fixos ao lado do corpo. Sem balanço de tronco.' },
-    { name: 'Rosca Alternada',    searchName: 'dumbbell alternate bicep curl',        muscles: 'Bíceps braquial, Braquial',                 equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Gire o punho na subida (supinação). Aumenta o pico de contração.' },
+    { name: 'Rosca Alternada',    searchName: 'alternate dumbbell bicep curl',        muscles: 'Bíceps braquial, Braquial',                 equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Gire o punho na subida (supinação). Aumenta o pico de contração.' },
     { name: 'Rosca Martelo',      searchName: 'hammer curl',                          muscles: 'Braquiorradial, Bíceps',                   equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Punho neutro (polegar para cima). Trabalha mais o braquiorradial.' },
     { name: 'Rosca Concentrada',  searchName: 'concentration curl',                  muscles: 'Bíceps (isolamento)',                       equipment: 'Haltere',       difficulty: 'Iniciante',     tip: 'Cotovelo apoiado na coxa. Máximo isolamento do bíceps.' },
     { name: 'Rosca Scott',        searchName: 'preacher curl',                        muscles: 'Bíceps (porção longa)',                    equipment: 'Barra/Máquina', difficulty: 'Intermediário', tip: 'Braço totalmente apoiado. Evita trapaça e maximiza isolamento.' },
@@ -82,10 +82,10 @@ const CATALOG = {
   ],
   Tríceps: [
     { name: 'Tríceps Testa',               searchName: 'skull crusher',               muscles: 'Tríceps (porção longa e medial)',           equipment: 'Barra/Halteres', difficulty: 'Intermediário', tip: 'Cotovelos apontados para cima. Baixe a barra à testa com controle.' },
-    { name: 'Tríceps Corda',               searchName: 'cable rope triceps extension', muscles: 'Tríceps (porção lateral)',                 equipment: 'Cabo + corda',   difficulty: 'Iniciante',     tip: 'Separe a corda no final para maior ativação da cabeça lateral.' },
+    { name: 'Tríceps Corda',               searchName: 'rope pushdown',               muscles: 'Tríceps (porção lateral)',                 equipment: 'Cabo + corda',   difficulty: 'Iniciante',     tip: 'Separe a corda no final para maior ativação da cabeça lateral.' },
     { name: 'Tríceps Francês',             searchName: 'dumbbell tricep extension',   muscles: 'Tríceps (porção longa)',                   equipment: 'Haltere',        difficulty: 'Intermediário', tip: 'Braços verticais. Foco total na cabeça longa do tríceps.' },
     { name: 'Mergulho no Banco',           searchName: 'bench dip',                   muscles: 'Tríceps, Peitoral inferior',               equipment: 'Banco',          difficulty: 'Iniciante',     tip: 'Quadris próximos ao banco. Desça até o cotovelo a 90°.' },
-    { name: 'Tríceps Coice',               searchName: 'tricep dumbbell kickback',    muscles: 'Tríceps (porção lateral)',                 equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Cotovelo fixo ao lado do tronco. Extensão completa no final.' },
+    { name: 'Tríceps Coice',               searchName: 'dumbbell kickback',           muscles: 'Tríceps (porção lateral)',                 equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Cotovelo fixo ao lado do tronco. Extensão completa no final.' },
     { name: 'Extensão de Tríceps no Cabo', searchName: 'cable triceps pushdown',      muscles: 'Tríceps (porção longa)',                   equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cotovelos fixos. Contração máxima no final do movimento.' },
   ],
   Abdômen: [
@@ -98,8 +98,8 @@ const CATALOG = {
   ],
   Glúteos: [
     { name: 'Hip Thrust',         searchName: 'barbell hip thrust',                   muscles: 'Glúteo máximo (isolamento)',               equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Aperte os glúteos no topo. Quadril paralelo ao chão.' },
-    { name: 'Agachamento Sumô',   searchName: 'plie dumbbell squat',                  muscles: 'Glúteos, Adutores, Quadríceps',            equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
-    { name: 'Stiff para Glúteos', searchName: 'stiff leg deadlift',                   muscles: 'Glúteos, Isquiotibiais',                   equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Empurre o quadril para trás na descida. Sinta o glúteo alongar.' },
+    { name: 'Agachamento Sumô',   searchName: 'plie squat',                           muscles: 'Glúteos, Adutores, Quadríceps',            equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
+    { name: 'Stiff para Glúteos', searchName: 'barbell stiff leg deadlift',           muscles: 'Glúteos, Isquiotibiais',                   equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Empurre o quadril para trás na descida. Sinta o glúteo alongar.' },
     { name: 'Abdução no Cabo',    searchName: 'cable hip abduction',                  muscles: 'Glúteo médio e mínimo',                   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
     { name: 'Glúteo no Cabo',     searchName: 'cable kickback',                       muscles: 'Glúteo máximo (unilateral)',               equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Tronco levemente inclinado. Extensão completa do quadril.' },
     { name: 'Avanço Reverso',     searchName: 'reverse lunge',                        muscles: 'Glúteos, Quadríceps (menos carga no joelho)', equipment: 'Halteres',  difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
@@ -235,7 +235,9 @@ const ExercisesLibraryPage = () => {
       try {
         const allExercises = Object.values(CATALOG).flat();
         const searches     = allExercises.map(ex => ex.searchName);
-        const BATCH        = 10;
+        // BATCH menor + delay entre batches → evita rate limit da ExerciseDB
+        const BATCH        = 5;
+        const DELAY_MS     = 400;
         const map          = {};
 
         for (let i = 0; i < searches.length; i += BATCH) {
@@ -257,6 +259,10 @@ const ExercisesLibraryPage = () => {
               }
             })
           );
+          // Pausa entre batches para não estourar o rate limit da ExerciseDB
+          if (i + BATCH < searches.length) {
+            await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+          }
         }
 
         setGifMap(map);
