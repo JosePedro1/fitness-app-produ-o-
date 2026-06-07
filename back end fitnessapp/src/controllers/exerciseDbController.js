@@ -3,9 +3,8 @@
  * Proxy para a ExerciseDB (oss.exercisedb.dev).
  * O frontend não pode chamar essa API diretamente por CORS — passa por aqui.
  *
- * CORREÇÃO: URL agora usa /name/{name} (rota correta da API)
- *           em vez de ?name=X (parâmetro que a API ignora/interpreta errado).
- * CACHE:    Map em memória evita chamadas repetidas e contorna rate limit.
+ * URL CORRETA: ?name={name}&limit=1  (query param, NÃO /name/ como rota)
+ * CACHE:       Map em memória evita chamadas repetidas e contorna rate limit.
  */
 
 const EDB_BASE = 'https://oss.exercisedb.dev/api/v1/exercises';
@@ -30,10 +29,13 @@ export const getExerciseGif = async (c) => {
   }
 
   try {
-    // CORREÇÃO CRÍTICA: /name/{name} é a rota correta para busca por nome.
-    // Antes estava errado: ?name=X (a API ignora esse query param).
-    const url = `${EDB_BASE}/name/${encodeURIComponent(name)}?limit=1`;
-    const res  = await fetch(url);
+    // URL CORRETA para oss.exercisedb.dev: query param ?name=X
+    // ERRADO: /name/X (rota que NÃO existe nessa versão da API)
+    const url = `${EDB_BASE}?name=${encodeURIComponent(name)}&limit=1&offset=0`;
+
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+    });
 
     if (!res.ok) {
       gifCache.set(name, null);
@@ -41,6 +43,9 @@ export const getExerciseGif = async (c) => {
     }
 
     const data = await res.json();
+
+    // oss.exercisedb.dev retorna { success, exercises: [...], total }
+    // mas fallback para array direto por segurança
     const list = Array.isArray(data)
       ? data
       : (data.exercises ?? data.data ?? []);
