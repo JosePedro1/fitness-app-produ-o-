@@ -34,7 +34,7 @@ const CATALOG = {
     { name: 'Leg Press',           imgs: img('Leg_Press'),                                 muscles: 'Quadríceps, Glúteos',                           equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Pés no centro da plataforma. Não trave os joelhos no topo.' },
     { name: 'Cadeira Extensora',   imgs: img('Leg_Extensions'),                            muscles: 'Quadríceps (isolamento)',                       equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Contração total no topo. Ideal como finalizador de treino.' },
     { name: 'Avanço',              imgs: img('Barbell_Lunge'),                             muscles: 'Quadríceps, Glúteos, Isquiotibiais',            equipment: 'Halteres/Barra', difficulty: 'Intermediário', tip: 'Joelho da frente não deve ultrapassar a ponta do pé.' },
-    { name: 'Agachamento Hack',    imgs: img('Barbell_Hack_Squat'),                        muscles: 'Quadríceps, Glúteos',                           equipment: 'Máquina',        difficulty: 'Intermediário', tip: 'Enfatiza o vasto medial (teardrop). Pés afastados na largura dos ombros.' },
+    { name: 'Agachamento Hack',    imgs: img('Smith_Machine_Squat'),                        muscles: 'Quadríceps, Glúteos',                           equipment: 'Máquina',        difficulty: 'Intermediário', tip: 'Enfatiza o vasto medial (teardrop). Pés afastados na largura dos ombros.' },
     { name: 'Agachamento Búlgaro', imgs: img('Split_Squat_with_Dumbbells'),                muscles: 'Quadríceps, Glúteos (unilateral)',              equipment: 'Halteres',       difficulty: 'Avançado',      tip: 'Pé traseiro elevado. Excelente para corrigir desequilíbrios.' },
   ],
   Posterior: [
