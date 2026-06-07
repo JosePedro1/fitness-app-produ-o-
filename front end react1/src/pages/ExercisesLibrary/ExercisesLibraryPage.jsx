@@ -4,11 +4,10 @@ import { useLocation } from 'react-router-dom';
 import { getRoutines } from '../../services/api-routines';
 import api from '../../services/api';
 
-// ── ExerciseDB Free V1 — bonequinho 3D, sem API key ───────────────────────────
-const EDB_BASE  = 'https://oss.exercisedb.dev/api/v1/exercises';
-const PAGE_SIZE = 100;   // máximo seguro por página
+// ── ExerciseDB Free V1 ────────────────────────────────────────────────────────
+const EDB_BASE = 'https://oss.exercisedb.dev/api/v1/exercises';
 
-// ── Normalização: remove acentos, hífens, underscores, caixa ─────────────────
+// ── Normalização ──────────────────────────────────────────────────────────────
 const normalize = (s) =>
   s.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -17,30 +16,10 @@ const normalize = (s) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-// ── Fuzzy match: retorna gifUrl com maior sobreposição de palavras ─────────────
+// ── Busca direta por searchName normalizado ───────────────────────────────────
 const findGifUrl = (searchName, gifMap) => {
-  const norm = normalize(searchName);
-  const keys = Object.keys(gifMap);
-  if (!keys.length) return null;
-
-  // 1. Exato
-  if (gifMap[norm]) return gifMap[norm];
-
-  const normWords = norm.split(' ').filter(w => w.length > 2);
-
-  // 2. Contém o termo inteiro
-  const exact = keys.find(k => k.includes(norm) || norm.includes(k));
-  if (exact) return gifMap[exact];
-
-  // 3. Pontuação por palavras coincidentes
-  let best = { score: -1, key: null };
-  for (const k of keys) {
-    const score = normWords.filter(w => k.includes(w)).length;
-    if (score > best.score) best = { score, key: k };
-  }
-  if (best.score >= 2) return gifMap[best.key];
-
-  return null;
+  if (!searchName || !Object.keys(gifMap).length) return null;
+  return gifMap[normalize(searchName)] ?? null;
 };
 
 // ── Catálogo ──────────────────────────────────────────────────────────────────
@@ -237,64 +216,61 @@ const ExercisesLibraryPage = () => {
   const [toast,            setToast]            = useState(null);
   const [deepLinkBanner,   setDeepLinkBanner]   = useState(null);
 
-  const [gifMap,     setGifMap]     = useState({});
-  const [apiLoading, setApiLoading] = useState(true);
-  const [apiError,   setApiError]   = useState(false);
-  const [totalLoaded,setTotalLoaded]= useState(0);
+  const [gifMap,      setGifMap]      = useState({});
+  const [apiLoading,  setApiLoading]  = useState(true);
+  const [apiError,    setApiError]    = useState(false);
+  const [totalLoaded, setTotalLoaded] = useState(0);
   const fetchedRef = useRef(false);
 
   const location = useLocation();
 
-  // ── Carrega TODOS os exercícios paginando até o fim ────────────────────────
+  // ── Busca apenas os GIFs do catálogo, por nome ────────────────────────────
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
-    const loadAll = async () => {
+    const loadCatalogGifs = async () => {
       try {
-        const all = [];
-        let offset = 0;
+        const allExercises = Object.values(CATALOG).flat();
+        const searches = allExercises.map(ex => ex.searchName);
 
-        while (true) {
-          const url = `${EDB_BASE}?limit=${PAGE_SIZE}&offset=${offset}`;
-          const res  = await fetch(url);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-
-          // A API pode retornar array direto ou { exercises: [...] } ou { data: [...] }
-          const page = Array.isArray(data)
-            ? data
-            : (data.exercises ?? data.data ?? data.results ?? []);
-
-          if (!page.length) break;
-          all.push(...page);
-          setTotalLoaded(all.length); // progresso em tempo real
-
-          if (page.length < PAGE_SIZE) break; // última página
-          offset += PAGE_SIZE;
-        }
-
+        const BATCH = 10;
         const map = {};
-        all.forEach(ex => {
-          if (ex.name && ex.gifUrl) {
-            map[normalize(ex.name)] = ex.gifUrl;
-          }
-        });
 
-        // Debug: loga os primeiros nomes para ajustar searchNames se necessário
-        console.log('[ExerciseDB] nomes carregados (primeiros 20):',
-          Object.keys(map).slice(0, 20));
+        for (let i = 0; i < searches.length; i += BATCH) {
+          const batch = searches.slice(i, i + BATCH);
+          await Promise.all(
+            batch.map(async (searchName) => {
+              try {
+                const res = await fetch(
+                  `${EDB_BASE}?name=${encodeURIComponent(searchName)}&limit=1`
+                );
+                if (!res.ok) return;
+                const data = await res.json();
+                const list = Array.isArray(data)
+                  ? data
+                  : (data.exercises ?? data.data ?? []);
+                if (list[0]?.gifUrl) {
+                  map[normalize(searchName)] = list[0].gifUrl;
+                  setTotalLoaded(prev => prev + 1);
+                }
+              } catch {
+                // silencia erro individual — o exercício fica sem GIF
+              }
+            })
+          );
+        }
 
         setGifMap(map);
       } catch (err) {
-        console.warn('[ExerciseDB] erro ao carregar:', err);
+        console.warn('[ExerciseDB] erro:', err);
         setApiError(true);
       } finally {
         setApiLoading(false);
       }
     };
 
-    loadAll();
+    loadCatalogGifs();
   }, []);
 
   // ── Deep link ──────────────────────────────────────────────────────────────
@@ -361,7 +337,11 @@ const ExercisesLibraryPage = () => {
               ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
               : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
           }`}>
-            {apiError ? 'GIFs offline' : apiLoading ? `Carregando GIFs… ${totalLoaded}` : `${totalLoaded} GIFs prontos`}
+            {apiError
+              ? 'GIFs offline'
+              : apiLoading
+              ? `Carregando GIFs… ${totalLoaded}/${Object.values(CATALOG).flat().length}`
+              : `${totalLoaded} GIFs prontos`}
           </span>
         </div>
 
@@ -382,9 +362,16 @@ const ExercisesLibraryPage = () => {
             {Object.keys(CATALOG).map(group => (
               <button
                 key={group}
-                onClick={() => { setSelectedGroup(group); setSelectedExercise(null); setSelectedData(null); setDeepLinkBanner(null); }}
+                onClick={() => {
+                  setSelectedGroup(group);
+                  setSelectedExercise(null);
+                  setSelectedData(null);
+                  setDeepLinkBanner(null);
+                }}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
-                  selectedGroup === group ? 'bg-indigo-600 text-white' : 'bg-black/20 text-gray-300 hover:bg-black/40'
+                  selectedGroup === group
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-black/20 text-gray-300 hover:bg-black/40'
                 }`}
               >
                 {group}<ChevronRight className="w-4 h-4" />
@@ -400,11 +387,14 @@ const ExercisesLibraryPage = () => {
                 {CATALOG[selectedGroup].map(exercise => (
                   <div
                     key={exercise.name}
-                    role="button" tabIndex={0}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleSelectExercise(exercise)}
                     onKeyDown={e => e.key === 'Enter' && handleSelectExercise(exercise)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer select-none ${
-                      selectedExercise === exercise.name ? 'bg-indigo-600 text-white' : 'bg-black/20 text-gray-300 hover:bg-black/40'
+                      selectedExercise === exercise.name
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-black/20 text-gray-300 hover:bg-black/40'
                     }`}
                   >
                     <span>{exercise.name}</span>
@@ -413,7 +403,9 @@ const ExercisesLibraryPage = () => {
                         onClick={(e) => handleAddToRoutine(e, exercise.name)}
                         className="p-1 rounded bg-black/30 hover:bg-indigo-600/50 transition-colors"
                         title="Adicionar à rotina"
-                      ><Plus className="w-3.5 h-3.5" /></button>
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
                       <ChevronRight className="w-4 h-4 opacity-60" />
                     </div>
                   </div>
@@ -460,14 +452,22 @@ const ExercisesLibraryPage = () => {
             ) : (
               <div className="flex flex-col gap-y-2">
                 {routines.map(routine => (
-                  <button key={routine.id} onClick={() => handleConfirmAdd(routine.id)}
-                    className="w-full px-4 py-2.5 bg-black/30 hover:bg-indigo-600/30 text-gray-200 text-sm rounded-md border border-gray-700 hover:border-indigo-500 text-left transition-all">
+                  <button
+                    key={routine.id}
+                    onClick={() => handleConfirmAdd(routine.id)}
+                    className="w-full px-4 py-2.5 bg-black/30 hover:bg-indigo-600/30 text-gray-200 text-sm rounded-md border border-gray-700 hover:border-indigo-500 text-left transition-all"
+                  >
                     {routine.name}
                   </button>
                 ))}
               </div>
             )}
-            <button onClick={() => setShowRoutineModal(false)} className="text-gray-500 hover:text-gray-300 text-sm text-center">Cancelar</button>
+            <button
+              onClick={() => setShowRoutineModal(false)}
+              className="text-gray-500 hover:text-gray-300 text-sm text-center"
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       )}
