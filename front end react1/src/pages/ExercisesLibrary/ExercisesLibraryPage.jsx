@@ -17,12 +17,12 @@ const CATALOG = {
     { name: 'Supino Reto',        imgs: img('Barbell_Bench_Press_-_Medium_Grip'),         muscles: 'Peitoral maior, Tríceps, Deltóide anterior',     equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Escápulas retraídas, lombar levemente arqueada. Cotovelos a 75°.' },
     { name: 'Supino Inclinado',   imgs: img('Barbell_Incline_Bench_Press_-_Medium_Grip'), muscles: 'Peitoral superior, Tríceps',                     equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Banco a 30–45°. Foco no feixe clavicular do peitoral.' },
     { name: 'Supino Declinado',   imgs: img('Decline_Barbell_Bench_Press'),               muscles: 'Peitoral inferior, Tríceps',                     equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Define a porção inferior do peitoral. Cuidado com o pescoço.' },
-    { name: 'Crucifixo',         imgs: img('Decline_Dumbbell_Flyes'),                    muscles: 'Peitoral maior (estiramento)',                   equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
+    { name: 'Crucifixo',         imgs: img('Dumbbell_Flyes'),                             muscles: 'Peitoral maior (estiramento)',                   equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
     { name: 'Crossover no Cabo',  imgs: img('Cable_Crossover'),                           muscles: 'Peitoral maior, Serrátil anterior',              equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cruze as mãos ao final para contração máxima.' },
-    { name: 'Flexão de Braços',   imgs: img('Clock_Push-Up'),                             muscles: 'Peitoral, Tríceps, Core',                        equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
+    { name: 'Flexão de Braços',   imgs: img('Push-Up'),                                   muscles: 'Peitoral, Tríceps, Core',                        equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
   ],
   Costas: [
-    { name: 'Barra Fixa',         imgs: img('Band_Assisted_Pull-Up'),                     muscles: 'Latíssimo, Bíceps, Romboides',                  equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
+    { name: 'Barra Fixa',         imgs: img('Pull-Up'),                     muscles: 'Latíssimo, Bíceps, Romboides',                  equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
     { name: 'Remada Curvada',     imgs: img('Bent_Over_Barbell_Row'),                     muscles: 'Latíssimo, Trapézio médio, Romboides',          equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
     { name: 'Remada Unilateral',  imgs: img('One-Arm_Dumbbell_Row'),                      muscles: 'Latíssimo, Romboides, Bíceps',                  equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
     { name: 'Puxada Frontal',     imgs: img('Wide-Grip_Lat_Pulldown'),                    muscles: 'Latíssimo, Bíceps, Teres maior',                equipment: 'Pulley',         difficulty: 'Iniciante',     tip: 'Puxe à frente do rosto. Ligeira inclinação do tronco para trás.' },
@@ -34,7 +34,7 @@ const CATALOG = {
     { name: 'Leg Press',           imgs: img('Leg_Press'),                                 muscles: 'Quadríceps, Glúteos',                           equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Pés no centro da plataforma. Não trave os joelhos no topo.' },
     { name: 'Cadeira Extensora',   imgs: img('Leg_Extensions'),                            muscles: 'Quadríceps (isolamento)',                       equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Contração total no topo. Ideal como finalizador de treino.' },
     { name: 'Avanço',              imgs: img('Barbell_Lunge'),                             muscles: 'Quadríceps, Glúteos, Isquiotibiais',            equipment: 'Halteres/Barra', difficulty: 'Intermediário', tip: 'Joelho da frente não deve ultrapassar a ponta do pé.' },
-    { name: 'Agachamento Hack',    imgs: img('Smith_Machine_Squat'),                        muscles: 'Quadríceps, Glúteos',                           equipment: 'Máquina',        difficulty: 'Intermediário', tip: 'Enfatiza o vasto medial (teardrop). Pés afastados na largura dos ombros.' },
+    { name: 'Agachamento Hack',    imgs: img('Smith_Machine_Squat'),                       muscles: 'Quadríceps, Glúteos',                           equipment: 'Máquina',        difficulty: 'Intermediário', tip: 'Enfatiza o vasto medial (teardrop). Pés afastados na largura dos ombros.' },
     { name: 'Agachamento Búlgaro', imgs: img('Split_Squat_with_Dumbbells'),                muscles: 'Quadríceps, Glúteos (unilateral)',              equipment: 'Halteres',       difficulty: 'Avançado',      tip: 'Pé traseiro elevado. Excelente para corrigir desequilíbrios.' },
   ],
   Posterior: [
@@ -73,10 +73,10 @@ const CATALOG = {
     { name: 'Tríceps Francês',               imgs: img('Dumbbell_Tricep_Extension_-Pronated_Grip'),muscles: 'Tríceps (porção longa)',           equipment: 'Haltere',        difficulty: 'Intermediário', tip: 'Braços verticais. Foco total na cabeça longa do tríceps.' },
     { name: 'Mergulho no Banco',             imgs: img('Bench_Dips'),                              muscles: 'Tríceps, Peitoral inferior',       equipment: 'Banco',          difficulty: 'Iniciante',     tip: 'Quadris próximos ao banco. Desça até o cotovelo a 90°.' },
     { name: 'Tríceps Coice',                 imgs: img('Tricep_Dumbbell_Kickback'),                muscles: 'Tríceps (porção lateral)',         equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Cotovelo fixo ao lado do tronco. Extensão completa no final.' },
-    { name: 'Extensão de Tríceps no Cabo',   imgs: img('Kneeling_Cable_Triceps_Extension'),        muscles: 'Tríceps (porção longa)',           equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cotovelos próximos à cabeça. Alongamento máximo da porção longa.' },
+    { name: 'Extensão de Tríceps no Cabo',   imgs: img('Cable_Rope_Overhead_Triceps_Extension'),   muscles: 'Tríceps (porção longa)',           equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cotovelos próximos à cabeça. Alongamento máximo da porção longa.' },
   ],
   Abdômen: [
-    { name: 'Abdominal Crunch',  imgs: img('Ab_Crunch_Machine'),      muscles: 'Reto abdominal',                   equipment: 'Máquina/Chão', difficulty: 'Iniciante',     tip: 'Enrole o tronco. Não puxe o pescoço com as mãos.' },
+    { name: 'Abdominal Crunch',  imgs: img('Crunches'),                muscles: 'Reto abdominal',                   equipment: 'Máquina/Chão', difficulty: 'Iniciante',     tip: 'Enrole o tronco. Não puxe o pescoço com as mãos.' },
     { name: 'Prancha',           imgs: img('Plank'),                   muscles: 'Core completo, Estabilizadores',  equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Quadril neutro — não suba nem deixe cair. Respire normalmente.' },
     { name: 'Elevação de Pernas',imgs: img('Hanging_Leg_Raise'),       muscles: 'Reto inferior, Flexores do quadril',equipment: 'Barra fixa', difficulty: 'Intermediário', tip: 'Suba as pernas à 90°. Controle a descida sem balanço.' },
     { name: 'Russian Twist',     imgs: img('Russian_Twist'),           muscles: 'Oblíquos, Reto abdominal',        equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Gire o tronco, não só os braços. Pés podem ser elevados.' },
@@ -85,11 +85,11 @@ const CATALOG = {
   ],
   Glúteos: [
     { name: 'Hip Thrust',         imgs: img('Barbell_Hip_Thrust'),         muscles: 'Glúteo máximo (isolamento)',              equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Aperte os glúteos no topo. Quadril paralelo ao chão.' },
-    { name: 'Agachamento Sumô',   imgs: img('Plie_Dumbbell_Squat'),        muscles: 'Glúteos, Adutores, Quadríceps',           equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
+    { name: 'Agachamento Sumô',   imgs: img('Sumo_Squat'),                 muscles: 'Glúteos, Adutores, Quadríceps',           equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
     { name: 'Stiff para Glúteos', imgs: img('Romanian_Deadlift'),          muscles: 'Glúteos, Isquiotibiais',                  equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Empurre o quadril para trás na descida. Sinta o glúteo alongar.' },
-    { name: 'Abdução no Cabo',    imgs: img('Side_Leg_Raises'),            muscles: 'Glúteo médio e mínimo',                   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
+    { name: 'Abdução no Cabo',    imgs: img('Cable_Hip_Abduction'),        muscles: 'Glúteo médio e mínimo',                   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
     { name: 'Glúteo no Cabo',     imgs: img('One-Legged_Cable_Kickback'),  muscles: 'Glúteo máximo (unilateral)',              equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Tronco levemente inclinado. Extensão completa do quadril.' },
-    { name: 'Avanço Reverso',     imgs: img('Crossover_Reverse_Lunge'),   muscles: 'Glúteos, Quadríceps (menos carga no joelho)',equipment: 'Halteres',    difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
+    { name: 'Avanço Reverso',     imgs: img('Reverse_Lunge'),              muscles: 'Glúteos, Quadríceps (menos carga no joelho)',equipment: 'Halteres',    difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
   ],
 };
 
