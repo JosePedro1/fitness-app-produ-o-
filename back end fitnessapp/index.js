@@ -3,14 +3,15 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import 'dotenv/config';
 
-import authRoutes      from './src/routes/authRoutes.js';
-import routineRoutes   from './src/routes/routineRoutes.js';
-import exerciseRoutes  from './src/routes/exerciseRoutes.js';
-import progressRoutes  from './src/routes/progressRoutes.js';
-import calendarRoutes  from './src/routes/calendarRoutes.js';
-import adminRoutes     from './src/routes/adminRoutes.js';
-import nutritionRoutes from './src/routes/nutritionRoutes.js';
-import academyRoutes   from './src/routes/academyRoutes.js';
+import authRoutes        from './src/routes/authRoutes.js';
+import routineRoutes     from './src/routes/routineRoutes.js';
+import exerciseRoutes    from './src/routes/exerciseRoutes.js';
+import progressRoutes    from './src/routes/progressRoutes.js';
+import calendarRoutes    from './src/routes/calendarRoutes.js';
+import adminRoutes       from './src/routes/adminRoutes.js';
+import nutritionRoutes   from './src/routes/nutritionRoutes.js';
+import academyRoutes     from './src/routes/academyRoutes.js';
+import exerciseDbRoutes  from './src/routes/exerciseDbRoutes.js'; // ← NOVO
 
 import { startSchedulers } from './src/services/scheduler.js';
 
@@ -32,14 +33,15 @@ app.use('*', cors({
 
 app.get('/', (c) => c.json({ status: 'ok', message: 'Fitness App Backend' }));
 
-app.route('/auth',      authRoutes);
-app.route('/routines',  routineRoutes);
-app.route('/exercises', exerciseRoutes);
-app.route('/progress',  progressRoutes);
-app.route('/calendar',  calendarRoutes);
-app.route('/admin',     adminRoutes);
-app.route('/nutrition', nutritionRoutes);
-app.route('/',          academyRoutes);
+app.route('/auth',        authRoutes);
+app.route('/routines',    routineRoutes);
+app.route('/exercises',   exerciseRoutes);
+app.route('/progress',    progressRoutes);
+app.route('/calendar',    calendarRoutes);
+app.route('/admin',       adminRoutes);
+app.route('/nutrition',   nutritionRoutes);
+app.route('/exercise-db', exerciseDbRoutes); // ← NOVO (antes de academyRoutes para não conflitar)
+app.route('/',            academyRoutes);
 
 startSchedulers();
 

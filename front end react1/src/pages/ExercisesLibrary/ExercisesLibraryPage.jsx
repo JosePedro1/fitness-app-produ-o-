@@ -4,8 +4,10 @@ import { useLocation } from 'react-router-dom';
 import { getRoutines } from '../../services/api-routines';
 import api from '../../services/api';
 
-// ── ExerciseDB Free V1 ────────────────────────────────────────────────────────
-const EDB_BASE = 'https://oss.exercisedb.dev/api/v1/exercises';
+// ── URL base do SEU backend (mesma instância do axios já configurada) ─────────
+// As chamadas passam por /exercise-db/gif?name=... no seu Render/backend.
+// Isso resolve o CORS porque o backend chama a ExerciseDB server-side.
+const PROXY_PATH = '/exercise-db/gif';
 
 // ── Normalização ──────────────────────────────────────────────────────────────
 const normalize = (s) =>
@@ -224,7 +226,7 @@ const ExercisesLibraryPage = () => {
 
   const location = useLocation();
 
-  // ── Busca apenas os GIFs do catálogo, por nome ────────────────────────────
+  // ── Carrega GIFs via proxy do backend (evita CORS) ─────────────────────────
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
@@ -232,30 +234,26 @@ const ExercisesLibraryPage = () => {
     const loadCatalogGifs = async () => {
       try {
         const allExercises = Object.values(CATALOG).flat();
-        const searches = allExercises.map(ex => ex.searchName);
-
-        const BATCH = 10;
-        const map = {};
+        const searches     = allExercises.map(ex => ex.searchName);
+        const BATCH        = 10;
+        const map          = {};
 
         for (let i = 0; i < searches.length; i += BATCH) {
           const batch = searches.slice(i, i + BATCH);
           await Promise.all(
             batch.map(async (searchName) => {
               try {
-                const res = await fetch(
-                  `${EDB_BASE}?name=${encodeURIComponent(searchName)}&limit=1`
-                );
-                if (!res.ok) return;
-                const data = await res.json();
-                const list = Array.isArray(data)
-                  ? data
-                  : (data.exercises ?? data.data ?? []);
-                if (list[0]?.gifUrl) {
-                  map[normalize(searchName)] = list[0].gifUrl;
+                // Usa a instância axios (api) que já tem o baseURL do backend
+                const res = await api.get(PROXY_PATH, {
+                  params: { name: searchName },
+                });
+                const gifUrl = res.data?.gifUrl;
+                if (gifUrl) {
+                  map[normalize(searchName)] = gifUrl;
                   setTotalLoaded(prev => prev + 1);
                 }
               } catch {
-                // silencia erro individual — o exercício fica sem GIF
+                // silencia erro individual
               }
             })
           );
@@ -263,7 +261,7 @@ const ExercisesLibraryPage = () => {
 
         setGifMap(map);
       } catch (err) {
-        console.warn('[ExerciseDB] erro:', err);
+        console.warn('[GIFs] erro geral:', err.message);
         setApiError(true);
       } finally {
         setApiLoading(false);
