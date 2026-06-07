@@ -4,14 +4,46 @@ import { useLocation } from 'react-router-dom';
 import { getRoutines } from '../../services/api-routines';
 import api from '../../services/api';
 
-// ── ExerciseDB Free V1 API — bonequinho 3D animado, sem API key ───────────────
-// Endpoint: https://oss.exercisedb.dev/api/v1/exercises
-// GIF:      https://static.exercisedb.dev/media/{exerciseId}.gif
-// Termos: uso não-comercial com atribuição.
-const EDB_URL = 'https://oss.exercisedb.dev/api/v1/exercises?limit=1500&offset=0';
+// ── ExerciseDB Free V1 — bonequinho 3D, sem API key ───────────────────────────
+const EDB_BASE  = 'https://oss.exercisedb.dev/api/v1/exercises';
+const PAGE_SIZE = 100;   // máximo seguro por página
+
+// ── Normalização: remove acentos, hífens, underscores, caixa ─────────────────
+const normalize = (s) =>
+  s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// ── Fuzzy match: retorna gifUrl com maior sobreposição de palavras ─────────────
+const findGifUrl = (searchName, gifMap) => {
+  const norm = normalize(searchName);
+  const keys = Object.keys(gifMap);
+  if (!keys.length) return null;
+
+  // 1. Exato
+  if (gifMap[norm]) return gifMap[norm];
+
+  const normWords = norm.split(' ').filter(w => w.length > 2);
+
+  // 2. Contém o termo inteiro
+  const exact = keys.find(k => k.includes(norm) || norm.includes(k));
+  if (exact) return gifMap[exact];
+
+  // 3. Pontuação por palavras coincidentes
+  let best = { score: -1, key: null };
+  for (const k of keys) {
+    const score = normWords.filter(w => k.includes(w)).length;
+    if (score > best.score) best = { score, key: k };
+  }
+  if (best.score >= 2) return gifMap[best.key];
+
+  return null;
+};
 
 // ── Catálogo ──────────────────────────────────────────────────────────────────
-// searchName = nome em inglês exatamente como aparece no ExerciseDB (lowercase).
 const CATALOG = {
   Peito: [
     { name: 'Supino Reto',        searchName: 'barbell bench press',                 muscles: 'Peitoral maior, Tríceps, Deltóide anterior',  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Escápulas retraídas, lombar levemente arqueada. Cotovelos a 75°.' },
@@ -22,15 +54,15 @@ const CATALOG = {
     { name: 'Flexão de Braços',   searchName: 'push up',                              muscles: 'Peitoral, Tríceps, Core',                    equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
   ],
   Costas: [
-    { name: 'Barra Fixa',         searchName: 'pull-up',                              muscles: 'Latíssimo, Bíceps, Romboides',                equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
+    { name: 'Barra Fixa',         searchName: 'pull up',                              muscles: 'Latíssimo, Bíceps, Romboides',                equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
     { name: 'Remada Curvada',     searchName: 'bent over barbell row',                muscles: 'Latíssimo, Trapézio médio, Romboides',       equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
     { name: 'Remada Unilateral',  searchName: 'one arm dumbbell row',                 muscles: 'Latíssimo, Romboides, Bíceps',               equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
     { name: 'Puxada Frontal',     searchName: 'wide grip lat pulldown',               muscles: 'Latíssimo, Bíceps, Teres maior',             equipment: 'Pulley',         difficulty: 'Iniciante',     tip: 'Puxe à frente do rosto. Ligeira inclinação do tronco para trás.' },
-    { name: 'Remada Cavalinho',   searchName: 't-bar row',                            muscles: 'Latíssimo, Trapézio, Lombares',              equipment: 'Barra T',        difficulty: 'Intermediário', tip: 'Excelente para espessura de costas. Mantenha lombar neutra.' },
+    { name: 'Remada Cavalinho',   searchName: 't bar row',                            muscles: 'Latíssimo, Trapézio, Lombares',              equipment: 'Barra T',        difficulty: 'Intermediário', tip: 'Excelente para espessura de costas. Mantenha lombar neutra.' },
     { name: 'Levantamento Terra', searchName: 'barbell deadlift',                     muscles: 'Lombares, Glúteos, Isquiotibiais, Trapézio', equipment: 'Barra',          difficulty: 'Avançado',      tip: 'Barra rente à perna, quadril empurra para trás na descida.' },
   ],
   Quadríceps: [
-    { name: 'Agachamento Livre',   searchName: 'barbell full squat',                  muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Joelhos na linha dos pés. Desça até a coxa ficar paralela ao chão.' },
+    { name: 'Agachamento Livre',   searchName: 'barbell squat',                       muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Joelhos na linha dos pés. Desça até a coxa ficar paralela ao chão.' },
     { name: 'Leg Press',           searchName: 'leg press',                           muscles: 'Quadríceps, Glúteos',                        equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Pés no centro da plataforma. Não trave os joelhos no topo.' },
     { name: 'Cadeira Extensora',   searchName: 'leg extension',                       muscles: 'Quadríceps (isolamento)',                    equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Contração total no topo. Ideal como finalizador de treino.' },
     { name: 'Avanço',              searchName: 'barbell lunge',                       muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Halteres/Barra', difficulty: 'Intermediário', tip: 'Joelho da frente não deve ultrapassar a ponta do pé.' },
@@ -48,7 +80,7 @@ const CATALOG = {
   Panturrilha: [
     { name: 'Panturrilha em Pé',        searchName: 'standing calf raise',            muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Barra/Máquina',  difficulty: 'Iniciante', tip: 'Desça o calcanhar abaixo da plataforma para amplitude total.' },
     { name: 'Panturrilha Sentado',      searchName: 'seated calf raise',              muscles: 'Sóleo (joelho dobrado)',                    equipment: 'Máquina',        difficulty: 'Iniciante', tip: 'Joelho a 90° enfatiza o sóleo, músculo mais profundo da panturrilha.' },
-    { name: 'Panturrilha no Leg Press', searchName: 'calf press on the leg press',   muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Leg Press',      difficulty: 'Iniciante', tip: 'Apenas os dedos dos pés na plataforma. Movimento completo.' },
+    { name: 'Panturrilha no Leg Press', searchName: 'calf press leg press',           muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Leg Press',      difficulty: 'Iniciante', tip: 'Apenas os dedos dos pés na plataforma. Movimento completo.' },
     { name: 'Panturrilha Unilateral',   searchName: 'donkey calf raise',              muscles: 'Gastrocnêmio (unilateral)',                 equipment: 'Peso corporal',  difficulty: 'Iniciante', tip: 'Excelente para corrigir assimetrias entre as pernas.' },
   ],
   Ombros: [
@@ -69,7 +101,7 @@ const CATALOG = {
   ],
   Tríceps: [
     { name: 'Tríceps Testa',               searchName: 'skull crusher',               muscles: 'Tríceps (porção longa e medial)',           equipment: 'Barra/Halteres', difficulty: 'Intermediário', tip: 'Cotovelos apontados para cima. Baixe a barra à testa com controle.' },
-    { name: 'Tríceps Corda',               searchName: 'cable rope overhead triceps extension', muscles: 'Tríceps (porção lateral)',   equipment: 'Cabo + corda',   difficulty: 'Iniciante',     tip: 'Separe a corda no final para maior ativação da cabeça lateral.' },
+    { name: 'Tríceps Corda',               searchName: 'cable rope triceps extension', muscles: 'Tríceps (porção lateral)',                 equipment: 'Cabo + corda',   difficulty: 'Iniciante',     tip: 'Separe a corda no final para maior ativação da cabeça lateral.' },
     { name: 'Tríceps Francês',             searchName: 'dumbbell tricep extension',   muscles: 'Tríceps (porção longa)',                   equipment: 'Haltere',        difficulty: 'Intermediário', tip: 'Braços verticais. Foco total na cabeça longa do tríceps.' },
     { name: 'Mergulho no Banco',           searchName: 'bench dip',                   muscles: 'Tríceps, Peitoral inferior',               equipment: 'Banco',          difficulty: 'Iniciante',     tip: 'Quadris próximos ao banco. Desça até o cotovelo a 90°.' },
     { name: 'Tríceps Coice',               searchName: 'tricep dumbbell kickback',    muscles: 'Tríceps (porção lateral)',                 equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Cotovelo fixo ao lado do tronco. Extensão completa no final.' },
@@ -100,8 +132,6 @@ const difficultyColor = {
   'Avançado':      'text-red-400',
 };
 
-const normalize = (s) => s.toLowerCase().replace(/[-_]/g, ' ').replace(/[^a-z0-9 ]/g, '').trim();
-
 const findExerciseInCatalog = (name) => {
   if (!name) return null;
   const lower = name.toLowerCase();
@@ -116,21 +146,20 @@ const findExerciseInCatalog = (name) => {
   return null;
 };
 
-// ── Componente de GIF ─────────────────────────────────────────────────────────
+// ── Componente GIF ────────────────────────────────────────────────────────────
 const ExerciseGif = ({ exerciseData, gifMap, apiLoading }) => {
   const [imgLoaded,  setImgLoaded]  = useState(false);
   const [imgErrored, setImgErrored] = useState(false);
 
-  const gifUrl = gifMap[normalize(exerciseData.searchName)] ?? null;
+  const gifUrl = findGifUrl(exerciseData.searchName, gifMap);
 
-  // Reset ao trocar de exercício
   useEffect(() => {
     setImgLoaded(false);
     setImgErrored(false);
   }, [exerciseData.name]);
 
-  const showSpinner = apiLoading || (!imgLoaded && !imgErrored && gifUrl);
-  const showFallback = (!apiLoading && !gifUrl) || imgErrored;
+  const showSpinner  = apiLoading || (!imgLoaded && !imgErrored && !!gifUrl);
+  const showFallback = !apiLoading && (!gifUrl || imgErrored);
 
   return (
     <div className="flex flex-col gap-3">
@@ -138,19 +167,16 @@ const ExerciseGif = ({ exerciseData, gifMap, apiLoading }) => {
         Demonstração — <span className="text-white font-medium">{exerciseData.name}</span>
       </p>
 
-      {/* Viewer */}
       <div
         className="relative w-full bg-black/40 rounded-xl overflow-hidden border border-white/5 flex items-center justify-center"
         style={{ minHeight: 220 }}
       >
-        {/* Spinner */}
         {showSpinner && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <Loader2 className="w-7 h-7 text-indigo-400 animate-spin" />
           </div>
         )}
 
-        {/* GIF animado do bonequinho */}
         {gifUrl && !imgErrored && (
           <img
             key={gifUrl}
@@ -163,20 +189,16 @@ const ExerciseGif = ({ exerciseData, gifMap, apiLoading }) => {
           />
         )}
 
-        {/* Fallback */}
         {showFallback && (
           <div className="flex flex-col items-center justify-center gap-3 p-6">
             <div className="w-14 h-14 bg-indigo-600/20 rounded-full flex items-center justify-center">
               <Dumbbell className="w-7 h-7 text-indigo-400" />
             </div>
-            <p className="text-gray-400 text-sm text-center">
-              {apiLoading ? 'Carregando...' : 'GIF não disponível para este exercício'}
-            </p>
+            <p className="text-gray-400 text-sm text-center">GIF não disponível</p>
           </div>
         )}
       </div>
 
-      {/* Metadados */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-black/25 border border-white/5 rounded-lg p-3 text-center">
           <p className="text-xs text-gray-500 mb-1">Músculos</p>
@@ -194,7 +216,6 @@ const ExerciseGif = ({ exerciseData, gifMap, apiLoading }) => {
         </div>
       </div>
 
-      {/* Dica */}
       <div className="flex items-start gap-2.5 bg-indigo-600/10 border border-indigo-500/20 rounded-lg px-4 py-3">
         <Zap className="w-4 h-4 text-indigo-400 mt-0.5 shrink-0" />
         <p className="text-xs text-indigo-200 leading-relaxed">
@@ -216,44 +237,64 @@ const ExercisesLibraryPage = () => {
   const [toast,            setToast]            = useState(null);
   const [deepLinkBanner,   setDeepLinkBanner]   = useState(null);
 
-  // GIF map: { normalizedName → gifUrl }
   const [gifMap,     setGifMap]     = useState({});
   const [apiLoading, setApiLoading] = useState(true);
   const [apiError,   setApiError]   = useState(false);
+  const [totalLoaded,setTotalLoaded]= useState(0);
   const fetchedRef = useRef(false);
 
   const location = useLocation();
 
-  // ── Busca todos os exercícios do ExerciseDB uma vez ao montar ──────────────
+  // ── Carrega TODOS os exercícios paginando até o fim ────────────────────────
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
-    const load = async () => {
+    const loadAll = async () => {
       try {
-        const res  = await fetch(EDB_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const all = [];
+        let offset = 0;
 
-        // Suporte à paginação: alguns endpoints retornam { exercises: [...] }
-        const list = Array.isArray(data) ? data : (data.exercises ?? data.data ?? []);
+        while (true) {
+          const url = `${EDB_BASE}?limit=${PAGE_SIZE}&offset=${offset}`;
+          const res  = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+
+          // A API pode retornar array direto ou { exercises: [...] } ou { data: [...] }
+          const page = Array.isArray(data)
+            ? data
+            : (data.exercises ?? data.data ?? data.results ?? []);
+
+          if (!page.length) break;
+          all.push(...page);
+          setTotalLoaded(all.length); // progresso em tempo real
+
+          if (page.length < PAGE_SIZE) break; // última página
+          offset += PAGE_SIZE;
+        }
 
         const map = {};
-        list.forEach(ex => {
+        all.forEach(ex => {
           if (ex.name && ex.gifUrl) {
             map[normalize(ex.name)] = ex.gifUrl;
           }
         });
+
+        // Debug: loga os primeiros nomes para ajustar searchNames se necessário
+        console.log('[ExerciseDB] nomes carregados (primeiros 20):',
+          Object.keys(map).slice(0, 20));
+
         setGifMap(map);
       } catch (err) {
-        console.warn('ExerciseDB fetch error:', err);
+        console.warn('[ExerciseDB] erro ao carregar:', err);
         setApiError(true);
       } finally {
         setApiLoading(false);
       }
     };
 
-    load();
+    loadAll();
   }, []);
 
   // ── Deep link ──────────────────────────────────────────────────────────────
@@ -309,20 +350,19 @@ const ExercisesLibraryPage = () => {
       )}
 
       <div className="w-full flex flex-col gap-y-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h1 className="lg:text-2xl md:text-xl text-lg font-semibold text-gray-200 bg-black/20 rounded-md py-2 px-4 w-fit">
             Biblioteca de Exercícios
           </h1>
-          {/* Indicador de status da API */}
-          {!apiLoading && (
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              apiError
-                ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-            }`}>
-              {apiError ? 'GIFs offline' : `${Object.keys(gifMap).length} GIFs carregados`}
-            </span>
-          )}
+          <span className={`text-xs px-2 py-1 rounded-full border ${
+            apiError
+              ? 'bg-red-500/10 text-red-400 border-red-500/20'
+              : apiLoading
+              ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
+            {apiError ? 'GIFs offline' : apiLoading ? `Carregando GIFs… ${totalLoaded}` : `${totalLoaded} GIFs prontos`}
+          </span>
         </div>
 
         {deepLinkBanner && (
@@ -386,7 +426,7 @@ const ExercisesLibraryPage = () => {
             )}
           </div>
 
-          {/* Coluna 3 — demonstração GIF */}
+          {/* Coluna 3 — GIF demonstrativo */}
           <div className="flex flex-col gap-y-3">
             {selectedData ? (
               <ExerciseGif
