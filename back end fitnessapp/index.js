@@ -11,7 +11,6 @@ import calendarRoutes    from './src/routes/calendarRoutes.js';
 import adminRoutes       from './src/routes/adminRoutes.js';
 import nutritionRoutes   from './src/routes/nutritionRoutes.js';
 import academyRoutes     from './src/routes/academyRoutes.js';
-import exerciseDbRoutes  from './src/routes/exerciseDbRoutes.js'; // ← NOVO
 
 import { startSchedulers } from './src/services/scheduler.js';
 
@@ -40,7 +39,7 @@ app.route('/progress',    progressRoutes);
 app.route('/calendar',    calendarRoutes);
 app.route('/admin',       adminRoutes);
 app.route('/nutrition',   nutritionRoutes);
-app.route('/exercise-db', exerciseDbRoutes); // ← NOVO (antes de academyRoutes para não conflitar)
+
 app.route('/',            academyRoutes);
 
 startSchedulers();
