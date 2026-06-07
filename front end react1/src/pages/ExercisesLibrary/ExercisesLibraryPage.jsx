@@ -1,91 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, ChevronRight, Dumbbell, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, ChevronRight, Dumbbell, Zap, Loader2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { getRoutines } from '../../services/api-routines';
 import api from '../../services/api';
 
-// ── CDN musclewiki.com — GIFs de humanos reais, sem API key, sem rate limit ──
-const MW = 'https://media.musclewiki.com/media/uploads/videos/branded';
+// ── ExerciseDB Free V1 — bonequinho 3D, sem API key ───────────────────────────
+const EDB_BASE  = 'https://oss.exercisedb.dev/api/v1/exercises';
+const PAGE_SIZE = 100;   // máximo seguro por página
 
-// ── Catálogo completo com URLs diretas do CDN ─────────────────────────────────
+// ── Normalização: remove acentos, hífens, underscores, caixa ─────────────────
+const normalize = (s) =>
+  s.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[-_]/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+// ── Fuzzy match: retorna gifUrl com maior sobreposição de palavras ─────────────
+const findGifUrl = (searchName, gifMap) => {
+  const norm = normalize(searchName);
+  const keys = Object.keys(gifMap);
+  if (!keys.length) return null;
+
+  // 1. Exato
+  if (gifMap[norm]) return gifMap[norm];
+
+  const normWords = norm.split(' ').filter(w => w.length > 2);
+
+  // 2. Contém o termo inteiro
+  const exact = keys.find(k => k.includes(norm) || norm.includes(k));
+  if (exact) return gifMap[exact];
+
+  // 3. Pontuação por palavras coincidentes
+  let best = { score: -1, key: null };
+  for (const k of keys) {
+    const score = normWords.filter(w => k.includes(w)).length;
+    if (score > best.score) best = { score, key: k };
+  }
+  if (best.score >= 2) return gifMap[best.key];
+
+  return null;
+};
+
+// ── Catálogo ──────────────────────────────────────────────────────────────────
 const CATALOG = {
   Peito: [
-    { name: 'Supino Reto',        gifUrl: `${MW}/male-chest-Bench-Press-front.gif`,                muscles: 'Peitoral maior, Tríceps, Deltóide anterior',  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Escápulas retraídas, lombar levemente arqueada. Cotovelos a 75°.' },
-    { name: 'Supino Inclinado',   gifUrl: `${MW}/male-chest-Incline-Bench-Press-front.gif`,        muscles: 'Peitoral superior, Tríceps',                  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Banco a 30–45°. Foco no feixe clavicular do peitoral.' },
-    { name: 'Supino Declinado',   gifUrl: `${MW}/male-chest-Decline-Bench-Press-front.gif`,        muscles: 'Peitoral inferior, Tríceps',                  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Define a porção inferior do peitoral. Cuidado com o pescoço.' },
-    { name: 'Crucifixo',          gifUrl: `${MW}/male-chest-Dumbbell-Fly-front.gif`,               muscles: 'Peitoral maior (estiramento)',                equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
-    { name: 'Crossover no Cabo',  gifUrl: `${MW}/male-chest-Cable-Crossover-front.gif`,            muscles: 'Peitoral maior, Serrátil anterior',           equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cruze as mãos ao final para contração máxima.' },
-    { name: 'Flexão de Braços',   gifUrl: `${MW}/male-chest-Push-Up-front.gif`,                    muscles: 'Peitoral, Tríceps, Core',                    equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
+    { name: 'Supino Reto',        searchName: 'barbell bench press',                 muscles: 'Peitoral maior, Tríceps, Deltóide anterior',  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Escápulas retraídas, lombar levemente arqueada. Cotovelos a 75°.' },
+    { name: 'Supino Inclinado',   searchName: 'barbell incline bench press',          muscles: 'Peitoral superior, Tríceps',                  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Banco a 30–45°. Foco no feixe clavicular do peitoral.' },
+    { name: 'Supino Declinado',   searchName: 'decline barbell bench press',          muscles: 'Peitoral inferior, Tríceps',                  equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Define a porção inferior do peitoral. Cuidado com o pescoço.' },
+    { name: 'Crucifixo',          searchName: 'dumbbell flyes',                       muscles: 'Peitoral maior (estiramento)',                equipment: 'Halteres',       difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados durante todo o arco.' },
+    { name: 'Crossover no Cabo',  searchName: 'cable crossover',                      muscles: 'Peitoral maior, Serrátil anterior',           equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cruze as mãos ao final para contração máxima.' },
+    { name: 'Flexão de Braços',   searchName: 'push up',                              muscles: 'Peitoral, Tríceps, Core',                    equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Corpo reto da cabeça ao calcanhar. Core sempre contraído.' },
   ],
   Costas: [
-    { name: 'Barra Fixa',         gifUrl: `${MW}/male-back-Pull-Up-front.gif`,                     muscles: 'Latíssimo, Bíceps, Romboides',                equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
-    { name: 'Remada Curvada',     gifUrl: `${MW}/male-back-Bent-Over-Row-front.gif`,               muscles: 'Latíssimo, Trapézio médio, Romboides',       equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
-    { name: 'Remada Unilateral',  gifUrl: `${MW}/male-back-Dumbbell-Row-front.gif`,                muscles: 'Latíssimo, Romboides, Bíceps',               equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
-    { name: 'Puxada Frontal',     gifUrl: `${MW}/male-back-Lat-Pulldown-front.gif`,                muscles: 'Latíssimo, Bíceps, Teres maior',             equipment: 'Pulley',         difficulty: 'Iniciante',     tip: 'Puxe à frente do rosto. Ligeira inclinação do tronco para trás.' },
-    { name: 'Remada Cavalinho',   gifUrl: `${MW}/male-back-T-Bar-Row-front.gif`,                   muscles: 'Latíssimo, Trapézio, Lombares',              equipment: 'Barra T',        difficulty: 'Intermediário', tip: 'Excelente para espessura de costas. Mantenha lombar neutra.' },
-    { name: 'Levantamento Terra', gifUrl: `${MW}/male-back-Deadlift-front.gif`,                    muscles: 'Lombares, Glúteos, Isquiotibiais, Trapézio', equipment: 'Barra',          difficulty: 'Avançado',      tip: 'Barra rente à perna, quadril empurra para trás na descida.' },
+    { name: 'Barra Fixa',         searchName: 'pull up',                              muscles: 'Latíssimo, Bíceps, Romboides',                equipment: 'Barra fixa',     difficulty: 'Avançado',      tip: 'Puxe até o queixo ultrapassar a barra. Controle a descida.' },
+    { name: 'Remada Curvada',     searchName: 'bent over barbell row',                muscles: 'Latíssimo, Trapézio médio, Romboides',       equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Tronco a ~45°. Puxe a barra ao umbigo, não ao peito.' },
+    { name: 'Remada Unilateral',  searchName: 'one arm dumbbell row',                 muscles: 'Latíssimo, Romboides, Bíceps',               equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Apoie o joelho e mão no banco. Cotovelo alto na subida.' },
+    { name: 'Puxada Frontal',     searchName: 'wide grip lat pulldown',               muscles: 'Latíssimo, Bíceps, Teres maior',             equipment: 'Pulley',         difficulty: 'Iniciante',     tip: 'Puxe à frente do rosto. Ligeira inclinação do tronco para trás.' },
+    { name: 'Remada Cavalinho',   searchName: 't bar row',                            muscles: 'Latíssimo, Trapézio, Lombares',              equipment: 'Barra T',        difficulty: 'Intermediário', tip: 'Excelente para espessura de costas. Mantenha lombar neutra.' },
+    { name: 'Levantamento Terra', searchName: 'barbell deadlift',                     muscles: 'Lombares, Glúteos, Isquiotibiais, Trapézio', equipment: 'Barra',          difficulty: 'Avançado',      tip: 'Barra rente à perna, quadril empurra para trás na descida.' },
   ],
   Quadríceps: [
-    { name: 'Agachamento Livre',   gifUrl: `${MW}/male-quads-Squat-front.gif`,                     muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Joelhos na linha dos pés. Desça até a coxa ficar paralela ao chão.' },
-    { name: 'Leg Press',           gifUrl: `${MW}/male-quads-Leg-Press-front.gif`,                 muscles: 'Quadríceps, Glúteos',                        equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Pés no centro da plataforma. Não trave os joelhos no topo.' },
-    { name: 'Cadeira Extensora',   gifUrl: `${MW}/male-quads-Leg-Extension-front.gif`,             muscles: 'Quadríceps (isolamento)',                    equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Contração total no topo. Ideal como finalizador de treino.' },
-    { name: 'Avanço',              gifUrl: `${MW}/male-quads-Lunge-front.gif`,                     muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Halteres/Barra', difficulty: 'Intermediário', tip: 'Joelho da frente não deve ultrapassar a ponta do pé.' },
-    { name: 'Agachamento Hack',    gifUrl: `${MW}/male-quads-Hack-Squat-front.gif`,                muscles: 'Quadríceps, Glúteos',                        equipment: 'Máquina',        difficulty: 'Intermediário', tip: 'Enfatiza o vasto medial (teardrop). Pés afastados na largura dos ombros.' },
-    { name: 'Agachamento Búlgaro', gifUrl: `${MW}/male-quads-Bulgarian-Split-Squat-front.gif`,     muscles: 'Quadríceps, Glúteos (unilateral)',           equipment: 'Halteres',       difficulty: 'Avançado',      tip: 'Pé traseiro elevado. Excelente para corrigir desequilíbrios.' },
+    { name: 'Agachamento Livre',   searchName: 'barbell squat',                       muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Joelhos na linha dos pés. Desça até a coxa ficar paralela ao chão.' },
+    { name: 'Leg Press',           searchName: 'leg press',                           muscles: 'Quadríceps, Glúteos',                        equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Pés no centro da plataforma. Não trave os joelhos no topo.' },
+    { name: 'Cadeira Extensora',   searchName: 'leg extension',                       muscles: 'Quadríceps (isolamento)',                    equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Contração total no topo. Ideal como finalizador de treino.' },
+    { name: 'Avanço',              searchName: 'barbell lunge',                       muscles: 'Quadríceps, Glúteos, Isquiotibiais',         equipment: 'Halteres/Barra', difficulty: 'Intermediário', tip: 'Joelho da frente não deve ultrapassar a ponta do pé.' },
+    { name: 'Agachamento Hack',    searchName: 'hack squat',                          muscles: 'Quadríceps, Glúteos',                        equipment: 'Máquina',        difficulty: 'Intermediário', tip: 'Enfatiza o vasto medial (teardrop). Pés afastados na largura dos ombros.' },
+    { name: 'Agachamento Búlgaro', searchName: 'split squat',                         muscles: 'Quadríceps, Glúteos (unilateral)',           equipment: 'Halteres',       difficulty: 'Avançado',      tip: 'Pé traseiro elevado. Excelente para corrigir desequilíbrios.' },
   ],
   Posterior: [
-    { name: 'Mesa Flexora',              gifUrl: `${MW}/male-hamstrings-Lying-Leg-Curl-front.gif`,      muscles: 'Isquiotibiais (isolamento)',               equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Quadril pressionado no banco. Sem balanço no movimento.' },
-    { name: 'Stiff',                     gifUrl: `${MW}/male-hamstrings-Romanian-Deadlift-front.gif`,   muscles: 'Isquiotibiais, Glúteos, Lombares',        equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Sinta o estiramento nos isquiotibiais. Joelhos levemente flexionados.' },
-    { name: 'Leg Curl em Pé',            gifUrl: `${MW}/male-hamstrings-Standing-Leg-Curl-front.gif`,   muscles: 'Isquiotibiais (unilateral)',              equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Ideal para trabalhar cada perna individualmente.' },
-    { name: 'Good Morning',              gifUrl: `${MW}/male-hamstrings-Good-Morning-front.gif`,        muscles: 'Isquiotibiais, Lombares, Glúteos',        equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Incline o tronco até ficar paralelo ao chão. Costas neutras.' },
-    { name: 'Levantamento Terra Romeno', gifUrl: `${MW}/male-hamstrings-Stiff-Leg-Deadlift-front.gif`,  muscles: 'Isquiotibiais, Glúteos, Lombares',        equipment: 'Halteres',       difficulty: 'Intermediário', tip: 'Descida controlada com estiramento total dos isquiotibiais.' },
-    { name: 'Ponte de Glúteo',           gifUrl: `${MW}/male-hamstrings-Glute-Bridge-front.gif`,        muscles: 'Isquiotibiais, Glúteos',                  equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Aperte os glúteos no topo. Ótimo para ativar a cadeia posterior.' },
+    { name: 'Mesa Flexora',              searchName: 'lying leg curl',                muscles: 'Isquiotibiais (isolamento)',                 equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Quadril pressionado no banco. Sem balanço no movimento.' },
+    { name: 'Stiff',                     searchName: 'romanian deadlift',             muscles: 'Isquiotibiais, Glúteos, Lombares',          equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Sinta o estiramento nos isquiotibiais. Joelhos levemente flexionados.' },
+    { name: 'Leg Curl em Pé',            searchName: 'standing leg curl',             muscles: 'Isquiotibiais (unilateral)',                equipment: 'Máquina',        difficulty: 'Iniciante',     tip: 'Ideal para trabalhar cada perna individualmente.' },
+    { name: 'Good Morning',              searchName: 'good morning',                  muscles: 'Isquiotibiais, Lombares, Glúteos',          equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Incline o tronco até ficar paralelo ao chão. Costas neutras.' },
+    { name: 'Levantamento Terra Romeno', searchName: 'dumbbell romanian deadlift',    muscles: 'Isquiotibiais, Glúteos, Lombares',          equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Descida controlada com estiramento total dos isquiotibiais.' },
+    { name: 'Ponte de Glúteo',           searchName: 'barbell glute bridge',          muscles: 'Isquiotibiais, Glúteos',                    equipment: 'Peso corporal',  difficulty: 'Iniciante',     tip: 'Aperte os glúteos no topo. Ótimo para ativar a cadeia posterior.' },
   ],
   Panturrilha: [
-    { name: 'Panturrilha em Pé',        gifUrl: `${MW}/male-calves-Standing-Calf-Raise-front.gif`,      muscles: 'Gastrocnêmio, Sóleo',       equipment: 'Barra/Máquina',  difficulty: 'Iniciante', tip: 'Desça o calcanhar abaixo da plataforma para amplitude total.' },
-    { name: 'Panturrilha Sentado',      gifUrl: `${MW}/male-calves-Seated-Calf-Raise-front.gif`,        muscles: 'Sóleo (joelho dobrado)',    equipment: 'Máquina',        difficulty: 'Iniciante', tip: 'Joelho a 90° enfatiza o sóleo, músculo mais profundo da panturrilha.' },
-    { name: 'Panturrilha no Leg Press', gifUrl: `${MW}/male-calves-Calf-Press-front.gif`,               muscles: 'Gastrocnêmio, Sóleo',       equipment: 'Leg Press',      difficulty: 'Iniciante', tip: 'Apenas os dedos dos pés na plataforma. Movimento completo.' },
-    { name: 'Panturrilha Unilateral',   gifUrl: `${MW}/male-calves-Single-Leg-Calf-Raise-front.gif`,    muscles: 'Gastrocnêmio (unilateral)', equipment: 'Peso corporal',  difficulty: 'Iniciante', tip: 'Excelente para corrigir assimetrias entre as pernas.' },
+    { name: 'Panturrilha em Pé',        searchName: 'standing calf raise',            muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Barra/Máquina',  difficulty: 'Iniciante', tip: 'Desça o calcanhar abaixo da plataforma para amplitude total.' },
+    { name: 'Panturrilha Sentado',      searchName: 'seated calf raise',              muscles: 'Sóleo (joelho dobrado)',                    equipment: 'Máquina',        difficulty: 'Iniciante', tip: 'Joelho a 90° enfatiza o sóleo, músculo mais profundo da panturrilha.' },
+    { name: 'Panturrilha no Leg Press', searchName: 'calf press leg press',           muscles: 'Gastrocnêmio, Sóleo',                       equipment: 'Leg Press',      difficulty: 'Iniciante', tip: 'Apenas os dedos dos pés na plataforma. Movimento completo.' },
+    { name: 'Panturrilha Unilateral',   searchName: 'donkey calf raise',              muscles: 'Gastrocnêmio (unilateral)',                 equipment: 'Peso corporal',  difficulty: 'Iniciante', tip: 'Excelente para corrigir assimetrias entre as pernas.' },
   ],
   Ombros: [
-    { name: 'Desenvolvimento com Barra', gifUrl: `${MW}/male-shoulders-Overhead-Press-front.gif`,          muscles: 'Deltóide anterior, Tríceps, Trapézio',   equipment: 'Barra',     difficulty: 'Intermediário', tip: 'Barra parte da frente do pescoço. Core contraído no movimento.' },
-    { name: 'Desenvolvimento Halteres',  gifUrl: `${MW}/male-shoulders-Dumbbell-Shoulder-Press-front.gif`, muscles: 'Deltóide anterior e médio, Tríceps',     equipment: 'Halteres',  difficulty: 'Iniciante',     tip: 'Maior amplitude que a barra. Pulsos neutros durante todo o movimento.' },
-    { name: 'Elevação Lateral',          gifUrl: `${MW}/male-shoulders-Lateral-Raise-front.gif`,           muscles: 'Deltóide médio (isolamento)',             equipment: 'Halteres',  difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados. Polegar ligeiramente abaixado.' },
-    { name: 'Elevação Frontal',          gifUrl: `${MW}/male-shoulders-Front-Raise-front.gif`,             muscles: 'Deltóide anterior',                      equipment: 'Halteres',  difficulty: 'Iniciante',     tip: 'Suba até a altura dos olhos. Não use impulso do tronco.' },
-    { name: 'Remada Alta',               gifUrl: `${MW}/male-shoulders-Upright-Row-front.gif`,             muscles: 'Deltóide médio, Trapézio superior',      equipment: 'Barra',     difficulty: 'Intermediário', tip: 'Cotovelos sempre acima dos punhos. Cuidado com a amplitude.' },
-    { name: 'Face Pull',                 gifUrl: `${MW}/male-shoulders-Face-Pull-front.gif`,               muscles: 'Deltóide posterior, Trapézio médio',     equipment: 'Cabo',      difficulty: 'Iniciante',     tip: 'Puxe em direção à testa, cotovelos para fora. Essencial para saúde do ombro.' },
+    { name: 'Desenvolvimento com Barra', searchName: 'barbell shoulder press',        muscles: 'Deltóide anterior, Tríceps, Trapézio',      equipment: 'Barra',     difficulty: 'Intermediário', tip: 'Barra parte da frente do pescoço. Core contraído no movimento.' },
+    { name: 'Desenvolvimento Halteres',  searchName: 'dumbbell shoulder press',       muscles: 'Deltóide anterior e médio, Tríceps',        equipment: 'Halteres',  difficulty: 'Iniciante',     tip: 'Maior amplitude que a barra. Pulsos neutros durante todo o movimento.' },
+    { name: 'Elevação Lateral',          searchName: 'lateral raise',                 muscles: 'Deltóide médio (isolamento)',               equipment: 'Halteres',  difficulty: 'Iniciante',     tip: 'Cotovelos levemente flexionados. Polegar ligeiramente abaixado.' },
+    { name: 'Elevação Frontal',          searchName: 'front raise',                   muscles: 'Deltóide anterior',                        equipment: 'Halteres',  difficulty: 'Iniciante',     tip: 'Suba até a altura dos olhos. Não use impulso do tronco.' },
+    { name: 'Remada Alta',               searchName: 'upright row',                   muscles: 'Deltóide médio, Trapézio superior',        equipment: 'Barra',     difficulty: 'Intermediário', tip: 'Cotovelos sempre acima dos punhos. Cuidado com a amplitude.' },
+    { name: 'Face Pull',                 searchName: 'face pull',                     muscles: 'Deltóide posterior, Trapézio médio',       equipment: 'Cabo',      difficulty: 'Iniciante',     tip: 'Puxe em direção à testa, cotovelos para fora. Essencial para saúde do ombro.' },
   ],
   Bíceps: [
-    { name: 'Rosca Direta',      gifUrl: `${MW}/male-biceps-Barbell-Curl-front.gif`,           muscles: 'Bíceps braquial, Braquial',   equipment: 'Barra',         difficulty: 'Iniciante',     tip: 'Cotovelos fixos ao lado do corpo. Sem balanço de tronco.' },
-    { name: 'Rosca Alternada',   gifUrl: `${MW}/male-biceps-Dumbbell-Curl-front.gif`,          muscles: 'Bíceps braquial, Braquial',   equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Gire o punho na subida (supinação). Aumenta o pico de contração.' },
-    { name: 'Rosca Martelo',     gifUrl: `${MW}/male-biceps-Hammer-Curl-front.gif`,            muscles: 'Braquiorradial, Bíceps',      equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Punho neutro (polegar para cima). Trabalha mais o braquiorradial.' },
-    { name: 'Rosca Concentrada', gifUrl: `${MW}/male-biceps-Concentration-Curl-front.gif`,     muscles: 'Bíceps (isolamento)',         equipment: 'Haltere',       difficulty: 'Iniciante',     tip: 'Cotovelo apoiado na coxa. Máximo isolamento do bíceps.' },
-    { name: 'Rosca Scott',       gifUrl: `${MW}/male-biceps-Preacher-Curl-front.gif`,          muscles: 'Bíceps (porção longa)',       equipment: 'Barra/Máquina', difficulty: 'Intermediário', tip: 'Braço totalmente apoiado. Evita trapaça e maximiza isolamento.' },
-    { name: 'Rosca no Cabo',     gifUrl: `${MW}/male-biceps-Cable-Curl-front.gif`,             muscles: 'Bíceps (tensão constante)',   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Tensão constante em todo o arco do movimento.' },
+    { name: 'Rosca Direta',       searchName: 'barbell curl',                         muscles: 'Bíceps braquial, Braquial',                 equipment: 'Barra',         difficulty: 'Iniciante',     tip: 'Cotovelos fixos ao lado do corpo. Sem balanço de tronco.' },
+    { name: 'Rosca Alternada',    searchName: 'dumbbell alternate bicep curl',        muscles: 'Bíceps braquial, Braquial',                 equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Gire o punho na subida (supinação). Aumenta o pico de contração.' },
+    { name: 'Rosca Martelo',      searchName: 'hammer curl',                          muscles: 'Braquiorradial, Bíceps',                   equipment: 'Halteres',      difficulty: 'Iniciante',     tip: 'Punho neutro (polegar para cima). Trabalha mais o braquiorradial.' },
+    { name: 'Rosca Concentrada',  searchName: 'concentration curl',                  muscles: 'Bíceps (isolamento)',                       equipment: 'Haltere',       difficulty: 'Iniciante',     tip: 'Cotovelo apoiado na coxa. Máximo isolamento do bíceps.' },
+    { name: 'Rosca Scott',        searchName: 'preacher curl',                        muscles: 'Bíceps (porção longa)',                    equipment: 'Barra/Máquina', difficulty: 'Intermediário', tip: 'Braço totalmente apoiado. Evita trapaça e maximiza isolamento.' },
+    { name: 'Rosca no Cabo',      searchName: 'cable curl',                           muscles: 'Bíceps (tensão constante)',                equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Tensão constante em todo o arco do movimento.' },
   ],
   Tríceps: [
-    { name: 'Tríceps Testa',               gifUrl: `${MW}/male-triceps-Skull-Crusher-front.gif`,              muscles: 'Tríceps (porção longa e medial)', equipment: 'Barra/Halteres', difficulty: 'Intermediário', tip: 'Cotovelos apontados para cima. Baixe a barra à testa com controle.' },
-    { name: 'Tríceps Corda',               gifUrl: `${MW}/male-triceps-Tricep-Pushdown-front.gif`,            muscles: 'Tríceps (porção lateral)',        equipment: 'Cabo + corda',   difficulty: 'Iniciante',     tip: 'Separe a corda no final para maior ativação da cabeça lateral.' },
-    { name: 'Tríceps Francês',             gifUrl: `${MW}/male-triceps-French-Press-front.gif`,               muscles: 'Tríceps (porção longa)',          equipment: 'Haltere',        difficulty: 'Intermediário', tip: 'Braços verticais. Foco total na cabeça longa do tríceps.' },
-    { name: 'Mergulho no Banco',           gifUrl: `${MW}/male-triceps-Bench-Dip-front.gif`,                  muscles: 'Tríceps, Peitoral inferior',      equipment: 'Banco',          difficulty: 'Iniciante',     tip: 'Quadris próximos ao banco. Desça até o cotovelo a 90°.' },
-    { name: 'Tríceps Coice',               gifUrl: `${MW}/male-triceps-Tricep-Kickback-front.gif`,            muscles: 'Tríceps (porção lateral)',        equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Cotovelo fixo ao lado do tronco. Extensão completa no final.' },
-    { name: 'Extensão de Tríceps no Cabo', gifUrl: `${MW}/male-triceps-Overhead-Tricep-Extension-front.gif`,  muscles: 'Tríceps (porção longa)',          equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cotovelos próximos à cabeça. Alongamento máximo da porção longa.' },
+    { name: 'Tríceps Testa',               searchName: 'skull crusher',               muscles: 'Tríceps (porção longa e medial)',           equipment: 'Barra/Halteres', difficulty: 'Intermediário', tip: 'Cotovelos apontados para cima. Baixe a barra à testa com controle.' },
+    { name: 'Tríceps Corda',               searchName: 'cable rope triceps extension', muscles: 'Tríceps (porção lateral)',                 equipment: 'Cabo + corda',   difficulty: 'Iniciante',     tip: 'Separe a corda no final para maior ativação da cabeça lateral.' },
+    { name: 'Tríceps Francês',             searchName: 'dumbbell tricep extension',   muscles: 'Tríceps (porção longa)',                   equipment: 'Haltere',        difficulty: 'Intermediário', tip: 'Braços verticais. Foco total na cabeça longa do tríceps.' },
+    { name: 'Mergulho no Banco',           searchName: 'bench dip',                   muscles: 'Tríceps, Peitoral inferior',               equipment: 'Banco',          difficulty: 'Iniciante',     tip: 'Quadris próximos ao banco. Desça até o cotovelo a 90°.' },
+    { name: 'Tríceps Coice',               searchName: 'tricep dumbbell kickback',    muscles: 'Tríceps (porção lateral)',                 equipment: 'Haltere',        difficulty: 'Iniciante',     tip: 'Cotovelo fixo ao lado do tronco. Extensão completa no final.' },
+    { name: 'Extensão de Tríceps no Cabo', searchName: 'cable triceps pushdown',      muscles: 'Tríceps (porção longa)',                   equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Cotovelos fixos. Contração máxima no final do movimento.' },
   ],
   Abdômen: [
-    { name: 'Abdominal Crunch',  gifUrl: `${MW}/male-abs-Crunch-front.gif`,               muscles: 'Reto abdominal',                 equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Enrole o tronco. Não puxe o pescoço com as mãos.' },
-    { name: 'Prancha',           gifUrl: `${MW}/male-abs-Plank-front.gif`,                muscles: 'Core completo, Estabilizadores',  equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Quadril neutro — não suba nem deixe cair. Respire normalmente.' },
-    { name: 'Elevação de Pernas',gifUrl: `${MW}/male-abs-Leg-Raise-front.gif`,            muscles: 'Reto inferior, Flexores do quadril', equipment: 'Barra fixa', difficulty: 'Intermediário', tip: 'Suba as pernas à 90°. Controle a descida sem balanço.' },
-    { name: 'Russian Twist',     gifUrl: `${MW}/male-abs-Russian-Twist-front.gif`,        muscles: 'Oblíquos, Reto abdominal',        equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Gire o tronco, não só os braços. Pés podem ser elevados.' },
-    { name: 'Abdominal no Cabo', gifUrl: `${MW}/male-abs-Cable-Crunch-front.gif`,         muscles: 'Reto abdominal (carga alta)',     equipment: 'Cabo',          difficulty: 'Intermediário', tip: 'Quadril fixo. O movimento é só do tronco. Carga progressiva.' },
-    { name: 'Mountain Climber',  gifUrl: `${MW}/male-abs-Mountain-Climbers-front.gif`,    muscles: 'Core, Quadríceps, Ombros',        equipment: 'Peso corporal', difficulty: 'Intermediário', tip: 'Cadência rápida para cardio, lenta para força de core.' },
+    { name: 'Abdominal Crunch',  searchName: 'crunch',                                muscles: 'Reto abdominal',                            equipment: 'Máquina/Chão',  difficulty: 'Iniciante',     tip: 'Enrole o tronco. Não puxe o pescoço com as mãos.' },
+    { name: 'Prancha',           searchName: 'plank',                                 muscles: 'Core completo, Estabilizadores',           equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Quadril neutro — não suba nem deixe cair. Respire normalmente.' },
+    { name: 'Elevação de Pernas',searchName: 'hanging leg raise',                     muscles: 'Reto inferior, Flexores do quadril',       equipment: 'Barra fixa',    difficulty: 'Intermediário', tip: 'Suba as pernas à 90°. Controle a descida sem balanço.' },
+    { name: 'Russian Twist',     searchName: 'russian twist',                         muscles: 'Oblíquos, Reto abdominal',                 equipment: 'Peso corporal', difficulty: 'Iniciante',     tip: 'Gire o tronco, não só os braços. Pés podem ser elevados.' },
+    { name: 'Abdominal no Cabo', searchName: 'cable crunch',                          muscles: 'Reto abdominal (carga alta)',              equipment: 'Cabo',          difficulty: 'Intermediário', tip: 'Quadril fixo. O movimento é só do tronco. Carga progressiva.' },
+    { name: 'Mountain Climber',  searchName: 'mountain climber',                      muscles: 'Core, Quadríceps, Ombros',                 equipment: 'Peso corporal', difficulty: 'Intermediário', tip: 'Cadência rápida para cardio, lenta para força de core.' },
   ],
   Glúteos: [
-    { name: 'Hip Thrust',         gifUrl: `${MW}/male-glutes-Hip-Thrust-front.gif`,             muscles: 'Glúteo máximo (isolamento)',             equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Aperte os glúteos no topo. Quadril paralelo ao chão.' },
-    { name: 'Agachamento Sumô',   gifUrl: `${MW}/male-glutes-Sumo-Squat-front.gif`,             muscles: 'Glúteos, Adutores, Quadríceps',          equipment: 'Haltere/Barra',  difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
-    { name: 'Stiff para Glúteos', gifUrl: `${MW}/male-glutes-Romanian-Deadlift-front.gif`,      muscles: 'Glúteos, Isquiotibiais',                 equipment: 'Barra',          difficulty: 'Intermediário', tip: 'Empurre o quadril para trás na descida. Sinta o glúteo alongar.' },
-    { name: 'Abdução no Cabo',    gifUrl: `${MW}/male-glutes-Cable-Hip-Abduction-front.gif`,    muscles: 'Glúteo médio e mínimo',                  equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
-    { name: 'Glúteo no Cabo',     gifUrl: `${MW}/male-glutes-Cable-Kickback-front.gif`,         muscles: 'Glúteo máximo (unilateral)',             equipment: 'Cabo',           difficulty: 'Iniciante',     tip: 'Tronco levemente inclinado. Extensão completa do quadril.' },
-    { name: 'Avanço Reverso',     gifUrl: `${MW}/male-glutes-Reverse-Lunge-front.gif`,          muscles: 'Glúteos, Quadríceps (menos carga no joelho)', equipment: 'Halteres', difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
+    { name: 'Hip Thrust',         searchName: 'barbell hip thrust',                   muscles: 'Glúteo máximo (isolamento)',               equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Aperte os glúteos no topo. Quadril paralelo ao chão.' },
+    { name: 'Agachamento Sumô',   searchName: 'plie dumbbell squat',                  muscles: 'Glúteos, Adutores, Quadríceps',            equipment: 'Haltere/Barra', difficulty: 'Iniciante',     tip: 'Pés bem abertos e virados para fora. Joelhos seguem a direção dos pés.' },
+    { name: 'Stiff para Glúteos', searchName: 'stiff leg deadlift',                   muscles: 'Glúteos, Isquiotibiais',                   equipment: 'Barra',         difficulty: 'Intermediário', tip: 'Empurre o quadril para trás na descida. Sinta o glúteo alongar.' },
+    { name: 'Abdução no Cabo',    searchName: 'cable hip abduction',                  muscles: 'Glúteo médio e mínimo',                   equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Eleve a perna lateralmente. Corpo estável durante o movimento.' },
+    { name: 'Glúteo no Cabo',     searchName: 'cable kickback',                       muscles: 'Glúteo máximo (unilateral)',               equipment: 'Cabo',          difficulty: 'Iniciante',     tip: 'Tronco levemente inclinado. Extensão completa do quadril.' },
+    { name: 'Avanço Reverso',     searchName: 'reverse lunge',                        muscles: 'Glúteos, Quadríceps (menos carga no joelho)', equipment: 'Halteres',  difficulty: 'Intermediário', tip: 'Passo para trás. Menos estresse no joelho que o avanço frontal.' },
   ],
 };
 
@@ -111,12 +147,19 @@ const findExerciseInCatalog = (name) => {
 };
 
 // ── Componente GIF ────────────────────────────────────────────────────────────
-const ExerciseGif = ({ exerciseData }) => {
-  const [status, setStatus] = useState('loading'); // 'loading' | 'ok' | 'error'
+const ExerciseGif = ({ exerciseData, gifMap, apiLoading }) => {
+  const [imgLoaded,  setImgLoaded]  = useState(false);
+  const [imgErrored, setImgErrored] = useState(false);
+
+  const gifUrl = findGifUrl(exerciseData.searchName, gifMap);
 
   useEffect(() => {
-    setStatus('loading');
-  }, [exerciseData.gifUrl]);
+    setImgLoaded(false);
+    setImgErrored(false);
+  }, [exerciseData.name]);
+
+  const showSpinner  = apiLoading || (!imgLoaded && !imgErrored && !!gifUrl);
+  const showFallback = !apiLoading && (!gifUrl || imgErrored);
 
   return (
     <div className="flex flex-col gap-3">
@@ -124,28 +167,34 @@ const ExerciseGif = ({ exerciseData }) => {
         Demonstração — <span className="text-white font-medium">{exerciseData.name}</span>
       </p>
 
-      <div className="w-full bg-black/40 rounded-xl overflow-hidden border border-white/5 min-h-[180px] flex items-center justify-center relative">
-        {status === 'loading' && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-7 h-7 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+      <div
+        className="relative w-full bg-black/40 rounded-xl overflow-hidden border border-white/5 flex items-center justify-center"
+        style={{ minHeight: 220 }}
+      >
+        {showSpinner && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <Loader2 className="w-7 h-7 text-indigo-400 animate-spin" />
           </div>
         )}
-        {status !== 'error' && (
+
+        {gifUrl && !imgErrored && (
           <img
-            src={exerciseData.gifUrl}
-            alt={`Demonstração de ${exerciseData.name}`}
-            className={`w-full object-contain transition-opacity duration-300 ${status === 'ok' ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={()  => setStatus('ok')}
-            onError={() => setStatus('error')}
+            key={gifUrl}
+            src={gifUrl}
+            alt={`Demonstração: ${exerciseData.name}`}
+            className="w-full object-contain transition-opacity duration-500"
+            style={{ opacity: imgLoaded ? 1 : 0 }}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgErrored(true)}
           />
         )}
-        {status === 'error' && (
-          <div className="p-8 text-center w-full">
-            <div className="w-14 h-14 bg-indigo-600/20 rounded-full flex items-center justify-center mx-auto mb-3">
+
+        {showFallback && (
+          <div className="flex flex-col items-center justify-center gap-3 p-6">
+            <div className="w-14 h-14 bg-indigo-600/20 rounded-full flex items-center justify-center">
               <Dumbbell className="w-7 h-7 text-indigo-400" />
             </div>
-            <p className="text-gray-300 font-medium text-sm">{exerciseData.name}</p>
-            <p className="text-gray-500 text-xs mt-1">GIF não disponível no momento</p>
+            <p className="text-gray-400 text-sm text-center">GIF não disponível</p>
           </div>
         )}
       </div>
@@ -188,9 +237,67 @@ const ExercisesLibraryPage = () => {
   const [toast,            setToast]            = useState(null);
   const [deepLinkBanner,   setDeepLinkBanner]   = useState(null);
 
+  const [gifMap,     setGifMap]     = useState({});
+  const [apiLoading, setApiLoading] = useState(true);
+  const [apiError,   setApiError]   = useState(false);
+  const [totalLoaded,setTotalLoaded]= useState(0);
+  const fetchedRef = useRef(false);
+
   const location = useLocation();
 
-  // ── Deep link ─────────────────────────────────────────────────────────────
+  // ── Carrega TODOS os exercícios paginando até o fim ────────────────────────
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const loadAll = async () => {
+      try {
+        const all = [];
+        let offset = 0;
+
+        while (true) {
+          const url = `${EDB_BASE}?limit=${PAGE_SIZE}&offset=${offset}`;
+          const res  = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+
+          // A API pode retornar array direto ou { exercises: [...] } ou { data: [...] }
+          const page = Array.isArray(data)
+            ? data
+            : (data.exercises ?? data.data ?? data.results ?? []);
+
+          if (!page.length) break;
+          all.push(...page);
+          setTotalLoaded(all.length); // progresso em tempo real
+
+          if (page.length < PAGE_SIZE) break; // última página
+          offset += PAGE_SIZE;
+        }
+
+        const map = {};
+        all.forEach(ex => {
+          if (ex.name && ex.gifUrl) {
+            map[normalize(ex.name)] = ex.gifUrl;
+          }
+        });
+
+        // Debug: loga os primeiros nomes para ajustar searchNames se necessário
+        console.log('[ExerciseDB] nomes carregados (primeiros 20):',
+          Object.keys(map).slice(0, 20));
+
+        setGifMap(map);
+      } catch (err) {
+        console.warn('[ExerciseDB] erro ao carregar:', err);
+        setApiError(true);
+      } finally {
+        setApiLoading(false);
+      }
+    };
+
+    loadAll();
+  }, []);
+
+  // ── Deep link ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const exerciseName = params.get('exercise');
@@ -226,9 +333,9 @@ const ExercisesLibraryPage = () => {
 
   const handleConfirmAdd = async (routineId) => {
     try {
-      await api.post(`/routines/${routineId}/exercises`, { name: exerciseToAdd });
-      setShowRoutineModal(false);
+      await api.post('/exercises', { routine_id: routineId, exercise: exerciseToAdd, completed: false });
       showToast(`"${exerciseToAdd}" adicionado à rotina!`);
+      setShowRoutineModal(false);
     } catch {
       showToast('Erro ao adicionar exercício.', 'error');
     }
@@ -236,7 +343,6 @@ const ExercisesLibraryPage = () => {
 
   return (
     <div className="w-full min-h-screen lg:py-16 md:py-14 sm:py-12 py-10 lg:px-24 md:px-16 sm:px-6 px-4">
-
       {toast && (
         <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${
           toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-indigo-500' : 'bg-indigo-600'
@@ -244,9 +350,19 @@ const ExercisesLibraryPage = () => {
       )}
 
       <div className="w-full flex flex-col gap-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Biblioteca de Exercícios</h1>
-          <p className="text-sm text-gray-500">{Object.values(CATALOG).flat().length} exercícios com demonstração em vídeo</p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="lg:text-2xl md:text-xl text-lg font-semibold text-gray-200 bg-black/20 rounded-md py-2 px-4 w-fit">
+            Biblioteca de Exercícios
+          </h1>
+          <span className={`text-xs px-2 py-1 rounded-full border ${
+            apiError
+              ? 'bg-red-500/10 text-red-400 border-red-500/20'
+              : apiLoading
+              ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
+            {apiError ? 'GIFs offline' : apiLoading ? `Carregando GIFs… ${totalLoaded}` : `${totalLoaded} GIFs prontos`}
+          </span>
         </div>
 
         {deepLinkBanner && (
@@ -258,11 +374,11 @@ const ExercisesLibraryPage = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr_1fr] gap-x-6 gap-y-4">
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Coluna 1 — grupos musculares */}
-          <div className="flex flex-col gap-y-1">
-            <p className="text-xs text-gray-500 uppercase tracking-widest mb-2 px-1">Grupo muscular</p>
+          <div className="flex flex-col gap-y-2">
+            <p className="text-gray-400 text-sm mb-1">Grupo muscular</p>
             {Object.keys(CATALOG).map(group => (
               <button
                 key={group}
@@ -271,8 +387,7 @@ const ExercisesLibraryPage = () => {
                   selectedGroup === group ? 'bg-indigo-600 text-white' : 'bg-black/20 text-gray-300 hover:bg-black/40'
                 }`}
               >
-                {group}
-                <ChevronRight className="w-4 h-4" />
+                {group}<ChevronRight className="w-4 h-4" />
               </button>
             ))}
           </div>
@@ -305,22 +420,28 @@ const ExercisesLibraryPage = () => {
                 ))}
               </>
             ) : (
-              <div className="flex items-center justify-center h-full mt-8">
+              <div className="flex items-center justify-center h-full">
                 <p className="text-gray-500 text-sm text-center">Selecione um grupo muscular</p>
               </div>
             )}
           </div>
 
-          {/* Coluna 3 — demonstração */}
+          {/* Coluna 3 — GIF demonstrativo */}
           <div className="flex flex-col gap-y-3">
             {selectedData ? (
-              <ExerciseGif exerciseData={selectedData} />
+              <ExerciseGif
+                exerciseData={selectedData}
+                gifMap={gifMap}
+                apiLoading={apiLoading}
+              />
             ) : (
               <div className="flex flex-col items-center justify-center h-full mt-8 gap-3">
                 <div className="w-14 h-14 bg-white/5 rounded-full flex items-center justify-center">
                   <Dumbbell className="w-6 h-6 text-gray-600" />
                 </div>
-                <p className="text-gray-500 text-sm text-center">Selecione um exercício<br />para ver a demonstração</p>
+                <p className="text-gray-500 text-sm text-center">
+                  Selecione um exercício<br />para ver a demonstração
+                </p>
               </div>
             )}
           </div>
