@@ -14,7 +14,7 @@
 
 import api from './api.js';
 
-const API_BASE = 'https://fitness-app-produ-o.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://fitness-app-produ-o.onrender.com';
 
 // ── PERFIL ────────────────────────────────────────────────────────────────────
 

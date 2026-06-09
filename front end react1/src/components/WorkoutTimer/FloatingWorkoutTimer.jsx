@@ -61,6 +61,7 @@ const FinishModal = () => {
       });
       setExerciseAdded(true);
       setNewExercise('');
+      setTimeout(() => setExerciseAdded(false), 2000);
     } catch {
       setExerciseErr('Não foi possível adicionar. Tente novamente.');
     } finally {
@@ -213,14 +214,14 @@ const FinishModal = () => {
             <button
               type="button"
               onClick={handleAddExercise}
-              disabled={!newExercise.trim() || addingEx || exerciseAdded}
+              disabled={!newExercise.trim() || addingEx}
               className="self-start flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 border border-indigo-500/40 text-indigo-300 text-xs font-medium hover:bg-indigo-600/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {addingEx
                 ? <span className="w-3.5 h-3.5 border-2 border-indigo-300/30 border-t-indigo-300 rounded-full animate-spin" />
                 : <Plus className="w-3.5 h-3.5" />
               }
-              {exerciseAdded ? 'Adicionado!' : 'Adicionar à rotina'}
+              {'Adicionar à rotina'}
             </button>
           </div>
 

@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import supabase from '../config/supabase.js';
+import { supabaseAdmin as supabase } from '../config/supabase.js';
 
 const adminRoutes = new Hono();
 

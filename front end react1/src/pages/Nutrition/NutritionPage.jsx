@@ -1,6 +1,6 @@
 // src/pages/Nutrition/NutritionPage.jsx
 import React, { useState, useEffect } from 'react';
-import { Salad, Sparkles, Zap, Target, ArrowRight, ArrowLeft, Plus, Trash2, CheckCircle, Circle, Dumbbell } from 'lucide-react';
+import { Salad, Sparkles, Zap, Target, ArrowRight, ArrowLeft, Plus, Trash2, CheckCircle, Circle, Dumbbell, AlertCircle } from 'lucide-react';
 import { getRoutines } from '../../services/api-routines';
 import { getNutritionMe, generateFreePlan, generatePremiumPlan, addExercisesToRoutine } from '../../services/api-nutrition';
 import {
@@ -8,16 +8,81 @@ import {
   OptionCard, StepIndicator, UsageBar, PremiumBanner, PlanResult,
 } from './NutritionComponents';
 
+// ── Helpers de validação ───────────────────────────────────
+
+// Detecta nomes próprios no campo de ingredientes.
+// Retorna lista dos tokens suspeitos.
+function findSuspectIngredients(raw) {
+  if (!raw?.trim()) return [];
+  return raw
+    .split(/[,;\n]+/)
+    .map(t => t.trim())
+    .filter(t => t.length >= 3)
+    .filter(token =>
+      /^[A-ZÁÀÃÂÉÊÍÓÔÕÚÇ][a-záàãâéêíóôõúç]{2,}$/.test(token) && !/\d/.test(token)
+    );
+}
+
+// Valida perfil físico. Retorna string de erro ou null se ok.
+function validateProfile(profile) {
+  const w = parseFloat(profile.weight);
+  const h = parseFloat(profile.height);
+  const a = parseInt(profile.age);
+  if (!profile.weight || isNaN(w) || w < 30 || w > 300) return 'Peso inválido (30–300 kg)';
+  if (!profile.height || isNaN(h) || h < 100 || h > 250) return 'Altura inválida (100–250 cm)';
+  if (!profile.age    || isNaN(a) || a < 10 || a > 100)  return 'Idade inválida (10–100 anos)';
+  return null;
+}
+
+// ── Campo com aviso de ingredientes ───────────────────────
+function IngredientsField({ value, onChange, warning }) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-gray-300 mb-2 block">
+        🥦 O que você tem em casa? <span className="text-gray-600 font-normal">(opcional)</span>
+      </label>
+      <textarea
+        value={value}
+        onChange={onChange}
+        placeholder="Ex: frango, arroz, ovo, brócolis…"
+        rows={2}
+        className={`w-full bg-black/30 border rounded-xl text-gray-300 placeholder-gray-600 text-sm px-4 py-3 outline-none focus:border-[#5B4FFF]/50 transition-colors resize-none ${
+          warning.length > 0 ? 'border-amber-500/40' : 'border-white/10'
+        }`}
+      />
+      {warning.length > 0 && (
+        <p className="text-xs text-amber-400 mt-1.5 flex items-start gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            <strong>{warning.join(', ')}</strong> não parece{warning.length > 1 ? 'm' : ''} ser{' '}
+            {warning.length > 1 ? 'alimentos' : 'um alimento'}. Remova ou corrija antes de gerar.
+          </span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Formulário Free ────────────────────────────────────────
 function FreeForm({ onGenerate, loading, error, usage }) {
-  const [goal, setGoal]               = useState('');
-  const [ingredients, setIngredients] = useState('');
-  const [restrictions, setRestrictions] = useState('');
-  const [meals, setMeals]             = useState('3');
-  const limitReached = usage.used >= DAILY_LIMIT;
+  const [goal, setGoal]                       = useState('');
+  const [ingredients, setIngredients]         = useState('');
+  const [ingredientWarning, setIngredientWarning] = useState([]);
+  const [restrictions, setRestrictions]       = useState('');
+  const [meals, setMeals]                     = useState('3');
+
+  const limitReached  = usage.used >= DAILY_LIMIT;
+  // Botão bloqueado se: sem objetivo, com ingredientes inválidos, ou loading
+  const canGenerate   = !!goal && ingredientWarning.length === 0 && !loading && !limitReached;
+
+  function handleIngredientsChange(e) {
+    setIngredients(e.target.value);
+    setIngredientWarning(findSuspectIngredients(e.target.value));
+  }
 
   return (
     <div className="space-y-5">
+      {/* Objetivo */}
       <div>
         <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
           <Target className="w-4 h-4 text-[#5B4FFF]" /> Qual é o seu objetivo?
@@ -34,23 +99,20 @@ function FreeForm({ onGenerate, loading, error, usage }) {
         </div>
       </div>
 
-      <div>
-        <label className="text-sm font-semibold text-gray-300 mb-2 block">
-          🥦 O que você tem em casa? <span className="text-gray-600 font-normal">(opcional)</span>
-        </label>
-        <textarea
-          value={ingredients} onChange={e => setIngredients(e.target.value)}
-          placeholder="Ex: frango, arroz, ovo, brócolis…" rows={2}
-          className="w-full bg-black/30 border border-white/10 rounded-xl text-gray-300 placeholder-gray-600 text-sm px-4 py-3 outline-none focus:border-[#5B4FFF]/50 transition-colors resize-none"
-        />
-      </div>
+      {/* Ingredientes */}
+      <IngredientsField
+        value={ingredients}
+        onChange={handleIngredientsChange}
+        warning={ingredientWarning}
+      />
 
+      {/* Restrições + refeições */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-semibold text-gray-300 mb-2 block">🚫 Restrições</label>
           <input
             type="text" value={restrictions} onChange={e => setRestrictions(e.target.value)}
-            placeholder="sem glúten…"
+            placeholder="Ex: sem glúten…"
             className="w-full bg-black/30 border border-white/10 rounded-xl text-gray-300 placeholder-gray-600 text-sm px-3 py-2.5 outline-none focus:border-[#5B4FFF]/50 transition-colors"
           />
         </div>
@@ -66,7 +128,9 @@ function FreeForm({ onGenerate, loading, error, usage }) {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />{error}
+        </div>
       )}
 
       {limitReached ? (
@@ -74,7 +138,7 @@ function FreeForm({ onGenerate, loading, error, usage }) {
       ) : (
         <button
           onClick={() => onGenerate({ goal, ingredients, restrictions, meals })}
-          disabled={loading || !goal}
+          disabled={!canGenerate}
           className="w-full flex items-center justify-center gap-2 h-12 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all text-sm"
           style={{ fontFamily: 'Syne, sans-serif' }}
         >
@@ -90,24 +154,34 @@ function FreeForm({ onGenerate, loading, error, usage }) {
           )}
         </button>
       )}
+
+      {/* Dicas de preenchimento */}
+      {!goal && (
+        <p className="text-xs text-gray-600 text-center">Selecione um objetivo para habilitar a geração</p>
+      )}
+      {ingredientWarning.length > 0 && (
+        <p className="text-xs text-amber-500/80 text-center">Corrija os ingredientes inválidos para continuar</p>
+      )}
     </div>
   );
 }
 
 // ── Wizard Premium ─────────────────────────────────────────
 function PremiumWizard({ onGenerate, loading, error }) {
-  const [step, setStep]                   = useState(0);
-  const [goal, setGoal]                   = useState('');
-  const [biotype, setBiotype]             = useState('');
-  const [profile, setProfile]             = useState({ weight: '', height: '', age: '', gender: 'm', activityLevel: 'moderado' });
-  const [selectedMeals, setSelectedMeals] = useState([...ALL_MEALS]);
-  const [routines, setRoutines]           = useState([]);
+  const [step, setStep]                         = useState(0);
+  const [goal, setGoal]                         = useState('');
+  const [biotype, setBiotype]                   = useState('');
+  const [profile, setProfile]                   = useState({ weight: '', height: '', age: '', gender: 'm', activityLevel: 'moderado' });
+  const [profileErrors, setProfileErrors]       = useState({});
+  const [selectedMeals, setSelectedMeals]       = useState([...ALL_MEALS]);
+  const [routines, setRoutines]                 = useState([]);
   const [selectedRoutines, setSelectedRoutines] = useState({});
   const [manualExercises, setManualExercises]   = useState([]);
-  const [newExercise, setNewExercise]     = useState({ name: '', sets: '', weight: '', rest: '' });
-  const [cardio, setCardio]               = useState({ type: 'min', value: '' });
-  const [ingredients, setIngredients]     = useState('');
-  const [restrictions, setRestrictions]   = useState('');
+  const [newExercise, setNewExercise]           = useState({ name: '', sets: '', weight: '', rest: '' });
+  const [cardio, setCardio]                     = useState({ type: 'min', value: '' });
+  const [ingredients, setIngredients]           = useState('');
+  const [ingredientWarning, setIngredientWarning] = useState([]);
+  const [restrictions, setRestrictions]         = useState('');
 
   useEffect(() => {
     getRoutines().then(setRoutines).catch(() => {});
@@ -133,6 +207,28 @@ function PremiumWizard({ onGenerate, loading, error }) {
     setManualExercises(prev => prev.filter(e => e.id !== id));
   }
 
+  function handleIngredientsChange(e) {
+    setIngredients(e.target.value);
+    setIngredientWarning(findSuspectIngredients(e.target.value));
+  }
+
+  // Valida cada campo de perfil individualmente (feedback em tempo real)
+  function validateProfileField(key, value) {
+    const errors = { ...profileErrors };
+    const v = parseFloat(value);
+    if (key === 'weight') {
+      errors.weight = (!value || isNaN(v) || v < 30 || v > 300) ? 'Entre 30 e 300 kg' : '';
+    }
+    if (key === 'height') {
+      errors.height = (!value || isNaN(v) || v < 100 || v > 250) ? 'Entre 100 e 250 cm' : '';
+    }
+    if (key === 'age') {
+      const a = parseInt(value);
+      errors.age = (!value || isNaN(a) || a < 10 || a > 100) ? 'Entre 10 e 100 anos' : '';
+    }
+    setProfileErrors(errors);
+  }
+
   function handleGenerate() {
     const routinesDone = routines
       .filter(r => selectedRoutines[r.id])
@@ -149,14 +245,21 @@ function PremiumWizard({ onGenerate, loading, error }) {
     });
   }
 
-  const canNext0 = goal && biotype;
-  const canNext1 = selectedMeals.length >= 1;
+  // Step 0: objetivo + biótipo selecionados
+  const canNext0 = !!(goal && biotype);
+
+  // Step 1: perfil válido + ao menos 1 refeição selecionada
+  const profileValid = !validateProfile(profile) && Object.values(profileErrors).every(e => !e);
+  const canNext1 = profileValid && selectedMeals.length >= 1;
+
+  // Step 3 (final): sem ingredientes suspeitos
+  const canGenerate = !loading && ingredientWarning.length === 0;
 
   return (
     <div>
       <StepIndicator current={step} total={4} />
 
-      {/* Step 0: Objetivo + Biótipo */}
+      {/* ── Step 0: Objetivo + Biótipo ── */}
       {step === 0 && (
         <div className="space-y-5">
           <div>
@@ -188,29 +291,41 @@ function PremiumWizard({ onGenerate, loading, error }) {
           >
             Próximo <ArrowRight className="w-4 h-4" />
           </button>
+          {!canNext0 && (
+            <p className="text-xs text-gray-600 text-center">Selecione objetivo e biótipo para continuar</p>
+          )}
         </div>
       )}
 
-      {/* Step 1: Perfil físico + refeições */}
+      {/* ── Step 1: Perfil físico + refeições ── */}
       {step === 1 && (
         <div className="space-y-5">
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
-              📊 Seu perfil físico <span className="text-gray-600 font-normal">(para cálculo preciso)</span>
+              📊 Seu perfil físico <span className="text-xs text-red-400 font-normal">* obrigatório</span>
             </p>
             <div className="bg-black/20 border border-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
               {[
-                { key: 'weight', label: 'Peso (kg)',   placeholder: '70' },
-                { key: 'height', label: 'Altura (cm)', placeholder: '175' },
-                { key: 'age',    label: 'Idade',       placeholder: '25' },
-              ].map(({ key, label, placeholder }) => (
+                { key: 'weight', label: 'Peso (kg)',   placeholder: '70', hint: '30–300' },
+                { key: 'height', label: 'Altura (cm)', placeholder: '175', hint: '100–250' },
+                { key: 'age',    label: 'Idade',       placeholder: '25', hint: '10–100' },
+              ].map(({ key, label, placeholder, hint }) => (
                 <div key={key}>
                   <label className="text-xs text-gray-500 mb-1 block">{label}</label>
                   <input
                     type="number" value={profile[key]} placeholder={placeholder}
-                    onChange={e => setProfile(p => ({ ...p, [key]: e.target.value }))}
-                    className="w-full bg-black/30 border border-white/10 rounded-lg text-gray-300 placeholder-gray-600 text-sm px-3 py-2 outline-none focus:border-[#5B4FFF]/50 transition-colors"
+                    onChange={e => {
+                      setProfile(p => ({ ...p, [key]: e.target.value }));
+                      validateProfileField(key, e.target.value);
+                    }}
+                    className={`w-full bg-black/30 border rounded-lg text-gray-300 placeholder-gray-600 text-sm px-3 py-2 outline-none transition-colors ${
+                      profileErrors[key] ? 'border-red-500/40 focus:border-red-500/60' : 'border-white/10 focus:border-[#5B4FFF]/50'
+                    }`}
                   />
+                  {profileErrors[key]
+                    ? <p className="text-xs text-red-400 mt-1">{profileErrors[key]}</p>
+                    : <p className="text-xs text-gray-600 mt-1">{hint}</p>
+                  }
                 </div>
               ))}
               <div>
@@ -286,17 +401,22 @@ function PremiumWizard({ onGenerate, loading, error }) {
               Próximo <ArrowRight className="w-4 h-4" />
             </button>
           </div>
+          {!canNext1 && (
+            <p className="text-xs text-gray-600 text-center">
+              {!profileValid ? 'Preencha os dados de perfil corretamente' : 'Selecione ao menos uma refeição'}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Step 2: Treino do dia */}
+      {/* ── Step 2: Treino do dia ── */}
       {step === 2 && (
         <div className="space-y-5">
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-1.5">
               <Dumbbell className="w-4 h-4 text-[#5B4FFF]" /> Quais rotinas você fez hoje?
             </p>
-            <p className="text-xs text-gray-500 mb-3">Selecione as que você realizou</p>
+            <p className="text-xs text-gray-500 mb-3">Selecione as que você realizou <span className="text-gray-600">(opcional)</span></p>
             {routines.length === 0 ? (
               <p className="text-sm text-gray-500 bg-black/20 border border-white/5 rounded-xl px-4 py-3">
                 Você não tem rotinas cadastradas. Adicione exercícios manualmente abaixo.
@@ -332,9 +452,9 @@ function PremiumWizard({ onGenerate, loading, error }) {
               />
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { key: 'sets',   label: 'Séries',       placeholder: '4' },
-                  { key: 'weight', label: 'Peso (kg)',     placeholder: '80' },
-                  { key: 'rest',   label: 'Descanso (s)',  placeholder: '60' },
+                  { key: 'sets',   label: 'Séries',      placeholder: '4' },
+                  { key: 'weight', label: 'Peso (kg)',    placeholder: '80' },
+                  { key: 'rest',   label: 'Descanso (s)', placeholder: '60' },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key}>
                     <label className="text-xs text-gray-500 mb-1 block">{label}</label>
@@ -387,9 +507,10 @@ function PremiumWizard({ onGenerate, loading, error }) {
         </div>
       )}
 
-      {/* Step 3: Cardio + extras + gerar */}
+      {/* ── Step 3: Cardio + Ingredientes + Restrições + Gerar ── */}
       {step === 3 && (
         <div className="space-y-5">
+          {/* Cardio */}
           <div>
             <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
               🏃 Cardio hoje? <span className="text-gray-600 font-normal">(opcional)</span>
@@ -415,17 +536,14 @@ function PremiumWizard({ onGenerate, loading, error }) {
             </div>
           </div>
 
-          <div>
-            <label className="text-sm font-semibold text-gray-300 mb-2 block">
-              🥦 O que você tem em casa? <span className="text-gray-600 font-normal">(opcional)</span>
-            </label>
-            <textarea
-              value={ingredients} onChange={e => setIngredients(e.target.value)}
-              placeholder="Ex: frango, arroz, ovo, brócolis…" rows={2}
-              className="w-full bg-black/30 border border-white/10 rounded-xl text-gray-300 placeholder-gray-600 text-sm px-4 py-3 outline-none focus:border-[#5B4FFF]/50 transition-colors resize-none"
-            />
-          </div>
+          {/* Ingredientes com validação */}
+          <IngredientsField
+            value={ingredients}
+            onChange={handleIngredientsChange}
+            warning={ingredientWarning}
+          />
 
+          {/* Restrições */}
           <div>
             <label className="text-sm font-semibold text-gray-300 mb-2 block">
               🚫 Restrições alimentares <span className="text-gray-600 font-normal">(opcional)</span>
@@ -438,7 +556,9 @@ function PremiumWizard({ onGenerate, loading, error }) {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">{error}</div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />{error}
+            </div>
           )}
 
           <div className="flex gap-2">
@@ -446,7 +566,7 @@ function PremiumWizard({ onGenerate, loading, error }) {
               <ArrowLeft className="w-4 h-4" /> Voltar
             </button>
             <button
-              onClick={handleGenerate} disabled={loading}
+              onClick={handleGenerate} disabled={!canGenerate}
               className="flex-1 h-12 bg-[#5B4FFF] hover:bg-[#5B4FFF]/85 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
@@ -457,6 +577,9 @@ function PremiumWizard({ onGenerate, loading, error }) {
               )}
             </button>
           </div>
+          {ingredientWarning.length > 0 && !loading && (
+            <p className="text-xs text-amber-500/80 text-center">Corrija os ingredientes inválidos para gerar</p>
+          )}
         </div>
       )}
     </div>
@@ -465,19 +588,17 @@ function PremiumWizard({ onGenerate, loading, error }) {
 
 // ── Página principal ───────────────────────────────────────
 const NutritionPage = () => {
-  const [isPremium, setIsPremium]     = useState(false);
-  const [usage, setUsage]             = useState({ used: 0, limit: DAILY_LIMIT });
-  const [loadingMe, setLoadingMe]     = useState(true);
-  const [plan, setPlan]               = useState(null);
+  const [isPremium, setIsPremium]         = useState(false);
+  const [usage, setUsage]                 = useState({ used: 0, limit: DAILY_LIMIT });
+  const [loadingMe, setLoadingMe]         = useState(true);
+  const [plan, setPlan]                   = useState(null);
   const [planIsPremium, setPlanIsPremium] = useState(false);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState('');
-  const [routines, setRoutines]       = useState([]);
-  const [allExercises, setAllExercises] = useState([]);
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState('');
+  const [routines, setRoutines]           = useState([]);
+  const [allExercises, setAllExercises]   = useState([]);
 
   useEffect(() => {
-    // Usa getNutritionMe: o backend valida o premium via banco de dados,
-    // não mais via localStorage (mais seguro e coerente).
     getNutritionMe()
       .then(data => {
         setIsPremium(data.isPremium);
@@ -501,7 +622,7 @@ const NutritionPage = () => {
     } catch (err) {
       const d = err.response?.data;
       if (d?.error === 'limite_atingido') setUsage(u => ({ ...u, used: DAILY_LIMIT }));
-      setError(d?.message || 'Erro ao gerar plano.');
+      setError(d?.message || d?.error || 'Erro ao gerar plano.');
     }
     setLoading(false);
   }
@@ -512,18 +633,16 @@ const NutritionPage = () => {
       const data = await generatePremiumPlan(params);
       setPlan(data.plan);
       setPlanIsPremium(true);
-      // Coleta exercícios para o botão "Adicionar à rotina"
       const exs = [];
       params.workout?.routinesDone?.forEach(r => r.exercises?.forEach(e => exs.push(e)));
       params.workout?.manualExercises?.forEach(e => exs.push(e));
       setAllExercises(exs);
     } catch (err) {
       const d = err.response?.data;
-      // 403 = não é premium (backend rejeitou)
       if (err.response?.status === 403) {
         setError('Este recurso é exclusivo para assinantes Premium.');
       } else {
-        setError(d?.message || 'Erro ao gerar plano.');
+        setError(d?.message || d?.error || 'Erro ao gerar plano.');
       }
     }
     setLoading(false);
@@ -541,7 +660,6 @@ const NutritionPage = () => {
     return (
       <div className="w-full min-h-screen bg-[#171717] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          {/* border-[3px] em vez de border-3 (inválido no Tailwind) */}
           <div className="w-8 h-8 border-[3px] border-[#5B4FFF]/30 border-t-[#5B4FFF] rounded-full animate-spin" />
           <span className="text-gray-500 text-sm">Carregando...</span>
         </div>

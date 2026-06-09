@@ -1,4 +1,4 @@
-import supabase from '../config/supabase.js';
+import { supabaseAdmin as supabase } from '../config/supabase.js';
 
 export const postProgress = async (c) => {
   try {
@@ -59,4 +59,3 @@ export const deleteProgress = async (c) => {
 
   return c.json({ message: 'Progresso deletado com sucesso' });
 };
-

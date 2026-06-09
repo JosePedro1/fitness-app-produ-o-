@@ -12,7 +12,7 @@
  */
 
 import cron     from 'node-cron';
-import supabase from '../config/supabase.js';
+import { supabaseAdmin as supabase } from '../config/supabase.js';
 import { sendEmail } from './emailService.js';
 
 const DAYS_PT = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];

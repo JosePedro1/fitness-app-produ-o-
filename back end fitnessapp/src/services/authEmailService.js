@@ -1,4 +1,4 @@
-import supabase from '../config/supabase.js';
+import { supabaseAdmin as supabase } from '../config/supabase.js';
 import { sendEmail } from './emailService.js';
 
 export const sendRegisterEmail = async (email) => {
