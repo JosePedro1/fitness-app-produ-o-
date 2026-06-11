@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import About    from './About';
-import IMC      from './IMC';
-import Services from './Services';
-import Footer   from './Footer';
-import WorkoutBanner from '../../components/WorkoutTimer/WorkoutBanner';
+import About          from './About';
+import IMC            from './IMC';
+import Services       from './Services';
+import Footer         from './Footer';
+import WorkoutBanner  from '../../components/WorkoutTimer/WorkoutBanner';
+import FeedbackWidget from '../../components/FeedbackWidget/FeedbackWidget'; // ← NOVO
 import { getProfile } from '../../services/api-profile';
 
 /**
@@ -19,11 +20,8 @@ const Home = () => {
         if (data?.display_name?.trim()) {
           setGreeting(data.display_name.trim());
         }
-        // Se não tiver display_name, mantém 'Atleta'
       })
-      .catch(() => {
-        // Falha silenciosa — mantém 'Atleta'
-      });
+      .catch(() => {});
   }, []);
 
   return (
@@ -57,6 +55,9 @@ const Home = () => {
       <section id="footer">
         <Footer />
       </section>
+
+      {/* Widget flutuante de feedback — aparece em todas as páginas via /home */}
+      <FeedbackWidget />
     </div>
   );
 };

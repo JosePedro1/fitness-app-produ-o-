@@ -235,4 +235,74 @@ adminRoutes.post('/requests/:id/reject', async (c) => {
   return c.json({ message: 'Solicitação rejeitada.' });
 });
 
+// ── GET /admin/feedback ───────────────────────────────────────────────────────
+// Lista todos os feedbacks com info do usuário (mais recentes primeiro)
+adminRoutes.get('/feedback', async (c) => {
+  if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
+
+  try {
+    // Paginação simples via query params
+    const page  = Math.max(1, Number(c.req.query('page')  || 1));
+    const limit = Math.min(100, Math.max(1, Number(c.req.query('limit') || 50)));
+    const offset = (page - 1) * limit;
+
+    const [
+      { data: feedbacks, error },
+      { count: total },
+    ] = await Promise.all([
+      supabase
+        .from('feedback')
+        .select(`
+          id, rating, message, premium_suggestions, created_at,
+          users(user_id, email, display_name, avatar_url)
+        `)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1),
+
+      supabase
+        .from('feedback')
+        .select('*', { count: 'exact', head: true }),
+    ]);
+
+    if (error) throw new Error(error.message);
+
+    // Médias de avaliação
+    const { data: ratingData } = await supabase
+      .from('feedback')
+      .select('rating');
+
+    const ratings = (ratingData || []).map((r) => r.rating);
+    const avgRating = ratings.length
+      ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+      : null;
+
+    const distribution = [1, 2, 3, 4, 5].map((star) => ({
+      star,
+      count: ratings.filter((r) => r === star).length,
+    }));
+
+    return c.json({
+      feedbacks:    feedbacks || [],
+      total:        total     || 0,
+      page,
+      limit,
+      avgRating:    avgRating  ? Number(avgRating) : null,
+      distribution,
+    });
+  } catch (err) {
+    console.error('admin/feedback error:', err);
+    return c.json({ error: 'Erro ao buscar feedbacks.' }, 500);
+  }
+});
+
+// ── DELETE /admin/feedback/:id ────────────────────────────────────────────────
+adminRoutes.delete('/feedback/:id', async (c) => {
+  if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
+
+  const id = c.req.param('id');
+  const { error } = await supabase.from('feedback').delete().eq('id', id);
+  if (error) return c.json({ error: error.message }, 500);
+  return c.json({ message: 'Feedback removido.' });
+});
+
 export default adminRoutes;

@@ -628,6 +628,225 @@ function TabRequests({ password, onPendingCount }) {
   );
 }
 
+// ── Tab: Feedback dos usuários ────────────────────────────────────────────────
+function TabFeedback({ password }) {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
+  const [page,    setPage]    = useState(1);
+  const [deleting, setDeleting] = useState(null);
+  const limit = 20;
+
+  const load = async (p = 1) => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${API}/admin/feedback?page=${p}&limit=${limit}`,
+        { headers: { 'x-admin-password': password } }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erro');
+      setData(json);
+      setPage(p);
+    } catch (e) { setError(e.message); }
+    finally    { setLoading(false); }
+  };
+
+  useEffect(() => { load(1); }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Remover este feedback?')) return;
+    setDeleting(id);
+    try {
+      await fetch(`${API}/admin/feedback/${id}`, {
+        method:  'DELETE',
+        headers: { 'x-admin-password': password },
+      });
+      setData((prev) => ({
+        ...prev,
+        feedbacks: prev.feedbacks.filter((f) => f.id !== id),
+        total:     prev.total - 1,
+      }));
+    } catch { /* silencioso */ }
+    finally { setDeleting(null); }
+  };
+
+  const starBar = (count, total) => {
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1, height: 6, background: 'var(--surface4)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ width: `${pct}%`, height: '100%', background: '#F59E0B', borderRadius: 99 }} />
+        </div>
+        <span style={{ fontSize: 11, color: 'var(--text3)', minWidth: 24 }}>{count}</span>
+      </div>
+    );
+  };
+
+  const renderStars = (r) =>
+    [1,2,3,4,5].map((s) => (
+      <span key={s} style={{ color: s <= r ? '#F59E0B' : 'var(--border2)', fontSize: 14 }}>★</span>
+    ));
+
+  if (loading && !data) return (
+    <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text3)' }}>Carregando feedbacks…</div>
+  );
+  if (error) return (
+    <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--red)' }}>{error}</div>
+  );
+  if (!data) return null;
+
+  const totalPages = Math.ceil(data.total / limit);
+
+  return (
+    <>
+      {/* Resumo */}
+      <div className="adm-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+        <div className="adm-card">
+          <div className="adm-card-icon">💬</div>
+          <div className="adm-card-label">Total de Feedbacks</div>
+          <div className="adm-card-value" style={{ color: 'var(--primary-light)' }}>{fmt(data.total)}</div>
+        </div>
+        <div className="adm-card">
+          <div className="adm-card-icon">⭐</div>
+          <div className="adm-card-label">Nota Média</div>
+          <div className="adm-card-value" style={{ color: '#F59E0B' }}>
+            {data.avgRating !== null ? data.avgRating.toFixed(1) : '—'}
+          </div>
+          <div className="adm-card-sub">de 5 estrelas</div>
+        </div>
+      </div>
+
+      {/* Distribuição de estrelas */}
+      {data.distribution && data.total > 0 && (
+        <div className="adm-section">
+          <div className="adm-section-title">Distribuição de notas</div>
+          <div className="adm-card" style={{ maxWidth: 340 }}>
+            {[5,4,3,2,1].map(({ star } = data.distribution.find((d) => d.star === 5) && { star: 5 }) =>
+              data.distribution.slice().reverse().map((d) => (
+                <div key={d.star} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: '#F59E0B', minWidth: 20 }}>{d.star}★</span>
+                  {starBar(d.count, data.total)}
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {data.total > 0 ? Math.round((d.count / data.total) * 100) : 0}%
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lista de feedbacks */}
+      <div className="adm-section">
+        <div className="adm-section-title">Feedbacks recentes</div>
+        {data.feedbacks.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text3)' }}>
+            Nenhum feedback ainda.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {data.feedbacks.map((fb) => (
+              <div key={fb.id} className="adm-card" style={{ position: 'relative' }}>
+                {/* Header do card */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {/* Avatar */}
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%',
+                      background: 'var(--primary-bg)', border: '1px solid rgba(91,79,255,.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14, fontWeight: 700, color: 'var(--primary-light)',
+                      overflow: 'hidden', flexShrink: 0,
+                    }}>
+                      {fb.users?.avatar_url
+                        ? <img src={fb.users.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                        : (fb.users?.display_name?.[0] || fb.users?.email?.[0] || '?').toUpperCase()
+                      }
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>
+                        {fb.users?.display_name || fb.users?.email?.split('@')[0] || 'Usuário'}
+                      </p>
+                      <p style={{ fontSize: 11, color: 'var(--text3)' }}>{fb.users?.email}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 11, color: 'var(--text3)' }}>{fmtDate(fb.created_at)}</span>
+                    <button
+                      onClick={() => handleDelete(fb.id)}
+                      disabled={deleting === fb.id}
+                      style={{
+                        background: 'none', border: '1px solid rgba(239,68,68,.2)',
+                        color: 'var(--red)', borderRadius: 6, padding: '3px 8px',
+                        fontSize: 11, cursor: 'pointer', opacity: deleting === fb.id ? 0.5 : 1,
+                      }}
+                    >
+                      {deleting === fb.id ? '…' : '✕'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Estrelas */}
+                <div style={{ marginBottom: 8 }}>{renderStars(fb.rating)}</div>
+
+                {/* Comentário */}
+                {fb.message && (
+                  <div style={{ marginBottom: 8 }}>
+                    <p style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>
+                      Comentário
+                    </p>
+                    <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{fb.message}</p>
+                  </div>
+                )}
+
+                {/* Sugestão premium */}
+                {fb.premium_suggestions && (
+                  <div style={{
+                    background: 'rgba(91,79,255,0.06)',
+                    border:     '1px solid rgba(91,79,255,0.18)',
+                    borderRadius: 8,
+                    padding:    '10px 12px',
+                    marginTop:  4,
+                  }}>
+                    <p style={{ fontSize: 11, color: 'var(--primary-light)', fontWeight: 600, letterSpacing: '.04em', marginBottom: 4 }}>
+                      💎 SUGESTÃO PREMIUM
+                    </p>
+                    <p style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.5 }}>{fb.premium_suggestions}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Paginação */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+            <button
+              className="adm-btn adm-btn-ghost adm-btn-sm"
+              disabled={page === 1 || loading}
+              onClick={() => load(page - 1)}
+            >
+              ← Anterior
+            </button>
+            <span style={{ fontSize: 13, color: 'var(--text2)', padding: '6px 12px' }}>
+              {page} / {totalPages}
+            </span>
+            <button
+              className="adm-btn adm-btn-ghost adm-btn-sm"
+              disabled={page === totalPages || loading}
+              onClick={() => load(page + 1)}
+            >
+              Próxima →
+            </button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ── Dashboard principal ───────────────────────────────────────────────────────
 function AdminDashboard({ password, onLogout }) {
   const [tab, setTab] = useState('overview');
@@ -656,11 +875,15 @@ function AdminDashboard({ password, onLogout }) {
             📋 Aprovações
             {pendingCount > 0 && <span className="adm-tab-badge">{pendingCount}</span>}
           </button>
+          <button className={`adm-tab ${tab === 'feedback' ? 'active' : ''}`} onClick={() => setTab('feedback')}>
+            💬 Feedback
+          </button>
         </div>
 
         {tab === 'overview'  && <TabOverview  password={password} />}
         {tab === 'academies' && <TabAcademies password={password} />}
         {tab === 'requests'  && <TabRequests  password={password} onPendingCount={setPendingCount} />}
+        {tab === 'feedback'  && <TabFeedback  password={password} />}
       </main>
     </div>
   );
