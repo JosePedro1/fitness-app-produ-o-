@@ -722,17 +722,15 @@ function TabFeedback({ password }) {
         <div className="adm-section">
           <div className="adm-section-title">Distribuição de notas</div>
           <div className="adm-card" style={{ maxWidth: 340 }}>
-            {[5,4,3,2,1].map(({ star } = data.distribution.find((d) => d.star === 5) && { star: 5 }) =>
-              data.distribution.slice().reverse().map((d) => (
-                <div key={d.star} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, color: '#F59E0B', minWidth: 20 }}>{d.star}★</span>
-                  {starBar(d.count, data.total)}
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {data.total > 0 ? Math.round((d.count / data.total) * 100) : 0}%
-                  </span>
-                </div>
-              ))
-            )}
+            {data.distribution.slice().reverse().map((d) => (
+              <div key={d.star} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: '#F59E0B', minWidth: 20 }}>{d.star}★</span>
+                {starBar(d.count, data.total)}
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+                  {data.total > 0 ? Math.round((d.count / data.total) * 100) : 0}%
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
