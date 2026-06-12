@@ -25,13 +25,27 @@ import ProfilePage          from '../pages/Profile/ProfilePage';
 import RankingPage          from '../pages/Ranking/RankingPage';
 import FeaturesPage         from '../pages/Features/FeaturesPage';
 
+// Redireciona a rota raiz dependendo do contexto:
+// — PWA instalado (standalone): vai direto pro login ou home (sem landing)
+// — Navegador normal: mostra a LandingPage normalmente
+const RootRoute = () => {
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  if (!isPWA) return <LandingPage />;
+
+  // No PWA: se já tem token vai pra home, senão vai pro login
+  const hasToken = !!localStorage.getItem('auth_token');
+  return <Navigate to={hasToken ? '/home' : '/login'} replace />;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/adm" element={<AdminPage />} />
 
-      {/* Rota pública — landing page */}
-      <Route path="/"                element={<LandingPage />} />
+      {/* Rota raiz — landing no browser, login/home no PWA */}
+      <Route path="/"                element={<RootRoute />} />
 
       {/* Ranking público da academia (sem login) */}
       <Route path="/ranking/:slug"   element={<RankingPage />} />
