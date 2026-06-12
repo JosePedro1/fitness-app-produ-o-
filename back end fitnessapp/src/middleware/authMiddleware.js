@@ -26,14 +26,23 @@ export const authenticate = async (c, next) => {
     return c.json({ error: 'Token inválido.' }, 401);
   }
 
+  // Busca usuário e valida session_id (sessão única por aparelho)
   const { data: user, error } = await supabaseAdmin
     .from('users')
-    .select('user_id, email')
+    .select('user_id, email, current_session_id')
     .eq('user_id', decoded.sub)
     .single();
 
   if (error || !user) {
     return c.json({ error: 'Usuário não encontrado.' }, 401);
+  }
+
+  // Se o token tem sid e não bate com a sessão atual → foi substituído por login em outro aparelho
+  if (decoded.sid && user.current_session_id && decoded.sid !== user.current_session_id) {
+    return c.json({
+      error: 'Sessão encerrada. Sua conta foi acessada em outro dispositivo.',
+      code: 'SESSION_REPLACED',
+    }, 401);
   }
 
   c.set('user', user);

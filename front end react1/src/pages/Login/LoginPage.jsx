@@ -1,4 +1,18 @@
-
+/**
+ * LoginPage.jsx
+ *
+ * Melhorias:
+ * 1. Olhinho no campo de senha (mostrar/esconder texto)
+ * 2. Botão "Entrar com Google" via Google Identity Services
+ *
+ * Para ativar o login com Google:
+ *   — Crie um projeto no console.cloud.google.com
+ *   — Ative "OAuth 2.0" e adicione seu domínio como Authorized Origin
+ *   — Adicione GOOGLE_CLIENT_ID no Render (backend expõe via GET /auth/google/config)
+ *   — No backend adicione: POST /auth/google  (valida credential JWT do Google
+ *     via https://oauth2.googleapis.com/tokeninfo?id_token=<credential>
+ *     e retorna seu próprio JWT)
+ */
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -57,6 +71,15 @@ export default function LoginPage() {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   }
+
+  // Exibe aviso quando sessão foi encerrada por outro dispositivo
+  useEffect(() => {
+    const msg = sessionStorage.getItem('auth_message');
+    if (msg) {
+      showToast(msg, 'error');
+      sessionStorage.removeItem('auth_message');
+    }
+  }, []);
 
   /* ── Login com e-mail / senha ── */
   async function doLogin(e) {

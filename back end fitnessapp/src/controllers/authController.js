@@ -105,13 +105,24 @@ export const login = async (c) => {
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao gerar token.' }, 500);
 
+    // Gera um session_id único para esta sessão — invalida sessões anteriores
+    const session_id = crypto.randomBytes(32).toString('hex');
+    const userAgent  = c.req.header('User-Agent') || '';
+
+    // Salva session_id e user_agent no banco
+    await supabaseAdmin
+      .from('users')
+      .update({ current_session_id: session_id, last_user_agent: userAgent })
+      .eq('user_id', user_id);
+
     const token = jwt.sign(
-      { sub: user_id },
+      { sub: user_id, sid: session_id },
       process.env.JWT_SECRET,
-      { expiresIn: '3h' }
+      { expiresIn: '7d' }  // 7 dias — sessão única dispensa expiração curta
     );
 
-    sendLoginEmail(email, user_id).catch((err) =>
+    // E-mail só se for dispositivo diferente do último login
+    sendLoginEmail(email, user_id, userAgent).catch((err) =>
       console.error('E-mail de login falhou:', err.message)
     );
 
@@ -264,12 +275,12 @@ export const googleLogin = async (c) => {
       user_id = existingUser.user_id;
  
       // Atualiza google_id se a coluna existir (opcional)
-      try {
-        await supabaseAdmin
-          .from('users')
-          .update({ google_id })
-          .eq('user_id', user_id);
-      } catch (_) { /* coluna pode não existir ainda — ignora */ }
+      await supabaseAdmin
+        .from('users')
+        .update({ google_id })
+        .eq('user_id', user_id)
+        .throwOnError()
+        .catch(() => { /* coluna pode não existir ainda — ignora */ });
  
     } else {
       // 3. Cria usuário no Supabase Auth (sem senha, confirmado direto)
@@ -321,12 +332,23 @@ export const googleLogin = async (c) => {
       sendRegisterEmail(email).catch(() => {});
     }
  
-    // 6. Gera nosso JWT (mesmo formato do login normal)
+    // 6. Gera sessão única e JWT
+    const session_id = crypto.randomBytes(32).toString('hex');
+    const userAgent  = c.req.header('User-Agent') || '';
+
+    await supabaseAdmin
+      .from('users')
+      .update({ current_session_id: session_id, last_user_agent: userAgent })
+      .eq('user_id', user_id);
+
     const token = jwt.sign(
-      { sub: user_id },
+      { sub: user_id, sid: session_id },
       process.env.JWT_SECRET,
-      { expiresIn: '3h' }
+      { expiresIn: '7d' }
     );
+
+    // E-mail só se for dispositivo diferente
+    sendLoginEmail(email, user_id, userAgent).catch(() => {});
  
     return c.json({
       message: 'Login com Google bem-sucedido.',

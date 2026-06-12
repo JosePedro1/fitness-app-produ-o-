@@ -22,13 +22,23 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado ou inválido → limpa localStorage e volta ao login
+      const code = error.response?.data?.code;
+
+      // Limpa sessão local
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_id');
       localStorage.removeItem('email');
-      // Só redireciona se não estiver já em páginas públicas
+      localStorage.removeItem('ft_user');
+
       const publicPaths = ['/login', '/register', '/'];
       if (!publicPaths.includes(window.location.pathname)) {
+        if (code === 'SESSION_REPLACED') {
+          // Sessão substituída por outro dispositivo — avisa o usuário
+          sessionStorage.setItem(
+            'auth_message',
+            'Sua sessão foi encerrada porque a conta foi acessada em outro dispositivo.'
+          );
+        }
         window.location.href = '/login';
       }
     }
