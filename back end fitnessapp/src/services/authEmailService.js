@@ -65,6 +65,19 @@ export const sendLoginEmail = async (email, user_id, userAgent) => {
 };
 
 
+// ── Aviso de sessão substituída (login em outro dispositivo) ─────────────────
+export const sendSessionReplacedEmail = async (email) => {
+  await sendEmail(
+    email,
+    '⚠️ Sua sessão foi encerrada — Fitness App',
+    `Olá!\n\nDetectamos um novo login na sua conta, e por isso sua sessão anterior foi encerrada.\n\n` +
+    `Se foi você, pode ignorar este e-mail.\n` +
+    `Se NÃO foi você, troque sua senha imediatamente:\n` +
+    `${FRONTEND_URL}/forgot-password\n\n` +
+    `Equipe Fitness App`
+  );
+};
+
 // ── Utilitário: resume o User-Agent em texto legível ─────────────────────────
 function summarizeUA(ua = '') {
   if (!ua) return 'Dispositivo desconhecido';
