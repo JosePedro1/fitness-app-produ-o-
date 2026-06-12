@@ -264,12 +264,12 @@ export const googleLogin = async (c) => {
       user_id = existingUser.user_id;
  
       // Atualiza google_id se a coluna existir (opcional)
-      await supabaseAdmin
-        .from('users')
-        .update({ google_id })
-        .eq('user_id', user_id)
-        .throwOnError()
-        .catch(() => { /* coluna pode não existir ainda — ignora */ });
+      try {
+        await supabaseAdmin
+          .from('users')
+          .update({ google_id })
+          .eq('user_id', user_id);
+      } catch (_) { /* coluna pode não existir ainda — ignora */ }
  
     } else {
       // 3. Cria usuário no Supabase Auth (sem senha, confirmado direto)
