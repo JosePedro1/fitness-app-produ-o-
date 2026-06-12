@@ -20,7 +20,10 @@ const AppLayout = () => {
     <div className={`w-full min-h-screen h-auto ${hideChrome ? '' : 'bg-[#171717]'}`}>
       {!hideChrome && <Navbar />}
 
-      <AppRoutes />
+      {/* pb-24 garante que o conteúdo não fique escondido atrás do BottomNav (h-16) no mobile */}
+      <div className={!hideChrome ? 'md:pb-0 pb-24' : ''}>
+        <AppRoutes />
+      </div>
 
       {/*
         FloatingWorkoutTimer fica montado em todas as rotas protegidas.

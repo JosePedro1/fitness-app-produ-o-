@@ -189,13 +189,13 @@ const RoutinePage = () => {
                   </div>
 
                   {/* Nome e info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className={`font-semibold text-sm truncate ${isToday ? 'text-indigo-200' : 'text-gray-300'}`}>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <p className={`font-semibold text-sm shrink-0 ${isToday ? 'text-indigo-200' : 'text-gray-300'}`}>
                         {label}
                       </p>
                       {!isRest && dayData?.workout_name && (
-                        <span className="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-600/30 shrink-0">
+                        <span className="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-600/30 truncate min-w-0 block max-w-[140px]">
                           {dayData.workout_name}
                         </span>
                       )}
