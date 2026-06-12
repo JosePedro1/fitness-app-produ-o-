@@ -5,6 +5,7 @@ import BottomNav from './components/BottomNav/BottomNav';
 import AppRoutes from './Routes/AppRoutes';
 import { WorkoutTimerProvider } from './context/WorkoutTimerContext';
 import FloatingWorkoutTimer from './components/WorkoutTimer/FloatingWorkoutTimer';
+import InstallPWA from './components/InstallPWA/InstallPWA';
 
 const AUTH_ROUTES = ['/login', '/signup', '/forgot-password', '/reset-password'];
 const PUBLIC_ROUTES = ['/'];
@@ -33,6 +34,12 @@ const AppLayout = () => {
         substitui o drawer hamburger como navegação primária no celular.
       */}
       {!hideChrome && <BottomNav />}
+
+      {/*
+        Banner flutuante de instalação PWA — aparece em todas as rotas.
+        Se posiciona acima do BottomNav em rotas protegidas.
+      */}
+      <InstallPWA />
     </div>
   );
 };

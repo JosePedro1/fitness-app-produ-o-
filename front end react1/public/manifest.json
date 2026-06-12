@@ -1,0 +1,27 @@
+{
+  "name": "FitTrack — Seu app de fitness",
+  "short_name": "FitTrack",
+  "description": "Crie rotinas, acompanhe progresso e otimize sua nutrição.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#111118",
+  "theme_color": "#5B4FFF",
+  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "sports"]
+}

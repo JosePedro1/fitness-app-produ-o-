@@ -216,3 +216,126 @@ export const resetPassword = async (c) => {
     return c.json({ error: err.message }, 500);
   }
 };
+
+
+
+export const googleLogin = async (c) => {
+  try {
+    const { credential, academy_slug } = await c.req.json();
+ 
+    if (!credential) {
+      return c.json({ error: 'credential é obrigatório.' }, 400);
+    }
+ 
+    // 1. Valida o token com o Google (gratuito, sem chave extra)
+    const googleRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
+    );
+    const profile = await googleRes.json();
+ 
+    if (!googleRes.ok || profile.error) {
+      return c.json({ error: 'Token do Google inválido.' }, 401);
+    }
+ 
+    // Verifica que o token foi emitido para o nosso app
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (clientId && profile.aud !== clientId) {
+      return c.json({ error: 'Token não pertence a este app.' }, 401);
+    }
+ 
+    const email     = profile.email;
+    const google_id = profile.sub; // ID único do Google
+ 
+    if (!email) {
+      return c.json({ error: 'Não foi possível obter o e-mail do Google.' }, 400);
+    }
+ 
+    // 2. Verifica se o usuário já existe em public.users
+    let { data: existingUser } = await supabaseAdmin
+      .from('users')
+      .select('user_id, email')
+      .eq('email', email)
+      .maybeSingle();
+ 
+    let user_id;
+ 
+    if (existingUser) {
+      // Usuário já cadastrado — apenas loga
+      user_id = existingUser.user_id;
+ 
+      // Atualiza google_id se a coluna existir (opcional)
+      await supabaseAdmin
+        .from('users')
+        .update({ google_id })
+        .eq('user_id', user_id)
+        .throwOnError()
+        .catch(() => { /* coluna pode não existir ainda — ignora */ });
+ 
+    } else {
+      // 3. Cria usuário no Supabase Auth (sem senha, confirmado direto)
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { google_id, full_name: profile.name, avatar_url: profile.picture },
+      });
+ 
+      if (authError) {
+        // Se o usuário já existe no auth.users mas não em public.users
+        if (authError.message?.includes('already been registered')) {
+          // Busca pelo e-mail via admin
+          const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+          const found = authUsers?.find(u => u.email === email);
+          if (!found) return c.json({ error: 'Erro ao localizar usuário.' }, 500);
+          user_id = found.id;
+        } else {
+          console.error('googleLogin — createUser error:', authError.message);
+          return c.json({ error: authError.message }, 500);
+        }
+      } else {
+        user_id = authData.user.id;
+      }
+ 
+      // 4. Resolve academy_id (se vier por link de academia)
+      let academy_id = null;
+      if (academy_slug?.trim()) {
+        const { data: academy } = await supabaseAdmin
+          .from('academies')
+          .select('id')
+          .eq('slug', academy_slug.trim().toLowerCase())
+          .eq('is_active', true)
+          .maybeSingle();
+        if (academy) academy_id = academy.id;
+      }
+ 
+      // 5. Upsert em public.users
+      const upsertPayload = { user_id, email };
+      if (academy_id) upsertPayload.academy_id = academy_id;
+      // google_id só se a coluna existir:
+      // upsertPayload.google_id = google_id;
+ 
+      await supabaseAdmin
+        .from('users')
+        .upsert(upsertPayload, { onConflict: 'user_id' });
+ 
+      // E-mail de boas-vindas (não bloqueia)
+      sendRegisterEmail(email).catch(() => {});
+    }
+ 
+    // 6. Gera nosso JWT (mesmo formato do login normal)
+    const token = jwt.sign(
+      { sub: user_id },
+      process.env.JWT_SECRET,
+      { expiresIn: '3h' }
+    );
+ 
+    return c.json({
+      message: 'Login com Google bem-sucedido.',
+      token,
+      user: { user_id, email },
+    });
+ 
+  } catch (err) {
+    console.error('googleLogin error:', err);
+    return c.json({ error: err.message }, 500);
+  }
+};
