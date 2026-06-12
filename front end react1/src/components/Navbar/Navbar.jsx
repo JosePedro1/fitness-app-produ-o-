@@ -24,6 +24,12 @@ const NAV_ITEMS = [
   { name: 'Perfil',     link: '/profile',            icon: UserCircle2 }, // ← NOVO
 ];
 
+// Itens já cobertos pela BottomNav (Início, Rotinas, Timer, Progresso, Perfil)
+// não precisam aparecer de novo no menu mobile — evita duplicidade e reduz
+// a lista de 8 para 3 + Sair, mantendo o uso com uma mão.
+const MOBILE_MORE_LINKS = ['/calendar', '/exercises-library', '/nutrition'];
+const MOBILE_MENU_ITEMS = NAV_ITEMS.filter(({ link }) => MOBILE_MORE_LINKS.includes(link));
+
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
@@ -70,20 +76,21 @@ const Navbar = () => {
           Sair
         </button>
 
-        {/* Mobile toggle */}
+        {/* Mobile toggle — "Mais" (Início, Rotinas, Timer, Progresso e Perfil já
+            ficam na BottomNav fixa, então o drawer só precisa dos extras) */}
         <button
           onClick={() => setOpen(!open)}
           className="md:hidden p-2 text-gray-400 hover:text-gray-200 transition-colors"
-          aria-label="Menu"
+          aria-label="Mais opções"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu — apenas destinos não cobertos pela BottomNav */}
       {open && (
         <div className="md:hidden pt-3 pb-1 flex flex-col gap-1 border-t border-white/5 mt-3">
-          {NAV_ITEMS.map(({ name, link, icon: Icon }) => {
+          {MOBILE_MENU_ITEMS.map(({ name, link, icon: Icon }) => {
             const active = location.pathname === link;
             return (
               <Link

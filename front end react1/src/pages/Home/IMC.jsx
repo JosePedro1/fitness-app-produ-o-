@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Dumbbell, ArrowRight, AlertCircle, TrendingUp,
+  ArrowRight, AlertCircle, TrendingUp,
   RotateCcw, Loader2, User, Target, Scale
 } from 'lucide-react';
 import Label from '../../components/Label/Label';
@@ -113,15 +113,7 @@ const IMC = () => {
         </div>
       )}
 
-      <div className="w-full h-auto items-center lg:py-16 md:py-14 sm:py-12 py-10 lg:px-24 md:px-16 sm:px-6 px-4">
-        <div className="w-full h-auto flex items-center justify-center mb-6">
-          <h6 className="lg:text-lg md:text-base sm:text-base text-base font-medium text-gray-200 flex items-center gap-x-2 bg-black/20 rounded-md py-2 px-4">
-            <Dumbbell className="w-4 h-4 -rotate-45 text-[#5B4FFF]" />
-            Calculadora IMC — Plano Personalizado
-          </h6>
-        </div>
-
-        <div className="w-full bg-black/20 rounded-md py-8 lg:px-8 md:px-6 px-4">
+      <div className="w-full">
 
           {/* Linha 1: Dados físicos */}
           <div className="flex flex-wrap gap-4 mb-4">
@@ -266,7 +258,6 @@ const IMC = () => {
               )}
             </div>
           )}
-        </div>
       </div>
     </>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar';
+import BottomNav from './components/BottomNav/BottomNav';
 import AppRoutes from './Routes/AppRoutes';
 import { WorkoutTimerProvider } from './context/WorkoutTimerContext';
 import FloatingWorkoutTimer from './components/WorkoutTimer/FloatingWorkoutTimer';
@@ -26,6 +27,12 @@ const AppLayout = () => {
         Não interfere em nenhum layout existente pois é position: fixed.
       */}
       {!hideChrome && <FloatingWorkoutTimer />}
+
+      {/*
+        BottomNav fixa (mobile, md:hidden) com os 5 destinos mais usados —
+        substitui o drawer hamburger como navegação primária no celular.
+      */}
+      {!hideChrome && <BottomNav />}
     </div>
   );
 };

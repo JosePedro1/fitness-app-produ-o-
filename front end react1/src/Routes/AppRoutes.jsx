@@ -23,6 +23,7 @@ import AdminPage            from '../pages/Admin/AdminPage';
 import NutritionPage        from '../pages/Nutrition/NutritionPage';
 import ProfilePage          from '../pages/Profile/ProfilePage';
 import RankingPage          from '../pages/Ranking/RankingPage';
+import FeaturesPage         from '../pages/Features/FeaturesPage';
 
 const AppRoutes = () => {
   return (
@@ -51,6 +52,7 @@ const AppRoutes = () => {
         <Route path="/calendar"          element={<CalendarPage />} />
         <Route path="/nutrition"         element={<NutritionPage />} />
         <Route path="/profile"           element={<ProfilePage />} />
+        <Route path="/features"          element={<FeaturesPage />} />
       </Route>
 
       {/* Fallback */}

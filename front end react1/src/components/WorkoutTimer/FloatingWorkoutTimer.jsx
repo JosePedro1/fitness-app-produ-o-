@@ -298,7 +298,7 @@ const FloatingWorkoutTimer = () => {
         {finishModal && <FinishModal />}
         <button
           onClick={() => setIsMinimized(false)}
-          className={`fixed bottom-5 right-5 z-[999] flex items-center gap-2 pl-3 pr-4 py-2 rounded-full shadow-2xl border transition-all duration-300 ${
+          className={`fixed bottom-20 right-5 md:bottom-5 z-[999] flex items-center gap-2 pl-3 pr-4 py-2 rounded-full shadow-2xl border transition-all duration-300 ${
             isRunning
               ? 'bg-indigo-600 border-indigo-500/60 shadow-indigo-900/50'
               : 'bg-[#252525] border-gray-700 shadow-black/50'
@@ -318,7 +318,7 @@ const FloatingWorkoutTimer = () => {
       {finishModal && <FinishModal />}
 
       <div
-        className={`fixed bottom-5 right-5 z-[999] w-64 rounded-2xl shadow-2xl border overflow-hidden transition-all duration-300 ${
+        className={`fixed bottom-20 right-5 md:bottom-5 z-[999] w-64 rounded-2xl shadow-2xl border overflow-hidden transition-all duration-300 ${
           isRunning
             ? 'bg-[#1a1a2e] border-indigo-500/40 shadow-indigo-900/40'
             : 'bg-[#1c1c1c] border-gray-700/60 shadow-black/60'

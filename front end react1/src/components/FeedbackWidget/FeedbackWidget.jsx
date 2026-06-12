@@ -81,8 +81,16 @@ export default function FeedbackWidget() {
 
   return (
     <>
+      <style>{`
+        @media (max-width: 767px) {
+          .fb-fab { bottom: 84px !important; }
+          .fb-panel { bottom: 148px !important; }
+        }
+      `}</style>
+
       {/* ── Botão flutuante ── */}
       <button
+        className="fb-fab"
         onClick={() => setOpen((v) => !v)}
         title="Enviar feedback"
         style={{
@@ -113,6 +121,7 @@ export default function FeedbackWidget() {
       {open && (
         <div
           ref={panelRef}
+          className="fb-panel"
           style={{
             position:     'fixed',
             bottom:       '88px',
