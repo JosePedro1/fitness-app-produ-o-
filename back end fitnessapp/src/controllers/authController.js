@@ -1,8 +1,13 @@
 import jwt    from 'jsonwebtoken';
 import crypto from 'crypto';
-import supabase, { supabaseAdmin } from '../config/supabase.js';
-import { sendEmail }                              from '../services/emailService.js';
-import { sendRegisterEmail, sendLoginEmail }      from '../services/authEmailService.js';
+import supabase, { supabaseAdmin }                                from '../config/supabase.js';
+import { sendEmail }                                              from '../services/emailService.js';
+import {
+  sendRegisterEmail,
+  sendVerificationEmail,
+  sendLoginEmail,
+  sendSessionReplacedEmail,
+} from '../services/authEmailService.js';
 
 // ── POST /auth/register ───────────────────────────────────────────────────────
 export const register = async (c) => {
@@ -16,23 +21,41 @@ export const register = async (c) => {
     // Verifica duplicata antes de criar no Auth
     const { data: existing } = await supabaseAdmin
       .from('users')
-      .select('user_id')
+      .select('user_id, email_verified')
       .eq('email', email)
       .maybeSingle();
 
     if (existing) {
+      // Se já existe mas ainda não verificou, reenvia o link de verificação
+      if (existing.email_verified === false) {
+        const token   = crypto.randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+        await supabaseAdmin
+          .from('users')
+          .update({ verification_token: token, verification_token_expires: expires })
+          .eq('user_id', existing.user_id);
+
+        sendVerificationEmail(email, token).catch((err) =>
+          console.error('Reenvio de verificação falhou:', err.message)
+        );
+
+        return c.json({
+          message: 'Conta já cadastrada mas não verificada. Reenviamos o link para seu e-mail.',
+        }, 200);
+      }
+
       return c.json({ error: 'Este e-mail já está registrado.' }, 400);
     }
 
     // Cria usuário no Supabase Auth
     const { data, error } = await supabase.auth.signUp({ email, password });
-
     if (error) return c.json({ error: error.message }, 400);
 
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao obter user_id.' }, 500);
 
-    // Resolve academy_id pelo slug (supabaseAdmin bypassa RLS)
+    // Resolve academy_id pelo slug
     let academy_id = null;
     if (academy_slug?.trim()) {
       const { data: academy, error: acadErr } = await supabaseAdmin
@@ -46,16 +69,23 @@ export const register = async (c) => {
         console.error('Erro ao buscar academia:', acadErr.message);
       } else if (academy) {
         academy_id = academy.id;
-        console.log(`register: academy_slug="${academy_slug}" → academy_id=${academy_id}`);
       } else {
         console.warn(`register: academia "${academy_slug}" não encontrada ou inativa.`);
       }
     }
 
-    // UPSERT em vez de INSERT para sobreviver a triggers do Supabase que
-    // já inserem o usuário em public.users ao criar em auth.users.
-    // onConflict: 'user_id' — se já existe, atualiza email + academy_id.
-    const upsertPayload = { user_id, email };
+    // Gera token de verificação de e-mail (válido 24 h)
+    const verificationToken   = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    // Upsert com email_verified = false
+    const upsertPayload = {
+      user_id,
+      email,
+      email_verified:              false,
+      verification_token:          verificationToken,
+      verification_token_expires:  verificationExpires,
+    };
     if (academy_id) upsertPayload.academy_id = academy_id;
 
     const { error: upsertError } = await supabaseAdmin
@@ -68,27 +98,75 @@ export const register = async (c) => {
       return c.json({ error: 'Erro ao salvar usuário.' }, 500);
     }
 
-    // Se houver academy_id mas o upsert não salvou (trigger inseriu sem o campo),
-    // garante que o academy_id foi de fato persistido com um UPDATE explícito.
     if (academy_id) {
       await supabaseAdmin
         .from('users')
         .update({ academy_id })
         .eq('user_id', user_id);
-      console.log(`register: academy_id=${academy_id} gravado para user ${user_id}`);
     }
 
-    sendRegisterEmail(email).catch((err) =>
-      console.error('E-mail de cadastro falhou:', err.message)
+    // Envia e-mail de verificação (NÃO o de boas-vindas — este vem após confirmação)
+    sendVerificationEmail(email, verificationToken).catch((err) =>
+      console.error('E-mail de verificação falhou:', err.message)
     );
 
     return c.json({
-      message: 'Usuário registrado com sucesso.',
+      message: 'Cadastro iniciado! Verifique seu e-mail para ativar sua conta.',
       user: { user_id, email },
       academy_id,
     });
   } catch (err) {
     console.error('register error:', err);
+    return c.json({ error: err.message }, 500);
+  }
+};
+// ── GET /auth/verify-email?token=xxx ─────────────────────────────────────────
+export const verifyEmail = async (c) => {
+  try {
+    const token = c.req.query('token');
+
+    if (!token) {
+      return c.json({ error: 'Token de verificação não informado.' }, 400);
+    }
+
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('user_id, email, verification_token_expires, email_verified')
+      .eq('verification_token', token)
+      .maybeSingle();
+
+    if (!user) {
+      return c.json({ error: 'Link de verificação inválido ou já utilizado.' }, 400);
+    }
+
+    if (user.email_verified) {
+      return c.json({ message: 'E-mail já verificado. Você pode fazer login.' });
+    }
+
+    if (new Date(user.verification_token_expires) < new Date()) {
+      return c.json({
+        error: 'Link expirado. Faça login para receber um novo link de verificação.',
+      }, 400);
+    }
+
+    // Marca como verificado e limpa o token
+    await supabaseAdmin
+      .from('users')
+      .update({
+        email_verified:             true,
+        verification_token:         null,
+        verification_token_expires: null,
+      })
+      .eq('user_id', user.user_id);
+
+    // Agora sim, envia o e-mail de boas-vindas
+    sendRegisterEmail(user.email).catch((err) =>
+      console.error('E-mail de boas-vindas falhou:', err.message)
+    );
+
+    return c.json({ message: 'E-mail verificado com sucesso! Você já pode fazer login.' });
+  } catch (err) {
+    console.error('verifyEmail error:', err);
     return c.json({ error: err.message }, 500);
   }
 };
@@ -99,29 +177,44 @@ export const login = async (c) => {
     const { email, password } = await c.req.json();
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
     if (error) return c.json({ error: 'E-mail ou senha incorretos.' }, 400);
 
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao gerar token.' }, 500);
 
-    // Gera um session_id único para esta sessão — invalida sessões anteriores
+    // Verifica se o e-mail foi confirmado na nossa tabela
+    const { data: userRecord } = await supabaseAdmin
+      .from('users')
+      .select('email_verified, current_session_id')
+      .eq('user_id', user_id)
+      .single();
+
+    // email_verified === false (explicitamente false, não null) → bloqueia login
+    if (userRecord?.email_verified === false) {
+      return c.json({
+        error: 'E-mail não verificado. Verifique sua caixa de entrada e clique no link enviado.',
+        code: 'EMAIL_NOT_VERIFIED',
+      }, 403);
+    }
+
     const session_id = crypto.randomBytes(32).toString('hex');
     const userAgent  = c.req.header('User-Agent') || '';
 
-    // Salva session_id e user_agent no banco
+    // FIX: atualiza SOMENTE o session_id aqui.
+    // O last_user_agent é lido e atualizado dentro de sendLoginEmail,
+    // garantindo que a comparação aconteça com o valor anterior (não o novo).
     await supabaseAdmin
       .from('users')
-      .update({ current_session_id: session_id, last_user_agent: userAgent })
+      .update({ current_session_id: session_id })
       .eq('user_id', user_id);
 
     const token = jwt.sign(
       { sub: user_id, sid: session_id },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }  // 7 dias — sessão única dispensa expiração curta
+      { expiresIn: '7d' }
     );
 
-    // E-mail só se for dispositivo diferente do último login
+    // Envia alerta de novo dispositivo (se for o caso) e atualiza last_user_agent
     sendLoginEmail(email, user_id, userAgent).catch((err) =>
       console.error('E-mail de login falhou:', err.message)
     );
@@ -154,6 +247,7 @@ export const forgotPassword = async (c) => {
       .eq('email', email)
       .maybeSingle();
 
+    // Resposta genérica para não revelar quais e-mails existem
     if (!user) {
       return c.json({ message: 'Se o e-mail existir, você receberá as instruções.' });
     }
@@ -228,72 +322,60 @@ export const resetPassword = async (c) => {
   }
 };
 
-
-
+// ── POST /auth/google ─────────────────────────────────────────────────────────
 export const googleLogin = async (c) => {
   try {
     const { credential, academy_slug } = await c.req.json();
- 
+
     if (!credential) {
       return c.json({ error: 'credential é obrigatório.' }, 400);
     }
- 
-    // 1. Valida o token com o Google (gratuito, sem chave extra)
+
+    // Valida o token com o Google
     const googleRes = await fetch(
       `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
     );
     const profile = await googleRes.json();
- 
+
     if (!googleRes.ok || profile.error) {
       return c.json({ error: 'Token do Google inválido.' }, 401);
     }
- 
-    // Verifica que o token foi emitido para o nosso app
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (clientId && profile.aud !== clientId) {
       return c.json({ error: 'Token não pertence a este app.' }, 401);
     }
- 
+
     const email     = profile.email;
-    const google_id = profile.sub; // ID único do Google
- 
+    const google_id = profile.sub;
+
     if (!email) {
       return c.json({ error: 'Não foi possível obter o e-mail do Google.' }, 400);
     }
- 
-    // 2. Verifica se o usuário já existe em public.users
+
     let { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('user_id, email')
       .eq('email', email)
       .maybeSingle();
- 
+
     let user_id;
- 
+
     if (existingUser) {
-      // Usuário já cadastrado — apenas loga
       user_id = existingUser.user_id;
- 
-      // Atualiza google_id se a coluna existir (opcional)
       try {
-        await supabaseAdmin
-          .from('users')
-          .update({ google_id })
-          .eq('user_id', user_id);
-      } catch (_) { /* coluna pode não existir ainda — ignora */ }
- 
+        await supabaseAdmin.from('users').update({ google_id }).eq('user_id', user_id);
+      } catch (_) { /* coluna pode não existir ainda */ }
+
     } else {
-      // 3. Cria usuário no Supabase Auth (sem senha, confirmado direto)
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email,
         email_confirm: true,
         user_metadata: { google_id, full_name: profile.name, avatar_url: profile.picture },
       });
- 
+
       if (authError) {
-        // Se o usuário já existe no auth.users mas não em public.users
         if (authError.message?.includes('already been registered')) {
-          // Busca pelo e-mail via admin
           const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
           const found = authUsers?.find(u => u.email === email);
           if (!found) return c.json({ error: 'Erro ao localizar usuário.' }, 500);
@@ -305,8 +387,7 @@ export const googleLogin = async (c) => {
       } else {
         user_id = authData.user.id;
       }
- 
-      // 4. Resolve academy_id (se vier por link de academia)
+
       let academy_id = null;
       if (academy_slug?.trim()) {
         const { data: academy } = await supabaseAdmin
@@ -317,28 +398,26 @@ export const googleLogin = async (c) => {
           .maybeSingle();
         if (academy) academy_id = academy.id;
       }
- 
-      // 5. Upsert em public.users
-      const upsertPayload = { user_id, email };
+
+      // Google já confirma o e-mail — email_verified = true direto
+      const upsertPayload = { user_id, email, email_verified: true };
       if (academy_id) upsertPayload.academy_id = academy_id;
-      // google_id só se a coluna existir:
-      // upsertPayload.google_id = google_id;
- 
+
       await supabaseAdmin
         .from('users')
         .upsert(upsertPayload, { onConflict: 'user_id' });
- 
-      // E-mail de boas-vindas (não bloqueia)
+
       sendRegisterEmail(email).catch(() => {});
     }
- 
-    // 6. Gera sessão única e JWT
+
     const session_id = crypto.randomBytes(32).toString('hex');
     const userAgent  = c.req.header('User-Agent') || '';
 
+    // FIX: atualiza SOMENTE o session_id aqui.
+    // last_user_agent é lido e atualizado dentro de sendLoginEmail.
     await supabaseAdmin
       .from('users')
-      .update({ current_session_id: session_id, last_user_agent: userAgent })
+      .update({ current_session_id: session_id })
       .eq('user_id', user_id);
 
     const token = jwt.sign(
@@ -347,15 +426,14 @@ export const googleLogin = async (c) => {
       { expiresIn: '7d' }
     );
 
-    // E-mail só se for dispositivo diferente
     sendLoginEmail(email, user_id, userAgent).catch(() => {});
- 
+
     return c.json({
       message: 'Login com Google bem-sucedido.',
       token,
       user: { user_id, email },
     });
- 
+
   } catch (err) {
     console.error('googleLogin error:', err);
     return c.json({ error: err.message }, 500);
