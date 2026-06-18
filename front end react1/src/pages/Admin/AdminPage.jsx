@@ -86,7 +86,8 @@ const GLOBAL_CSS = `
   .adm-section-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text2);letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
   .adm-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
 
-  .adm-table-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+  .adm-table-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .adm-table{min-width:560px}
   .adm-table{width:100%;border-collapse:collapse}
   .adm-table th{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;padding:12px 16px;border-bottom:1px solid var(--border);text-align:left;background:var(--surface3)}
   .adm-table td{font-size:13px;color:var(--text2);padding:11px 16px;border-bottom:1px solid var(--border);vertical-align:middle}

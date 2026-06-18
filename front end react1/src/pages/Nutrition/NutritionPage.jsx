@@ -671,13 +671,13 @@ const NutritionPage = () => {
     <div className="w-full min-h-screen bg-[#171717] pb-16">
       <div className="lg:px-24 md:px-16 px-4 pt-8">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+          <div className="min-w-0">
             <h1
-              className="text-2xl font-bold text-gray-100 flex items-center gap-2"
+              className="text-xl sm:text-2xl font-bold text-gray-100 flex items-center gap-2"
               style={{ fontFamily: 'Syne, sans-serif' }}
             >
-              <Salad className="w-6 h-6 text-[#5B4FFF]" />
+              <Salad className="w-6 h-6 text-[#5B4FFF] shrink-0" />
               Nutrição <span className="text-[#7B6FFF]">com IA</span>
             </h1>
             <p className="text-sm text-gray-500 mt-1">
@@ -685,7 +685,7 @@ const NutritionPage = () => {
             </p>
           </div>
           {isPremium && (
-            <div className="flex items-center gap-1.5 bg-[#5B4FFF]/15 border border-[#5B4FFF]/25 text-[#7B6FFF] text-xs font-semibold px-3 py-1.5 rounded-full">
+            <div className="shrink-0 flex items-center gap-1.5 bg-[#5B4FFF]/15 border border-[#5B4FFF]/25 text-[#7B6FFF] text-xs font-semibold px-3 py-1.5 rounded-full">
               <Sparkles className="w-3.5 h-3.5" /> Premium
             </div>
           )}

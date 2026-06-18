@@ -108,7 +108,7 @@ const IMC = () => {
   return (
     <>
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 px-5 py-3 bg-red-500 text-white text-sm font-medium rounded-lg shadow-lg">
+        <div className="fixed top-5 right-5 left-5 sm:left-auto sm:max-w-sm z-50 px-5 py-3 bg-red-500 text-white text-sm font-medium rounded-lg shadow-lg break-words">
           {toastMsg}
         </div>
       )}

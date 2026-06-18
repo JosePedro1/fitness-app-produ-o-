@@ -45,7 +45,7 @@ const checkTrainingReminders = async () => {
 
       await sendEmail(
         user.email,
-        `💪 Hora do treino — ${routine.name}`,
+        `Hora do treino — ${routine.name}`,
         `Olá!\n\nLembrete de treino:\n\nRotina: ${routine.name}\n\nAcesse: ${
           process.env.FRONTEND_URL || 'https://fitness-app-produ-o.vercel.app'
         }/routines`

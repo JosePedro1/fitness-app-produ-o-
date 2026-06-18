@@ -7,7 +7,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://fitness-app-produ-o.ve
 export const sendRegisterEmail = async (email) => {
   await sendEmail(
     email,
-    'Bem-vindo ao Fitness App! 🎉',
+    'Bem-vindo ao Fitness App!',
     `Olá!\n\nSeu e-mail foi verificado e sua conta está ativa.\n\nAcesse: ${FRONTEND_URL}\n\nBons treinos!\nEquipe Fitness App`
   );
 };
@@ -17,7 +17,7 @@ export const sendVerificationEmail = async (email, token) => {
   const url = `${FRONTEND_URL}/verify-email?token=${token}`;
   await sendEmail(
     email,
-    '✅ Verifique seu e-mail — Fitness App',
+    'Verifique seu e-mail — Fitness App',
     `Olá!\n\nObrigado por se cadastrar no Fitness App!\n\n` +
     `Para ativar sua conta, clique no link abaixo (válido por 24 horas):\n\n` +
     `${url}\n\n` +
@@ -46,7 +46,7 @@ export const sendLoginEmail = async (email, user_id, userAgent) => {
 
     await sendEmail(
       email,
-      '🔐 Novo acesso à sua conta — Fitness App',
+      'Novo acesso à sua conta — Fitness App',
       `Olá!\n\nDetectamos um acesso em um dispositivo novo:\n\n` +
       `  Dispositivo: ${deviceHint}\n` +
       `  Horário: ${when}\n\n` +

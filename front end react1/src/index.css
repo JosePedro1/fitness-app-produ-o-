@@ -9,6 +9,20 @@
    font-family: 'Inter', sans-serif;
  }
 
+ /* Garante que nenhum elemento (ex: cabeçalhos com botão ao lado) consiga
+    empurrar a página e criar uma barra de rolagem horizontal no celular. */
+ html, body {
+   width: 100%;
+   max-width: 100vw;
+   overflow-x: hidden;
+ }
+
+ #root {
+   width: 100%;
+   max-width: 100vw;
+   overflow-x: hidden;
+ }
+
  /* width */
  ::-webkit-scrollbar {
     width: 12px;

@@ -84,7 +84,7 @@ export default function FeedbackWidget() {
       <style>{`
         @media (max-width: 767px) {
           .fb-fab { bottom: 84px !important; }
-          .fb-panel { bottom: 148px !important; }
+          .fb-panel { bottom: 148px !important; right: 16px !important; left: 16px !important; width: auto !important; }
         }
       `}</style>
 

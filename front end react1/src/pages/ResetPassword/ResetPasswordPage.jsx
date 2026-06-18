@@ -57,7 +57,7 @@ const ResetPasswordPage = () => {
   return (
     <div className="relative">
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${toast.type === "error" ? "bg-red-500" : "bg-[#7001FD]"}`}>
+        <div className={`fixed top-5 right-5 left-5 sm:left-auto sm:max-w-sm z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium break-words transition-all duration-300 ${toast.type === "error" ? "bg-red-500" : "bg-[#7001FD]"}`}>
           {toast.message}
         </div>
       )}

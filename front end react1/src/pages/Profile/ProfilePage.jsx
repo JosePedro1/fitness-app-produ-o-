@@ -182,7 +182,7 @@ export default function ProfilePage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-xl transition-all
+        <div className={`fixed top-5 right-5 left-5 sm:left-auto sm:max-w-sm z-50 px-5 py-3 rounded-xl text-white text-sm font-medium shadow-xl transition-all break-words
           ${toast.type === 'error' ? 'bg-red-500' : 'bg-[#5B4FFF]'}`}>
           {toast.msg}
         </div>

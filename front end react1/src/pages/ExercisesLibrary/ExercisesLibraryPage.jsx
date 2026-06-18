@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, ChevronRight, Dumbbell, Zap } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
@@ -282,7 +281,7 @@ const ExercisesLibraryPage = () => {
   return (
     <div className="w-full min-h-screen lg:py-16 md:py-14 sm:py-12 py-10 lg:px-24 md:px-16 sm:px-6 px-4">
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium ${
+        <div className={`fixed top-5 right-5 left-5 sm:left-auto sm:max-w-sm z-50 px-5 py-3 rounded-lg shadow-lg text-white text-sm font-medium break-words ${
           toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-indigo-500' : 'bg-indigo-600'
         }`}>{toast.message}</div>
       )}
@@ -293,11 +292,11 @@ const ExercisesLibraryPage = () => {
         </h1>
 
         {deepLinkBanner && (
-          <div className="w-full bg-indigo-600/20 border border-indigo-500/40 rounded-xl px-5 py-3 flex items-center justify-between">
-            <p className="text-indigo-300 text-sm">
+          <div className="w-full bg-indigo-600/20 border border-indigo-500/40 rounded-xl px-5 py-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-indigo-300 text-sm min-w-0 break-words">
               Redirecionado para: <span className="font-semibold text-white">{deepLinkBanner}</span>
             </p>
-            <button onClick={() => setDeepLinkBanner(null)} className="text-gray-500 hover:text-gray-300 text-xs ml-4">Fechar</button>
+            <button onClick={() => setDeepLinkBanner(null)} className="shrink-0 text-gray-500 hover:text-gray-300 text-xs ml-4">Fechar</button>
           </div>
         )}
 

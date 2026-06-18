@@ -45,11 +45,11 @@ const ProgressPage = () => {
       <div className="w-full h-auto items-center lg:py-16 md:py-14 sm:py-12 py-10 lg:px-24 md:px-16 sm:px-6 px-4">
         <div className="w-full h-auto flex flex-col items-center justify-center">
 
-          <div className="w-full flex justify-between items-center mb-6">
-            <h1 className="lg:text-2xl md:text-xl sm:text-lg text-lg font-semibold text-gray-200 flex items-center gap-x-2 bg-black/20 rounded-md py-2 px-4">
+          <div className="w-full flex flex-wrap justify-between items-center gap-3 mb-6">
+            <h1 className="lg:text-2xl md:text-xl sm:text-lg text-base font-semibold text-gray-200 flex items-center gap-x-2 bg-black/20 rounded-md py-2 px-4">
               Meus Registros de Progresso
             </h1>
-            <PrimaryBtn onClick={() => setFormVisible(prev => !prev)}>
+            <PrimaryBtn onClick={() => setFormVisible(prev => !prev)} className="shrink-0">
               {formVisible ? 'Fechar' : 'Novo Progresso'}
             </PrimaryBtn>
           </div>

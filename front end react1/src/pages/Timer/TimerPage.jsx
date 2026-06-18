@@ -254,8 +254,8 @@ const TimerPage = () => {
   return (
     <div className="w-full min-h-screen bg-[#171717] lg:py-16 md:py-14 sm:py-12 py-10 lg:px-24 md:px-16 sm:px-6 px-4">
       {/* Header */}
-      <div className="w-full flex justify-between items-center mb-8">
-        <h1 className="lg:text-2xl md:text-xl text-lg font-semibold text-gray-200 flex items-center gap-x-2 bg-black/20 rounded-md py-2 px-4">
+      <div className="w-full flex flex-wrap justify-between items-center gap-3 mb-8">
+        <h1 className="lg:text-2xl md:text-xl text-base font-semibold text-gray-200 flex items-center gap-x-2 bg-black/20 rounded-md py-2 px-4">
           <Timer className="w-5 h-5 text-indigo-500" />
           Cronômetro de Treino
         </h1>
@@ -263,7 +263,7 @@ const TimerPage = () => {
         <button
           onClick={() => setShowPresets((v) => !v)}
           disabled={isActive && isRunning}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-400 bg-black/20 rounded-md py-2 px-3 transition-colors duration-200 disabled:opacity-40"
+          className="shrink-0 flex items-center gap-1.5 text-sm text-gray-400 hover:text-indigo-400 bg-black/20 rounded-md py-2 px-3 transition-colors duration-200 disabled:opacity-40"
         >
           <Dumbbell className="w-4 h-4 -rotate-45" />
           Presets
