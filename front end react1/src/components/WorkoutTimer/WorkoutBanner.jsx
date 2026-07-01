@@ -2,11 +2,15 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   Play, Clock, ChevronRight, Dumbbell,
   Pause, CheckCircle2, Moon, Loader2,
-  BarChart2,
+  BarChart2, Share2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWorkoutTimer } from '../../context/WorkoutTimerContext';
 import { getWeeklyProgram, completeDay } from '../../services/api-routines';
+import { getCalendarSessions } from '../../services/api-calendar';
+import { calculateStreak } from '../../utils/streak';
+import ShareCardModal from '../ShareCard/ShareCardModal';
+import WorkoutCompletedCard from '../ShareCard/cards/WorkoutCompletedCard';
 
 // ── Helpers ──
 const getTodayWeekday = () => {
@@ -26,10 +30,13 @@ const WorkoutBanner = () => {
     start, pause, resume, reset, setIsMinimized,
   } = useWorkoutTimer();
 
-  const [todayDay,    setTodayDay]    = useState(null);
-  const [loading,     setLoading]     = useState(true);
-  const [completing,  setCompleting]  = useState(false);
-  const [completed,   setCompleted]   = useState(false);
+  const [todayDay,     setTodayDay]     = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [completing,   setCompleting]   = useState(false);
+  const [completed,    setCompleted]    = useState(false);
+  const [finishedInfo, setFinishedInfo] = useState(null); // snapshot do treino p/ o card (elapsed zera após reset)
+  const [streakDays,   setStreakDays]   = useState(0);
+  const [shareOpen,    setShareOpen]    = useState(false);
 
   const weekday = getTodayWeekday();
 
@@ -64,19 +71,42 @@ const WorkoutBanner = () => {
     if (!todayDay || todayDay.is_rest_day) return;
     setCompleting(true);
     try {
+      const exerciseNames = (todayDay.week_day_exercises || []).map(e => e.exercise_name);
       await completeDay(weekday, {
         duration_sec:   elapsed,
-        exercises_done: (todayDay.week_day_exercises || []).map(e => e.exercise_name),
+        exercises_done: exerciseNames,
         notes:          '',
       });
+
+      // Guarda um snapshot ANTES do reset() zerar o cronômetro — é o que
+      // alimenta o card de compartilhamento.
+      setFinishedInfo({ workoutName: todayDay.workout_name, durationSec: elapsed, exercisesCount: exerciseNames.length });
       reset();
       setCompleted(true);
+
+      // Sequência de dias treinados (streak) — busca o histórico em segundo
+      // plano só pra exibir no card; não bloqueia a tela de "concluído".
+      getCalendarSessions()
+        .then((sessions) => setStreakDays(calculateStreak(sessions)))
+        .catch(() => setStreakDays(0));
     } catch (err) {
       console.error('Erro ao finalizar treino:', err);
     } finally {
       setCompleting(false);
     }
   };
+
+  const formatDuration = (sec) => {
+    const h = Math.floor(sec / 3600);
+    const m = Math.round((sec % 3600) / 60);
+    if (h > 0) return `${h}h ${m}min`;
+    if (m > 0) return `${m} min`;
+    return `${sec}s`;
+  };
+
+  const todayDateLabel = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+    .format(new Date())
+    .replace(/^\w/, (c) => c.toUpperCase());
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -90,21 +120,51 @@ const WorkoutBanner = () => {
   // ── Treino concluído ───────────────────────────────────────────────────────
   if (completed) {
     return (
-      <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/20 border border-green-500/30 rounded-2xl p-4 flex items-center gap-4">
-        <div className="w-11 h-11 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
-          <CheckCircle2 className="w-5 h-5 text-green-400" />
+      <>
+        <div className="bg-gradient-to-r from-green-900/30 to-emerald-900/20 border border-green-500/30 rounded-2xl p-4 flex items-center gap-4 flex-wrap">
+          <div className="w-11 h-11 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-green-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-green-300 font-semibold text-sm">Treino concluído! 🎉</p>
+            <p className="text-green-500/70 text-xs mt-0.5">
+              {WEEKDAY_LABELS[weekday]} · {elapsedFormatted} de duração
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/15 hover:bg-green-500/25 border border-green-500/30 text-green-300 text-xs font-semibold transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" /> Compartilhar
+            </button>
+            <Link to="/calendar"
+              className="text-green-400 text-xs font-medium hover:text-green-300 flex items-center gap-1">
+              Ver histórico <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-green-300 font-semibold text-sm">Treino concluído! 🎉</p>
-          <p className="text-green-500/70 text-xs mt-0.5">
-            {WEEKDAY_LABELS[weekday]} · {elapsedFormatted} de duração
-          </p>
-        </div>
-        <Link to="/calendar"
-          className="text-green-400 text-xs font-medium hover:text-green-300 flex items-center gap-1 shrink-0">
-          Ver histórico <ChevronRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
+
+        {finishedInfo && (
+          <ShareCardModal
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+            fileName="meu-treino-fittrack.png"
+            shareTitle="Meu treino de hoje no FitTrack"
+            shareText="Treino de hoje batido no FitTrack 💪"
+            renderCard={(cardRef) => (
+              <WorkoutCompletedCard
+                ref={cardRef}
+                workoutName={finishedInfo.workoutName}
+                durationLabel={formatDuration(finishedInfo.durationSec)}
+                exercisesDone={finishedInfo.exercisesCount}
+                streakDays={streakDays}
+                dateLabel={todayDateLabel}
+              />
+            )}
+          />
+        )}
+      </>
     );
   }
 

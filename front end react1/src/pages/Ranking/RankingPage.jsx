@@ -12,8 +12,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Trophy, Dumbbell, Flame, Crown, Star, Loader2, Users } from 'lucide-react';
+import { Trophy, Dumbbell, Flame, Crown, Star, Loader2, Users, Share2 } from 'lucide-react';
 import { getRanking } from '../../services/api-profile';
+import ShareCardModal from '../../components/ShareCard/ShareCardModal';
+import RankingCard from '../../components/ShareCard/cards/RankingCard';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const medal = (pos) => {
@@ -26,9 +28,10 @@ const medal = (pos) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function RankingPage() {
   const { slug }       = useParams();
-  const [data,     setData]    = useState(null);
-  const [loading,  setLoading] = useState(true);
-  const [error,    setError]   = useState(null);
+  const [data,      setData]      = useState(null);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     getRanking(slug)
@@ -91,9 +94,20 @@ export default function RankingPage() {
           </h1>
           {academy.city && <p className="text-sm text-gray-400 mb-3">{academy.city}</p>}
 
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-600/20 border border-indigo-600/30
-            rounded-full text-indigo-300 text-sm font-medium">
-            <Trophy className="w-3.5 h-3.5" /> Ranking de Treinos
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-600/20 border border-indigo-600/30
+              rounded-full text-indigo-300 text-sm font-medium">
+              <Trophy className="w-3.5 h-3.5" /> Ranking de Treinos
+            </div>
+            {ranking.length > 0 && (
+              <button
+                onClick={() => setShareOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10
+                  rounded-full text-gray-300 text-sm font-medium transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Compartilhar
+              </button>
+            )}
           </div>
 
           <div className="flex justify-center gap-6 mt-6">
@@ -248,6 +262,23 @@ export default function RankingPage() {
           Powered by <span className="text-indigo-600 font-semibold">FitTrack</span>
         </p>
       </div>
+
+      <ShareCardModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        fileName={`ranking-${slug}-fittrack.png`}
+        shareTitle={`Ranking ${academy.name} · FitTrack`}
+        shareText={`Confira o ranking de treinos da ${academy.name} no FitTrack!`}
+        renderCard={(cardRef) => (
+          <RankingCard
+            ref={cardRef}
+            academyName={academy.name}
+            city={academy.city}
+            totalMembers={ranking.length}
+            top3={top3.map((m) => ({ name: m.display_name, days: m.dias_treinados }))}
+          />
+        )}
+      />
     </div>
   );
 }

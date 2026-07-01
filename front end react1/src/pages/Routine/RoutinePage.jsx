@@ -3,12 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Dumbbell, Calendar, ChevronRight, ChevronDown, Edit2,
   Moon, Sun, Zap, Save, Plus, Trash2, X, Loader2, CheckCircle2,
-  Info, RotateCcw
+  Info, RotateCcw, Share2
 } from 'lucide-react';
 import { useConfirm } from '../../hooks/useConfirm';
 import ConfirmModal from '../../components/Confirm/ConfirmModal';
 import { getWeeklyProgram, saveDay } from '../../services/api-routines';
+import { getProfile } from '../../services/api-profile';
 import DayEditor from './DayEditor';
+import ShareCardModal from '../../components/ShareCard/ShareCardModal';
+import RoutineInviteCard from '../../components/ShareCard/cards/RoutineInviteCard';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -35,6 +38,8 @@ const RoutinePage = () => {
   const [editingDay,     setEditingDay]     = useState(null);  // weekday key em edição
   const [expandedDay,    setExpandedDay]    = useState(null);  // para accordion mobile
   const [imcBanner,      setImcBanner]      = useState(null);  // dados vindos da IMC
+  const [shareOpen,      setShareOpen]      = useState(false);
+  const [firstName,      setFirstName]      = useState(null);
   const { confirm, confirmProps }           = useConfirm();
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,6 +59,13 @@ const RoutinePage = () => {
   }, []);
 
   useEffect(() => { fetchProgram(); }, [fetchProgram]);
+
+  // Nome pro card de compartilhamento — busca em segundo plano, não bloqueia a tela.
+  useEffect(() => {
+    getProfile()
+      .then((p) => setFirstName(p?.display_name?.split(' ')[0] || null))
+      .catch(() => setFirstName(null));
+  }, []);
 
   // ── Detecta redirecionamento da IMC ────────────────────────────────────────
   useEffect(() => {
@@ -117,6 +129,12 @@ const RoutinePage = () => {
             Minha Semana de Treinos
           </h1>
           <div className="flex gap-2">
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-indigo-500/40 bg-indigo-600/10 text-indigo-300 hover:bg-indigo-600/20 text-sm transition-all"
+            >
+              <Share2 className="w-4 h-4" /> Compartilhar
+            </button>
             <a
               href="/exercises-library"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-indigo-500/50 hover:text-indigo-300 text-sm transition-all"
@@ -271,6 +289,37 @@ const RoutinePage = () => {
           })}
         </div>
       </div>
+
+      {(() => {
+        const shareDays = WEEKDAYS.map(({ key }) => {
+          const dayData = days.find(d => d.weekday === key);
+          const isRest  = dayData?.is_rest_day ?? true;
+          return { key, hasWorkout: !isRest };
+        });
+        const trainingDaysCount = shareDays.filter(d => d.hasWorkout).length;
+        const highlightNames = [...new Set(
+          days.filter(d => !d.is_rest_day && d.workout_name).map(d => d.workout_name)
+        )].slice(0, 3);
+
+        return (
+          <ShareCardModal
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+            fileName="minha-rotina-fittrack.png"
+            shareTitle="Minha rotina semanal no FitTrack"
+            shareText="Monta sua rotina de treino comigo no FitTrack 💪"
+            renderCard={(cardRef) => (
+              <RoutineInviteCard
+                ref={cardRef}
+                ownerLabel={firstName ? `Semana do ${firstName}` : 'Minha semana de treino'}
+                trainingDays={trainingDaysCount}
+                days={shareDays}
+                highlightNames={highlightNames}
+              />
+            )}
+          />
+        );
+      })()}
     </>
   );
 };
