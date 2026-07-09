@@ -220,7 +220,7 @@ const TimerPage = () => {
         body: `Descanse ${restSec}s antes da próxima série.`,
       });
     } else if (phase === 'done') {
-      showLocalNotification('Treino do timer concluído! 🎉', {
+      showLocalNotification('Treino do timer concluído!', {
         tag: 'interval-timer',
         body: `${totalRounds} séries finalizadas.`,
       });

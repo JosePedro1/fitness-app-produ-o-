@@ -126,7 +126,7 @@ const WorkoutBanner = () => {
             <CheckCircle2 className="w-5 h-5 text-green-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-green-300 font-semibold text-sm">Treino concluído! 🎉</p>
+            <p className="text-green-300 font-semibold text-sm">Treino concluído!</p>
             <p className="text-green-500/70 text-xs mt-0.5">
               {WEEKDAY_LABELS[weekday]} · {elapsedFormatted} de duração
             </p>
@@ -151,7 +151,7 @@ const WorkoutBanner = () => {
             onClose={() => setShareOpen(false)}
             fileName="meu-treino-fittrack.png"
             shareTitle="Meu treino de hoje no FitTrack"
-            shareText="Treino de hoje batido no FitTrack 💪"
+            shareText="Treino de hoje batido no FitTrack"
             renderCard={(cardRef) => (
               <WorkoutCompletedCard
                 ref={cardRef}

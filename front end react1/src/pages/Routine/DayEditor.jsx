@@ -57,7 +57,7 @@ const ExerciseLibraryModal = ({ open, onClose, onSelect, customExercises }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="w-full max-w-lg bg-[#0f0f1a] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
@@ -431,10 +431,10 @@ const DayEditor = ({ weekday, initialData: dayData, imcPrefill, onSave, onClose,
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-[#0b0b12] border-l border-white/10 flex flex-col shadow-2xl overflow-hidden">
+      <div className="fixed inset-y-0 right-0 z-[105] w-full max-w-lg bg-[#0b0b12] border-l border-white/10 flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
           <div>
@@ -556,7 +556,7 @@ const DayEditor = ({ weekday, initialData: dayData, imcPrefill, onSave, onClose,
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/10 flex gap-3 shrink-0">
+        <div className="px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/10 flex gap-3 shrink-0">
           <button onClick={onClose}
             className="flex-1 h-11 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-semibold rounded-xl text-sm transition-all">
             Cancelar

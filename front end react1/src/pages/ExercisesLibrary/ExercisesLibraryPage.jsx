@@ -371,7 +371,7 @@ const ExercisesLibraryPage = () => {
 
       {/* Modal rotina */}
       {showRoutineModal && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center px-4">
           <div className="bg-[#1d1d1d] rounded-md p-6 w-full max-w-sm flex flex-col gap-y-4">
             <h3 className="text-gray-200 font-semibold text-lg">Adicionar à qual rotina?</h3>
             <p className="text-gray-400 text-sm">"{exerciseToAdd}"</p>

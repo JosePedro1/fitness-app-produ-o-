@@ -60,7 +60,7 @@ export const WorkoutTimerProvider = ({ children }) => {
       ? `Em andamento — ${fmtElapsed(computeElapsed())}`
       : `Pausado em ${fmtElapsed(computeElapsed())}`;
 
-    showLocalNotification('Treino em andamento 💪', {
+    showLocalNotification('Treino em andamento', {
       tag: TIMER_NOTIF_TAG,
       body: text,
       requireInteraction: true,
@@ -170,17 +170,32 @@ export const WorkoutTimerProvider = ({ children }) => {
     reset();
   }, [reset]);
 
-  // ── Notificação local do cronômetro: atualiza ao iniciar/pausar/retomar e
-  //    a cada 1 min enquanto ativo. Fecha quando o widget não está mais visível. ──
+  // ── Notificação local do cronômetro: atualiza ao iniciar/pausar/retomar.
+  //    Enquanto o app está em primeiro plano, atualiza a cada 1s (dá pra ver
+  //    os segundos rodando ao abrir a cortina de notificações). Em segundo
+  //    plano o navegador já limita a frequência de qualquer jeito, então
+  //    caímos para 15s pra não gastar bateria à toa. Fecha quando o widget
+  //    não está mais visível. ──
   useEffect(() => {
     if (!isVisible) return;
 
     updateTimerNotification(isRunning);
+    if (!isRunning) return;
 
-    if (isRunning) {
-      notifIntervalRef.current = setInterval(() => updateTimerNotification(true), 60000);
-    }
-    return () => clearInterval(notifIntervalRef.current);
+    const startTicking = () => {
+      clearInterval(notifIntervalRef.current);
+      const period = document.hidden ? 15000 : 1000;
+      notifIntervalRef.current = setInterval(() => updateTimerNotification(true), period);
+    };
+
+    startTicking();
+    const handleVisibility = () => { updateTimerNotification(true); startTicking(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(notifIntervalRef.current);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [isRunning, isVisible, updateTimerNotification]);
 
   // ── Ouve cliques nos botões da notificação (Pausar/Retomar/Finalizar),
