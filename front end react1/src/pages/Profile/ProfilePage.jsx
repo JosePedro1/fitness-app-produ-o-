@@ -13,7 +13,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   User, Camera, Save, Trophy, Dumbbell,
   Eye, EyeOff, Building2, CheckCircle2, Loader2,
-  Crown, Star, Medal,
+  Crown, Star, Medal, Bell, BellOff,
 } from 'lucide-react';
 import {
   getProfile,
@@ -23,6 +23,13 @@ import {
   requestJoinAcademy,   // ← CORRIGIDO (era joinAcademy)
   getRanking,
 } from '../../services/api-profile';
+import {
+  isNotificationSupported,
+  isNotificationsEnabled,
+  getNotificationPermission,
+  requestNotificationPermission,
+  disableNotifications,
+} from '../../utils/notifications';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate = (iso) => {
@@ -56,6 +63,10 @@ export default function ProfilePage() {
 
   // Estado de solicitação de academia
   const [joinStatus, setJoinStatus] = useState(null); // 'pending' | 'approved' | null
+
+  // Notificações locais do app (cronômetro / timer) — não depende de servidor
+  const [notifEnabled, setNotifEnabled] = useState(isNotificationsEnabled());
+  const [notifBusy, setNotifBusy] = useState(false);
 
   const fileRef = useRef(null);
 
@@ -98,6 +109,29 @@ export default function ProfilePage() {
       .catch(() => showToast('Erro ao carregar perfil.', 'error'))
       .finally(() => setLoading(false));
   }, []);
+
+  // ── Notificações locais (cronômetro/timer) ──────────────────────────────────
+  const handleToggleNotifications = async () => {
+    if (notifBusy) return;
+    setNotifBusy(true);
+    try {
+      if (notifEnabled) {
+        disableNotifications();
+        setNotifEnabled(false);
+      } else {
+        const perm = await requestNotificationPermission();
+        if (perm === 'granted') {
+          setNotifEnabled(true);
+        } else if (perm === 'denied') {
+          showToast('Notificações bloqueadas no navegador. Ative nas configurações do site para usar.', 'error');
+        } else if (perm === 'unsupported') {
+          showToast('Seu navegador não suporta notificações.', 'error');
+        }
+      }
+    } finally {
+      setNotifBusy(false);
+    }
+  };
 
   // ── Salvar perfil ───────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -532,6 +566,47 @@ export default function ProfilePage() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Notificações locais (cronômetro do treino / timer de descanso) */}
+          <div className="bg-[#1c1c1c] border border-white/5 rounded-2xl p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  {notifEnabled
+                    ? <Bell className="w-4 h-4 text-green-400" />
+                    : <BellOff className="w-4 h-4 text-gray-500" />
+                  }
+                  <span className="text-sm font-semibold text-gray-200">
+                    Notificações do app
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Avisos locais neste aparelho para o cronômetro de treino (com botões de
+                  Pausar/Finalizar) e o timer de descanso. Não envia e-mail nem depende de
+                  internet — funciona enquanto o app estiver aberto ou em segundo plano.
+                </p>
+                {!isNotificationSupported() && (
+                  <p className="text-xs text-amber-400 mt-2">Seu navegador não suporta notificações.</p>
+                )}
+                {isNotificationSupported() && getNotificationPermission() === 'denied' && (
+                  <p className="text-xs text-amber-400 mt-2">
+                    Bloqueadas no navegador — ative manualmente nas configurações do site.
+                  </p>
+                )}
+              </div>
+
+              <button
+                onClick={handleToggleNotifications}
+                disabled={notifBusy || !isNotificationSupported()}
+                className={`shrink-0 w-12 h-6 rounded-full transition-colors relative disabled:opacity-40
+                  ${notifEnabled ? 'bg-[#5B4FFF]' : 'bg-gray-700'}`}
+              >
+                <span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform
+                  ${notifEnabled ? 'translate-x-6' : 'translate-x-0'}`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* Botão salvar */}

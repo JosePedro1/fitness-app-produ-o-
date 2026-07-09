@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Bell,
 } from 'lucide-react';
+import { showLocalNotification } from '../../utils/notifications';
 
 // ─── Presets ──────────────────────────────────────────────────────────────────
 const PRESETS = [
@@ -196,6 +197,35 @@ const TimerPage = () => {
       setTimeLeft(workSec);
     }
   }, [timeLeft, isRunning, phase, currentRound, totalRounds, workSec, restSec, beep]);
+
+  // ── Notificação local ao trocar de fase (só quando a aba está em segundo
+  //    plano — se o usuário está olhando a tela, o círculo já mostra tudo).
+  //    Não depende de servidor, só da permissão local do navegador. ──
+  const prevPhaseRef = useRef(phase);
+  useEffect(() => {
+    if (prevPhaseRef.current === phase) return;
+    const prevPhase = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+
+    if (!document.hidden) return;
+
+    if (phase === 'work' && prevPhase === 'rest') {
+      showLocalNotification('Descanso finalizado ⏱️', {
+        tag: 'interval-timer',
+        body: `Hora da série ${currentRound} de ${totalRounds}!`,
+      });
+    } else if (phase === 'rest') {
+      showLocalNotification('Série concluída 💪', {
+        tag: 'interval-timer',
+        body: `Descanse ${restSec}s antes da próxima série.`,
+      });
+    } else if (phase === 'done') {
+      showLocalNotification('Treino do timer concluído! 🎉', {
+        tag: 'interval-timer',
+        body: `${totalRounds} séries finalizadas.`,
+      });
+    }
+  }, [phase, currentRound, totalRounds, restSec]);
 
   // ── Controls ──
   const handleStart = () => {
