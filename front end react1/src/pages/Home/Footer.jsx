@@ -9,7 +9,7 @@ const Footer = () => (
       {/* Brand */}
       <div className="lg:w-[30%] md:w-[30%] sm:w-full w-full h-auto p-2 flex lg:items-start md:items-start sm:items-center items-center flex-col justify-center">
         <span className="text-2xl font-black text-white tracking-tight mb-3" style={{ fontFamily: 'Syne, sans-serif' }}>
-          Fit<span className="text-[#5B4FFF]">Track</span>
+          Fit<span className="text-[#5B4FFF]">Ness</span>
         </span>
         <p className="text-base text-gray-500 font-normal mb-4 lg:text-start md:text-start sm:text-center text-center">
           Seu app de fitness pessoal — organize treinos, acompanhe progresso e conquiste resultados de forma prática.

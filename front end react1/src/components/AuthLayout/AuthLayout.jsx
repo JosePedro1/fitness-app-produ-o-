@@ -76,7 +76,7 @@ const AuthLayout = ({
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <span className="auth-syne" style={{ fontSize: 22, fontWeight: 800, color: '#f0f0f8' }}>
-            Fit<span style={{ color: '#5B4FFF' }}>Track</span>
+            Fit<span style={{ color: '#5B4FFF' }}>Ness</span>
             <span
               className="auth-logo-dot"
               style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#5B4FFF', marginLeft: 3, verticalAlign: 'middle' }}

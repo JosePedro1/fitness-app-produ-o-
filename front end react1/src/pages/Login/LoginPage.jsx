@@ -281,7 +281,7 @@ export default function LoginPage() {
         <div className="auth-card">
           <div className="auth-logo">
             <span className="auth-logo-text">
-              Fit<span>Track</span><span className="logo-dot" />
+              Fit<span>Ness</span><span className="logo-dot" />
             </span>
           </div>
           <div className="auth-title">Bem-vindo de volta</div>

@@ -257,7 +257,7 @@ const RoutinePage = () => {
                       <div className="flex flex-col gap-2">
                         {dayData?.goal && (
                           <p className="text-indigo-300 text-xs bg-indigo-600/10 border border-indigo-600/20 rounded-lg px-3 py-2">
-                            🎯 {dayData.goal}
+                             {dayData.goal}
                           </p>
                         )}
                         {exercises.map((ex, idx) => (

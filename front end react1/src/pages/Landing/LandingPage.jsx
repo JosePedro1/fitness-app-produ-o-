@@ -136,8 +136,8 @@ const LandingPage = () => {
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-[5vw]"
         style={{ height: 64, background: 'rgba(17,17,24,.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,.08)' }}
       >
-        <div className="syne flex items-center gap-2 text-[20px] font-black" style={{ color: '#f0f0f8' }}>
-          Fit<span style={{ color: '#5B4FFF' }}>Track</span>
+        <div className="syne flex items-center gap-2 text-[20px] font-black whitespace-nowrap" style={{ color: '#f0f0f8' }}>
+          <span>Fit<span style={{ color: '#5B4FFF' }}>Ness</span></span>
           <span className="lp-logo-dot inline-block w-2 h-2 rounded-full ml-0.5" style={{ background: '#5B4FFF' }} />
         </div>
 
@@ -355,7 +355,7 @@ const LandingPage = () => {
 
       {/* ── FOOTER ── */}
       <footer className="flex items-center justify-between flex-wrap gap-4 px-[5vw] py-10" style={{ borderTop: '1px solid rgba(255,255,255,.08)' }}>
-        <div className="syne text-[18px] font-black">Fit<span style={{ color: '#5B4FFF' }}>Track</span></div>
+        <div className="syne text-[18px] font-black">Fit<span style={{ color: '#5B4FFF' }}>Ness</span></div>
         <div className="flex gap-5">
           {[
             { label: 'Funcionalidades', action: () => scrollTo('features') },

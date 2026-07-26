@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
 
         <div className="auth-card">
           <div className="auth-logo">
-            <span className="auth-logo-text">Fit<span>Track</span><span className="logo-dot" /></span>
+            <span className="auth-logo-text">Fit<span>Ness</span><span className="logo-dot" /></span>
           </div>
 
           {sent ? (
