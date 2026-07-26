@@ -2,7 +2,7 @@
  * ShareCardFrame.jsx
  * Moldura comum aos 3 cards de compartilhamento: formato 9:16 (ideal pra
  * Stories/WhatsApp Status), fundo em gradiente escuro consistente com o
- * resto do app, e rodapé de marca (FitTrack) — é o rodapé que transforma
+ * resto do app, e rodapé de marca (Fitness App) — é o rodapé que transforma
  * cada compartilhamento em divulgação do produto.
  *
  * Evitamos <img> de fontes externas (avatar do Supabase, logo remota) aqui

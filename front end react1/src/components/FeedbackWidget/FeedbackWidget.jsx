@@ -153,7 +153,7 @@ export default function FeedbackWidget() {
           }}>
             <div>
               <p style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 15, color: '#f0f0f8' }}>
-                Avalie o FitTrack
+                Avalie o Fitness App
               </p>
               <p style={{ fontSize: 12, color: 'rgba(240,240,248,0.45)', marginTop: 2 }}>
                 Sua opinião nos ajuda a melhorar
@@ -177,7 +177,7 @@ export default function FeedbackWidget() {
                 <p style={{ fontSize: 32, marginBottom: 8 }}>✅</p>
                 <p style={{ fontSize: 14, color: '#f0f0f8', fontWeight: 600 }}>Você já enviou um feedback!</p>
                 <p style={{ fontSize: 12, color: 'rgba(240,240,248,0.45)', marginTop: 4 }}>
-                  Agradecemos por contribuir com o FitTrack.
+                  Agradecemos por contribuir com o Fitness App.
                 </p>
               </div>
 
@@ -216,7 +216,7 @@ export default function FeedbackWidget() {
                 {/* Estrelas */}
                 <div style={{ marginBottom: 14 }}>
                   <p style={{ fontSize: 12, color: 'rgba(240,240,248,0.55)', marginBottom: 8, fontWeight: 500 }}>
-                    Como você avalia o FitTrack?
+                    Como você avalia o Fitness App?
                   </p>
                   <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -246,7 +246,7 @@ export default function FeedbackWidget() {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Conte sua experiência com o FitTrack..."
+                    placeholder="Conte sua experiência com o Fitness App..."
                     maxLength={1000}
                     rows={3}
                     style={{

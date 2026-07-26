@@ -241,7 +241,7 @@ const LandingPage = () => {
             Tudo que você precisa<br />para evoluir
           </h2>
           <p className="mx-auto text-[16px]" style={{ color: 'rgba(240,240,248,.6)', maxWidth: 560 }}>
-            De rotinas personalizadas a heatmap de treinos — o FitTrack centraliza sua jornada fitness em um só lugar.
+            De rotinas personalizadas a heatmap de treinos — o Fitness App centraliza sua jornada fitness em um só lugar.
           </p>
         </div>
 
@@ -367,7 +367,7 @@ const LandingPage = () => {
             </span>
           ))}
         </div>
-        <div className="text-[12px]" style={{ color: 'rgba(240,240,248,.35)' }}>© 2025 FitTrack</div>
+        <div className="text-[12px]" style={{ color: 'rgba(240,240,248,.35)' }}>© 2025 Fitness App</div>
       </footer>
     </div>
   );

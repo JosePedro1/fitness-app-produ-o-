@@ -1,6 +1,6 @@
 {
-  "name": "FitTrack — Seu app de fitness",
-  "short_name": "FitTrack",
+  "name": "Fitness App — Seu app de fitness",
+  "short_name": "Fitness App",
   "description": "Crie rotinas, acompanhe progresso e otimize sua nutrição.",
   "start_url": "/",
   "scope": "/",

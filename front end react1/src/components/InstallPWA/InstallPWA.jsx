@@ -150,13 +150,13 @@ export default function InstallPWA() {
         .pwa-ios-row svg { flex-shrink: 0; }
       `}</style>
 
-      <div className="pwa-banner" role="banner" aria-label="Instalar FitTrack">
+      <div className="pwa-banner" role="banner" aria-label="Instalar Fitness App">
         <div className="pwa-icon-wrap">
           <DumbbellIcon />
         </div>
 
         <div className="pwa-text">
-          <div className="pwa-title">FitTrack no seu celular</div>
+          <div className="pwa-title">Fitness App no seu celular</div>
           {isIOS ? (
             <div className="pwa-ios-row">
               Toque em <ShareIcon /> depois "Adicionar à Tela Inicial"

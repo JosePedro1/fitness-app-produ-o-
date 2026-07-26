@@ -55,7 +55,7 @@ const Footer = () => (
     </div>
 
     <div className="w-full flex flex-col items-center justify-between py-4 border-t border-gray-800">
-      <p className="text-sm text-gray-500">© 2025 FitTrack</p>
+      <p className="text-sm text-gray-500">© 2025 Fitness App</p>
       <div className="flex items-center justify-center gap-4 mt-2">
         <a href="https://github.com/JosePedro1" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-300 transition-colors"><Github className="w-4 h-4" /></a>
         <a href="https://www.instagram.com/fitness/" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-300 transition-colors"><Instagram className="w-4 h-4" /></a>

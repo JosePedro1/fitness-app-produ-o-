@@ -11,7 +11,7 @@ import calendarRoutes    from './src/routes/calendarRoutes.js';
 import adminRoutes       from './src/routes/adminRoutes.js';
 import nutritionRoutes   from './src/routes/nutritionRoutes.js';
 import academyRoutes     from './src/routes/academyRoutes.js';
-import feedbackRoutes    from './src/routes/feedbackRoutes.js'; // ← NOVO
+import feedbackRoutes    from './src/routes/feedbackRoutes.js';
 
 import { startSchedulers } from './src/services/scheduler.js';
 
@@ -40,7 +40,7 @@ app.route('/progress',    progressRoutes);
 app.route('/calendar',    calendarRoutes);
 app.route('/admin',       adminRoutes);
 app.route('/nutrition',   nutritionRoutes);
-app.route('/feedback',    feedbackRoutes); // ← NOVO
+app.route('/feedback',    feedbackRoutes);
 
 app.route('/',            academyRoutes);
 

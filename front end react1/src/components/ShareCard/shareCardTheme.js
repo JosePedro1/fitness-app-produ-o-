@@ -6,7 +6,7 @@
  */
 
 export const BRAND = {
-  name: 'FitTrack',
+  name: 'Fitness App',
   tagline: 'Treine. Registre. Compartilhe.',
   indigo: '#5B4FFF',
   indigoLight: '#7B6FFF',

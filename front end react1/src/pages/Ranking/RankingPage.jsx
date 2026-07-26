@@ -259,16 +259,16 @@ export default function RankingPage() {
 
         {/* Footer discreto */}
         <p className="text-center text-xs text-gray-700 mt-8">
-          Powered by <span className="text-indigo-600 font-semibold">FitTrack</span>
+          Powered by <span className="text-indigo-600 font-semibold">Fitness App</span>
         </p>
       </div>
 
       <ShareCardModal
         open={shareOpen}
         onClose={() => setShareOpen(false)}
-        fileName={`ranking-${slug}-fittrack.png`}
-        shareTitle={`Ranking ${academy.name} · FitTrack`}
-        shareText={`Confira o ranking de treinos da ${academy.name} no FitTrack!`}
+        fileName={`ranking-${slug}-fitness-app.png`}
+        shareTitle={`Ranking ${academy.name} · Fitness App`}
+        shareText={`Confira o ranking de treinos da ${academy.name} no Fitness App!`}
         renderCard={(cardRef) => (
           <RankingCard
             ref={cardRef}

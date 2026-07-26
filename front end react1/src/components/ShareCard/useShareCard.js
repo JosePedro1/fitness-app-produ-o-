@@ -22,7 +22,7 @@ const downloadBlob = (blob, fileName) => {
   URL.revokeObjectURL(url);
 };
 
-export function useShareCard({ fileName = 'fittrack.png', shareTitle, shareText } = {}) {
+export function useShareCard({ fileName = 'fitness-app.png', shareTitle, shareText } = {}) {
   const cardRef = useRef(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);

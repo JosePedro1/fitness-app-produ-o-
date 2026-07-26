@@ -305,9 +305,9 @@ const RoutinePage = () => {
           <ShareCardModal
             open={shareOpen}
             onClose={() => setShareOpen(false)}
-            fileName="minha-rotina-fittrack.png"
-            shareTitle="Minha rotina semanal no FitTrack"
-            shareText="Monta sua rotina de treino comigo no FitTrack 💪"
+            fileName="minha-rotina-fitness-app.png"
+            shareTitle="Minha rotina semanal no Fitness App"
+            shareText="Monta sua rotina de treino comigo no Fitness App 💪"
             renderCard={(cardRef) => (
               <RoutineInviteCard
                 ref={cardRef}

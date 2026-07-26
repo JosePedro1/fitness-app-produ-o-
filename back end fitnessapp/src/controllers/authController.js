@@ -9,6 +9,23 @@ import {
   sendSessionReplacedEmail,
 } from '../services/authEmailService.js';
 
+// ── Limitação de tentativas de login (em memória — não usa o banco) ──────────
+// OBS: como fica só na memória do processo, o contador zera se o servidor
+// reiniciar e não é compartilhado entre múltiplas instâncias/réplicas.
+const MAX_LOGIN_ATTEMPTS  = 5;        // tentativas erradas permitidas
+const LOCKOUT_MINUTES     = 15;       // duração do bloqueio temporário
+const LOCKOUT_DURATION_MS = LOCKOUT_MINUTES * 60 * 1000;
+
+const loginAttempts = new Map(); // email → { count: number, lockedUntil: number|null }
+
+function getAttemptState(email) {
+  return loginAttempts.get(email) || { count: 0, lockedUntil: null };
+}
+
+function isLocked(state) {
+  return !!state.lockedUntil && state.lockedUntil > Date.now();
+}
+
 // ── POST /auth/register ───────────────────────────────────────────────────────
 export const register = async (c) => {
   try {
@@ -176,8 +193,51 @@ export const login = async (c) => {
   try {
     const { email, password } = await c.req.json();
 
+    if (!email || !password) {
+      return c.json({ error: 'E-mail e senha são obrigatórios.' }, 400);
+    }
+
+    const state = getAttemptState(email);
+
+    // Já está bloqueado por excesso de tentativas → nem chega a validar a senha
+    if (isLocked(state)) {
+      return c.json({
+        error: `Muitas tentativas de login incorretas. Tente novamente em ${minutesUntil(state.lockedUntil)} minuto(s).`,
+        code: 'ACCOUNT_LOCKED',
+        lockout_until: new Date(state.lockedUntil).toISOString(),
+      }, 429);
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return c.json({ error: 'E-mail ou senha incorretos.' }, 400);
+
+    if (error) {
+      // Senha/e-mail incorretos: incrementa o contador em memória
+      state.count += 1;
+
+      if (state.count >= MAX_LOGIN_ATTEMPTS) {
+        state.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+        state.count = 0;
+        loginAttempts.set(email, state);
+
+        return c.json({
+          error: `Muitas tentativas de login incorretas. Sua conta foi bloqueada temporariamente por ${LOCKOUT_MINUTES} minutos.`,
+          code: 'ACCOUNT_LOCKED',
+          lockout_until: new Date(state.lockedUntil).toISOString(),
+        }, 429);
+      }
+
+      loginAttempts.set(email, state);
+      const remaining = MAX_LOGIN_ATTEMPTS - state.count;
+
+      return c.json({
+        error: `E-mail ou senha incorretos. Você tem mais ${remaining} tentativa(s) antes do bloqueio temporário.`,
+        code: 'INVALID_CREDENTIALS',
+        attempts_remaining: remaining,
+      }, 400);
+    }
+
+    // Login bem-sucedido: zera o contador em memória
+    loginAttempts.delete(email);
 
     const user_id = data?.user?.id;
     if (!user_id) return c.json({ error: 'Erro ao gerar token.' }, 500);
@@ -225,6 +285,12 @@ export const login = async (c) => {
     return c.json({ error: err.message }, 500);
   }
 };
+
+// ── Utilitário: minutos restantes até o fim do bloqueio (arredondado p/ cima) ─
+function minutesUntil(timestampMs) {
+  const diffMs = timestampMs - Date.now();
+  return Math.max(1, Math.ceil(diffMs / 60000));
+}
 
 // ── GET /auth/validate ────────────────────────────────────────────────────────
 export const validate = (c) => {

@@ -4,7 +4,7 @@
  * compartilhamento — é a mesma forma do timer circular do treino
  * (CircularProgress em TimerPage.jsx), só que parada, exibindo o número
  * principal do card. A recorrência do anel entre o app e o card reforça
- * a identidade visual em quem já usa o FitTrack e vê o card sendo postado.
+ * a identidade visual em quem já usa o Fitness App e vê o card sendo postado.
  */
 
 import React from 'react';

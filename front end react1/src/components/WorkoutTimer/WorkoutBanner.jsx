@@ -149,9 +149,9 @@ const WorkoutBanner = () => {
           <ShareCardModal
             open={shareOpen}
             onClose={() => setShareOpen(false)}
-            fileName="meu-treino-fittrack.png"
-            shareTitle="Meu treino de hoje no FitTrack"
-            shareText="Treino de hoje batido no FitTrack"
+            fileName="meu-treino-fitness-app.png"
+            shareTitle="Meu treino de hoje no Fitness App"
+            shareText="Treino de hoje batido no Fitness App"
             renderCard={(cardRef) => (
               <WorkoutCompletedCard
                 ref={cardRef}
