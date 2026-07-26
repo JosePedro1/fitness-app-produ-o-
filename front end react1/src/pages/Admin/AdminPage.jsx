@@ -846,6 +846,213 @@ function TabFeedback({ password }) {
   );
 }
 
+// ── Tab: Usuários / Premium ───────────────────────────────────────────────────
+function TabUsers({ password }) {
+  const [data,     setData]     = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState('');
+  const [page,     setPage]     = useState(1);
+  const [search,   setSearch]   = useState('');
+  const [filter,   setFilter]   = useState('all'); // all | premium | free
+  const [updating, setUpdating] = useState(null);
+  const [toast,    setToast]    = useState('');
+  const limit = 20;
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const load = useCallback(async (p = 1, s = search, f = filter) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, limit, filter: f });
+      if (s.trim()) params.set('search', s.trim());
+      const r = await fetch(`${API}/admin/users?${params}`, { headers: { 'x-admin-password': password } });
+      const json = await r.json();
+      if (!r.ok) throw new Error(json.error || 'Erro');
+      setData(json);
+      setPage(p);
+    } catch (e) { setError(e.message); }
+    finally    { setLoading(false); }
+  }, [password]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { load(1, search, filter); }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSearchSubmit = (e) => { e.preventDefault(); load(1, search, filter); };
+
+  const togglePremium = async (user, nextValue) => {
+    const label = nextValue ? 'conceder premium a' : 'cancelar o premium de';
+    if (!window.confirm(`Confirma ${label} "${user.display_name || user.email}"?`)) return;
+
+    setUpdating(user.user_id);
+    try {
+      const r = await fetch(`${API}/admin/users/${user.user_id}/premium`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+        body:    JSON.stringify({ is_premium: nextValue }),
+      });
+      const json = await r.json();
+      if (!r.ok) throw new Error(json.error || 'Erro ao atualizar.');
+
+      setData((prev) => ({
+        ...prev,
+        users: prev.users.map((u) => u.user_id === user.user_id ? { ...u, is_premium: nextValue } : u),
+        premiumCount: prev.premiumCount + (nextValue ? 1 : -1),
+      }));
+      showToast(nextValue ? 'Premium concedido!' : 'Premium cancelado.');
+    } catch (e) {
+      showToast(e.message || 'Erro ao atualizar.');
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  if (loading && !data) return <div className="adm-loader"><div className="adm-spinner" /></div>;
+  if (error) return <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--red)' }}>{error}</div>;
+  if (!data) return null;
+
+  const totalPages = Math.ceil(data.total / limit);
+  const freeCount  = data.total - data.premiumCount;
+
+  return (
+    <>
+      {toast && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 999, background: 'var(--primary)', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600 }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Resumo */}
+      <div className="adm-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+        <div className="adm-card">
+          <div className="adm-card-icon">👥</div>
+          <div className="adm-card-label">Total de Usuários</div>
+          <div className="adm-card-value" style={{ color: 'var(--primary-light)' }}>{fmt(data.total)}</div>
+        </div>
+        <div className="adm-card">
+          <div className="adm-card-icon">⭐</div>
+          <div className="adm-card-label">Premium</div>
+          <div className="adm-card-value" style={{ color: 'var(--green)' }}>{fmt(data.premiumCount)}</div>
+        </div>
+        <div className="adm-card">
+          <div className="adm-card-icon">◽</div>
+          <div className="adm-card-label">Sem premium</div>
+          <div className="adm-card-value" style={{ color: 'var(--text3)' }}>{fmt(freeCount)}</div>
+        </div>
+      </div>
+
+      {/* Busca + filtro */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flex: 1, minWidth: 220 }}>
+          <input
+            className="adm-input"
+            placeholder="Buscar por nome ou e-mail…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ height: 38, flex: 1 }}
+          />
+          <button type="submit" className="adm-btn adm-btn-sm adm-btn-ghost">Buscar</button>
+        </form>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[['all', 'Todos'], ['premium', 'Premium'], ['free', 'Sem premium']].map(([val, label]) => (
+            <button
+              key={val}
+              className={`adm-btn adm-btn-sm ${filter === val ? '' : 'adm-btn-ghost'}`}
+              onClick={() => setFilter(val)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {data.users.length === 0 ? (
+        <p style={{ color: 'var(--text3)', fontSize: 13 }}>Nenhum usuário encontrado.</p>
+      ) : (
+        <div className="adm-table-wrap">
+          <table className="adm-table">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Cadastro</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.users.map((u) => (
+                <tr key={u.user_id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {u.avatar_url
+                        ? <img src={u.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                        : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--primary-light)' }}>
+                            {(u.display_name?.[0] || u.email?.[0] || '?').toUpperCase()}
+                          </div>
+                      }
+                      <div>
+                        <p style={{ fontSize: 13, color: 'var(--text)' }}>{u.display_name || u.email?.split('@')[0] || '—'}</p>
+                        <p style={{ fontSize: 11, color: 'var(--text3)' }}>{u.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{fmtDate(u.created_at)}</td>
+                  <td>
+                    {u.is_premium
+                      ? <span className="adm-pill adm-pill-green">⭐ Premium</span>
+                      : <span className="adm-pill" style={{ background: 'var(--surface3)', color: 'var(--text3)' }}>Sem premium</span>
+                    }
+                  </td>
+                  <td>
+                    {u.is_premium ? (
+                      <button
+                        className="adm-btn adm-btn-sm adm-btn-danger"
+                        disabled={updating === u.user_id}
+                        onClick={() => togglePremium(u, false)}
+                      >
+                        {updating === u.user_id ? '…' : 'Cancelar premium'}
+                      </button>
+                    ) : (
+                      <button
+                        className="adm-btn adm-btn-sm adm-btn-success"
+                        disabled={updating === u.user_id}
+                        onClick={() => togglePremium(u, true)}
+                      >
+                        {updating === u.user_id ? '…' : 'Conceder premium'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 20 }}>
+          <button
+            className="adm-btn adm-btn-ghost adm-btn-sm"
+            disabled={page === 1 || loading}
+            onClick={() => load(page - 1, search, filter)}
+          >
+            ← Anterior
+          </button>
+          <span style={{ fontSize: 13, color: 'var(--text2)', padding: '6px 12px' }}>
+            {page} / {totalPages}
+          </span>
+          <button
+            className="adm-btn adm-btn-ghost adm-btn-sm"
+            disabled={page === totalPages || loading}
+            onClick={() => load(page + 1, search, filter)}
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Dashboard principal ───────────────────────────────────────────────────────
 function AdminDashboard({ password, onLogout }) {
   const [tab, setTab] = useState('overview');
@@ -877,12 +1084,16 @@ function AdminDashboard({ password, onLogout }) {
           <button className={`adm-tab ${tab === 'feedback' ? 'active' : ''}`} onClick={() => setTab('feedback')}>
             💬 Feedback
           </button>
+          <button className={`adm-tab ${tab === 'users' ? 'active' : ''}`} onClick={() => setTab('users')}>
+            👥 Usuários
+          </button>
         </div>
 
         {tab === 'overview'  && <TabOverview  password={password} />}
         {tab === 'academies' && <TabAcademies password={password} />}
         {tab === 'requests'  && <TabRequests  password={password} onPendingCount={setPendingCount} />}
         {tab === 'feedback'  && <TabFeedback  password={password} />}
+        {tab === 'users'     && <TabUsers     password={password} />}
       </main>
     </div>
   );

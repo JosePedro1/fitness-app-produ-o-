@@ -235,6 +235,82 @@ adminRoutes.post('/requests/:id/reject', async (c) => {
   return c.json({ message: 'Solicitação rejeitada.' });
 });
 
+// ── GET /admin/users ──────────────────────────────────────────────────────────
+// Lista usuários com status premium (paginado + busca por email/nome + filtro)
+adminRoutes.get('/users', async (c) => {
+  if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
+
+  try {
+    const page   = Math.max(1, Number(c.req.query('page')  || 1));
+    const limit  = Math.min(100, Math.max(1, Number(c.req.query('limit') || 50)));
+    const offset = (page - 1) * limit;
+    const search = (c.req.query('search') || '').trim();
+    const filter = c.req.query('filter') || 'all'; // 'all' | 'premium' | 'free'
+
+    let query = supabase
+      .from('users')
+      .select('user_id, email, display_name, avatar_url, is_premium, premium_expires_at, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (search) {
+      query = query.or(`email.ilike.%${search}%,display_name.ilike.%${search}%`);
+    }
+    if (filter === 'premium') query = query.eq('is_premium', true);
+    if (filter === 'free')    query = query.eq('is_premium', false);
+
+    const { data: users, error, count } = await query;
+    if (error) throw new Error(error.message);
+
+    const { count: premiumCount } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_premium', true);
+
+    return c.json({
+      users:        users || [],
+      total:        count || 0,
+      premiumCount: premiumCount || 0,
+      page,
+      limit,
+    });
+  } catch (err) {
+    console.error('admin/users error:', err);
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// ── PATCH /admin/users/:id/premium ────────────────────────────────────────────
+// Concede ou cancela o premium de um usuário específico
+adminRoutes.patch('/users/:id/premium', async (c) => {
+  if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
+
+  const id = c.req.param('id');
+  const { is_premium } = await c.req.json().catch(() => ({}));
+
+  if (typeof is_premium !== 'boolean') {
+    return c.json({ error: 'is_premium deve ser true ou false.' }, 400);
+  }
+
+  // Ao conceder premium, limpa qualquer data de expiração antiga (senão o usuário
+  // continuaria sendo tratado como "vencido" mesmo com is_premium = true).
+  const updatePayload = is_premium
+    ? { is_premium: true, premium_expires_at: null }
+    : { is_premium: false };
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updatePayload)
+    .eq('user_id', id)
+    .select('user_id, email, is_premium')
+    .single();
+
+  if (error) return c.json({ error: error.message }, 500);
+  if (!data)  return c.json({ error: 'Usuário não encontrado.' }, 404);
+
+  return c.json({ message: is_premium ? 'Premium concedido.' : 'Premium cancelado.', user: data });
+});
+
 // ── GET /admin/feedback ───────────────────────────────────────────────────────
 // Lista todos os feedbacks com info do usuário (mais recentes primeiro)
 adminRoutes.get('/feedback', async (c) => {
