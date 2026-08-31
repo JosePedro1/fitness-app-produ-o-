@@ -14,7 +14,7 @@ const requireAdmin = (c) => {
   return true;
 };
 
-// ── POST /admin/login ─────────────────────────────────────────────────────────
+// ── POST /admin/login
 adminRoutes.post('/login', async (c) => {
   const { password } = await c.req.json().catch(() => ({}));
   if (!process.env.ADMIN_PASSWORD) return c.json({ error: 'Senha não configurada.' }, 500);
@@ -22,7 +22,7 @@ adminRoutes.post('/login', async (c) => {
   return c.json({ ok: true });
 });
 
-// ── GET /admin/stats ──────────────────────────────────────────────────────────
+// ── GET /admin/stats 
 adminRoutes.get('/stats', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -88,7 +88,7 @@ adminRoutes.get('/stats', async (c) => {
   }
 });
 
-// ── GET /admin/academies ──────────────────────────────────────────────────────
+// ── GET /admin/academies
 adminRoutes.get('/academies', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -121,7 +121,7 @@ adminRoutes.get('/academies', async (c) => {
   }
 });
 
-// ── POST /admin/academies ─────────────────────────────────────────────────────
+// ── POST /admin/academies
 adminRoutes.post('/academies', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -155,7 +155,7 @@ adminRoutes.post('/academies', async (c) => {
   }
 });
 
-// ── DELETE /admin/academies/:id ───────────────────────────────────────────────
+// ── DELETE /admin/academies/:id 
 adminRoutes.delete('/academies/:id', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -165,7 +165,7 @@ adminRoutes.delete('/academies/:id', async (c) => {
   return c.json({ message: 'Academia desativada.' });
 });
 
-// ── GET /admin/requests ───────────────────────────────────────────────────────
+// ── GET /admin/requests
 adminRoutes.get('/requests', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -187,7 +187,7 @@ adminRoutes.get('/requests', async (c) => {
   }
 });
 
-// ── POST /admin/requests/:id/approve ─────────────────────────────────────────
+// ── POST /admin/requests/:id/approve 
 adminRoutes.post('/requests/:id/approve', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -220,7 +220,7 @@ adminRoutes.post('/requests/:id/approve', async (c) => {
   }
 });
 
-// ── POST /admin/requests/:id/reject ──────────────────────────────────────────
+// ── POST /admin/requests/:id/reject
 adminRoutes.post('/requests/:id/reject', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 
@@ -235,7 +235,7 @@ adminRoutes.post('/requests/:id/reject', async (c) => {
   return c.json({ message: 'Solicitação rejeitada.' });
 });
 
-// ── GET /admin/users ──────────────────────────────────────────────────────────
+// ── GET /admin/users
 // Lista usuários com status premium (paginado + busca por email/nome + filtro)
 adminRoutes.get('/users', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
@@ -280,7 +280,7 @@ adminRoutes.get('/users', async (c) => {
   }
 });
 
-// ── PATCH /admin/users/:id/premium ────────────────────────────────────────────
+// ── PATCH /admin/users/:id/premium
 // Concede ou cancela o premium de um usuário específico
 adminRoutes.patch('/users/:id/premium', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
@@ -311,7 +311,7 @@ adminRoutes.patch('/users/:id/premium', async (c) => {
   return c.json({ message: is_premium ? 'Premium concedido.' : 'Premium cancelado.', user: data });
 });
 
-// ── GET /admin/feedback ───────────────────────────────────────────────────────
+// ── GET /admin/feedback 
 // Lista todos os feedbacks com info do usuário (mais recentes primeiro)
 adminRoutes.get('/feedback', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
@@ -371,7 +371,7 @@ adminRoutes.get('/feedback', async (c) => {
   }
 });
 
-// ── DELETE /admin/feedback/:id ────────────────────────────────────────────────
+// ── DELETE /admin/feedback/:id 
 adminRoutes.delete('/feedback/:id', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
 

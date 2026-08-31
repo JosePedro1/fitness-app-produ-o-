@@ -27,11 +27,11 @@ const requireAdmin = (c) => {
 
 const academyRoutes = new Hono();
 
-// ── PÚBLICAS (sem auth) ───────────────────────────────────────────────────────
+// ── PÚBLICAS (sem auth) 
 // GET /ranking/:slug — página pública do ranking da academia
 academyRoutes.get('/ranking/:slug', getRanking);
 
-// ── AUTENTICADAS ──────────────────────────────────────────────────────────────
+// ── AUTENTICADAS 
 academyRoutes.use('/profile/*', authenticate);
 academyRoutes.use('/academies', authenticate);
 
@@ -43,7 +43,7 @@ academyRoutes.post('/profile/join/:slug', joinAcademy);
 // Listar academias (para o select no perfil)
 academyRoutes.get('/academies', listAcademies);
 
-// ── ADMIN ─────────────────────────────────────────────────────────────────────
+// ── ADMIN 
 academyRoutes.post('/admin/academies', async (c) => {
   if (!requireAdmin(c)) return c.json({ error: 'Não autorizado.' }, 401);
   return createAcademy(c);

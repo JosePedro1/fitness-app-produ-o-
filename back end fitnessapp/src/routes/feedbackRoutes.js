@@ -11,7 +11,7 @@ import { authenticate } from '../middleware/authMiddleware.js';
 
 const feedbackRoutes = new Hono();
 
-// ── POST /feedback ─────────────────────────────────────────────────────────────
+// ── POST /feedback 
 feedbackRoutes.post('/', authenticate, async (c) => {
   const userId = c.get('user_id');
 
@@ -54,7 +54,7 @@ feedbackRoutes.post('/', authenticate, async (c) => {
   }
 });
 
-// ── GET /feedback/mine ─────────────────────────────────────────────────────────
+// ── GET /feedback/mine 
 // Retorna o feedback mais recente do usuário (para saber se já avaliou)
 feedbackRoutes.get('/mine', authenticate, async (c) => {
   const userId = c.get('user_id');

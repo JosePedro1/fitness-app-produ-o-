@@ -3,7 +3,7 @@ import { sendEmail } from './emailService.js';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://fitness-app-produ-o.vercel.app';
 
-// ── Bem-vindo após verificação do e-mail ──────────────────────────────────────
+// ── Bem-vindo após verificação do e-mail
 export const sendRegisterEmail = async (email) => {
   await sendEmail(
     email,
@@ -12,7 +12,7 @@ export const sendRegisterEmail = async (email) => {
   );
 };
 
-// ── Link de verificação de e-mail (enviado no cadastro) ───────────────────────
+// ── Link de verificação de e-mail (enviado no cadastro)
 export const sendVerificationEmail = async (email, token) => {
   const url = `${FRONTEND_URL}/verify-email?token=${token}`;
   await sendEmail(
@@ -26,7 +26,7 @@ export const sendVerificationEmail = async (email, token) => {
   );
 };
 
-// ── Alerta de novo dispositivo no login ───────────────────────────────────────
+// ── Alerta de novo dispositivo no login
 // Compara o User-Agent atual com o último registrado no banco.
 // Se for diferente (novo aparelho/navegador), avisa por e-mail e atualiza o registro.
 // IP é ignorado pois muda entre casa, academia, dados móveis etc.
