@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 /* ─────────────────────────────────────────────────────────
-   Direção de design
-   Fundo carvão quente (não preto-azulado), tipografia condensada
-   de placar/vestiário para títulos, corpo em sans humanista.
-   Um único dispositivo visual — a "placa" (barra de peso) —
-   é reaproveitado como marcador de item, indicador de nota e
-   textura de fundo, em vez de emojis, pílulas e blobs roxos.
+   Paleta alinhada com LoginPage
+   Fundo: #111118 / #18181f  |  Texto: #f0f0f8
+   Accent: #5B4FFF (primário) / #7B6FFF (hover)
+   Fontes: Bebas Neue (display) + Work Sans (corpo)
 ───────────────────────────────────────────────────────── */
 
 const FontLoader = () => (
@@ -20,46 +18,46 @@ const FontLoader = () => (
     .lp-stripes {
       background-image: repeating-linear-gradient(
         -35deg,
-        rgba(243,238,226,.05) 0px,
-        rgba(243,238,226,.05) 2px,
+        rgba(255,255,255,.03) 0px,
+        rgba(255,255,255,.03) 2px,
         transparent 2px,
         transparent 22px
       );
     }
 
-    .lp-nav-link { color: rgba(243,238,226,.62); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 3px; transition: color .15s, border-color .15s; }
-    .lp-nav-link:hover { color: #F3EEE2; border-color: #D3452B; }
+    .lp-nav-link { color: rgba(240,240,248,.55); text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 3px; transition: color .15s, border-color .15s; }
+    .lp-nav-link:hover { color: #f0f0f8; border-color: #5B4FFF; }
 
-    .lp-btn-primary { background: #D3452B; color: #F3EEE2; transition: background-color .15s; }
-    .lp-btn-primary:hover { background: #B93A23; }
+    .lp-btn-primary { background: #5B4FFF; color: #f0f0f8; transition: background-color .15s; }
+    .lp-btn-primary:hover { background: #7B6FFF; }
 
-    .lp-btn-outline { background: transparent; color: #F3EEE2; border: 1px solid rgba(243,238,226,.22); transition: border-color .15s, background-color .15s; }
-    .lp-btn-outline:hover { border-color: #F3EEE2; background: rgba(243,238,226,.04); }
+    .lp-btn-outline { background: transparent; color: #f0f0f8; border: 1px solid rgba(255,255,255,.14); transition: border-color .15s, background-color .15s; }
+    .lp-btn-outline:hover { border-color: #f0f0f8; background: rgba(255,255,255,.04); }
 
-    .lp-row { border-top: 1px solid rgba(243,238,226,.12); transition: background-color .15s; cursor: pointer; }
-    .lp-row:hover { background: rgba(243,238,226,.03); }
-    .lp-row:last-child { border-bottom: 1px solid rgba(243,238,226,.12); }
+    .lp-row { border-top: 1px solid rgba(255,255,255,.08); transition: background-color .15s; cursor: pointer; }
+    .lp-row:hover { background: rgba(255,255,255,.03); }
+    .lp-row:last-child { border-bottom: 1px solid rgba(255,255,255,.08); }
 
-    .lp-input { background: transparent; border: none; border-bottom: 1px solid rgba(243,238,226,.28); color: #F3EEE2; outline: none; transition: border-color .15s; }
-    .lp-input:focus { border-color: #D3452B; }
+    .lp-input { background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,.22); color: #f0f0f8; outline: none; transition: border-color .15s; }
+    .lp-input:focus { border-color: #5B4FFF; }
 
-    .lp-note { border: 1px solid rgba(243,238,226,.14); }
+    .lp-note { border: 1px solid rgba(255,255,255,.08); }
 
     ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #17150F; }
-    ::-webkit-scrollbar-thumb { background: #3A362B; border-radius: 0; }
-    ::-webkit-scrollbar-thumb:hover { background: #D3452B; }
+    ::-webkit-scrollbar-track { background: #111118; }
+    ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 0; }
+    ::-webkit-scrollbar-thumb:hover { background: #5B4FFF; }
   `}</style>
 );
 
-/* Marcador em forma de placa — usado como bullet, nota e textura */
+/* Marcador em forma de placa */
 const Plate = ({ filled, size = 18 }) => (
   <div
     style={{
       width: 9,
       height: size,
-      background: filled ? '#D3452B' : 'transparent',
-      border: `1px solid ${filled ? '#D3452B' : 'rgba(243,238,226,.3)'}`,
+      background: filled ? '#5B4FFF' : 'transparent',
+      border: `1px solid ${filled ? '#5B4FFF' : 'rgba(240,240,248,.3)'}`,
     }}
   />
 );
@@ -85,36 +83,36 @@ const FeatureRow = ({ tag, title, desc, onClick }) => (
   <div className="lp-row grid gap-4 py-6 items-start" style={{ gridTemplateColumns: '64px 1fr' }} onClick={onClick}>
     <div
       className="lp-display flex items-center justify-center text-[15px]"
-      style={{ width: 48, height: 48, border: '1px solid #D3452B', color: '#D3452B' }}
+      style={{ width: 48, height: 48, border: '1px solid #5B4FFF', color: '#5B4FFF' }}
     >
       {tag}
     </div>
     <div>
-      <div className="text-[16px] font-semibold mb-1" style={{ color: '#F3EEE2' }}>{title}</div>
-      <div className="text-[14px] leading-[1.6]" style={{ color: 'rgba(243,238,226,.6)', maxWidth: 460 }}>{desc}</div>
+      <div className="text-[16px] font-semibold mb-1" style={{ color: '#f0f0f8' }}>{title}</div>
+      <div className="text-[14px] leading-[1.6]" style={{ color: 'rgba(240,240,248,.6)', maxWidth: 460 }}>{desc}</div>
     </div>
   </div>
 );
 
 const Note = ({ rating, text, name, role }) => (
-  <div className="lp-note relative p-6" style={{ background: '#1D1B14' }}>
-    <div style={{ position: 'absolute', top: 0, left: 0, width: 26, height: 5, background: '#D3452B' }} />
+  <div className="lp-note relative p-6" style={{ background: '#18181f' }}>
+    <div style={{ position: 'absolute', top: 0, left: 0, width: 26, height: 5, background: '#5B4FFF' }} />
     <PlateRating value={rating} />
-    <div className="text-[14px] leading-[1.7] my-4" style={{ color: 'rgba(243,238,226,.72)' }}>{text}</div>
-    <div className="flex items-baseline justify-between border-t pt-3" style={{ borderColor: 'rgba(243,238,226,.12)' }}>
-      <span className="text-[13px] font-medium" style={{ color: '#F3EEE2' }}>{name}</span>
-      <span className="text-[12px]" style={{ color: 'rgba(243,238,226,.4)' }}>{role}</span>
+    <div className="text-[14px] leading-[1.7] my-4" style={{ color: 'rgba(240,240,248,.72)' }}>{text}</div>
+    <div className="flex items-baseline justify-between border-t pt-3" style={{ borderColor: 'rgba(255,255,255,.08)' }}>
+      <span className="text-[13px] font-medium" style={{ color: '#f0f0f8' }}>{name}</span>
+      <span className="text-[12px]" style={{ color: 'rgba(240,240,248,.4)' }}>{role}</span>
     </div>
   </div>
 );
 
 /* ── Classificação IMC ── */
 const classificarIMC = (v) => {
-  if (v < 18.5) return { label: 'Abaixo do peso', cor: '#6FA8DC', exercises: ['Supino Reto','Levantamento Terra','Agachamento Livre','Desenvolvimento Halteres','Rosca Direta'] };
-  if (v < 25)   return { label: 'Peso normal',    cor: '#7FB069', exercises: ['Supino Reto','Remada Curvada','Agachamento Livre','Prancha','Elevação Lateral'] };
-  if (v < 30)   return { label: 'Sobrepeso',      cor: '#E8B23D', exercises: ['Flexão de Braços','Agachamento Sumô','Prancha','Abdominal Crunch','Elevação de Pernas'] };
-  if (v < 35)   return { label: 'Obesidade grau 1', cor: '#D3452B', exercises: ['Flexão de Braços','Panturrilha em Pé','Prancha','Abdominal Crunch','Russian Twist'] };
-  return              { label: 'Obesidade grau 2+', cor: '#B93A23', exercises: ['Flexão de Braços','Prancha','Abdominal Crunch','Panturrilha em Pé','Elevação Lateral'] };
+  if (v < 18.5) return { label: 'Abaixo do peso',    cor: '#6FA8DC', exercises: ['Supino Reto','Levantamento Terra','Agachamento Livre','Desenvolvimento Halteres','Rosca Direta'] };
+  if (v < 25)   return { label: 'Peso normal',        cor: '#7FB069', exercises: ['Supino Reto','Remada Curvada','Agachamento Livre','Prancha','Elevação Lateral'] };
+  if (v < 30)   return { label: 'Sobrepeso',          cor: '#E8B23D', exercises: ['Flexão de Braços','Agachamento Sumô','Prancha','Abdominal Crunch','Elevação de Pernas'] };
+  if (v < 35)   return { label: 'Obesidade grau 1',   cor: '#7B6FFF', exercises: ['Flexão de Braços','Panturrilha em Pé','Prancha','Abdominal Crunch','Russian Twist'] };
+  return              { label: 'Obesidade grau 2+',   cor: '#5B4FFF', exercises: ['Flexão de Braços','Prancha','Abdominal Crunch','Panturrilha em Pé','Elevação Lateral'] };
 };
 
 /* ══════════════════════════════ MAIN ══════════════════════════════ */
@@ -138,32 +136,32 @@ const LandingPage = () => {
   };
 
   const features = [
-    { tag: 'RT',  title: 'Rotinas de treino',      desc: 'Monte rotinas com exercícios da biblioteca, organize por dia da semana e marque cada treino como concluído.' },
-    { tag: 'HIIT', title: 'Cronômetro de séries',  desc: 'Timer de série e descanso com aviso sonoro, presets prontos (Tabata, Força, HIIT) e contagem de rounds.' },
-    { tag: 'PG',  title: 'Progresso corporal',      desc: 'Registre peso e medidas ao longo do tempo e acompanhe a evolução em gráficos por data.' },
-    { tag: 'CAL', title: 'Calendário de treinos',   desc: 'Mapa de calor com sequência de dias treinados, estatísticas e histórico — manual ou puxado do cronômetro.' },
-    { tag: 'IMC', title: 'Calculadora de IMC',      desc: 'Calcule seu IMC e receba uma rotação de treino A/B/C com progressão de fase automática.' },
-    { tag: 'BIB', title: 'Biblioteca de exercícios', desc: '48 exercícios em 8 grupos musculares, cada um com vídeo demonstrativo do YouTube.' },
+    { tag: 'RT',   title: 'Rotinas de treino',       desc: 'Monte rotinas com exercícios da biblioteca, organize por dia da semana e marque cada treino como concluído.' },
+    { tag: 'HIIT', title: 'Cronômetro de séries',     desc: 'Timer de série e descanso com aviso sonoro, presets prontos (Tabata, Força, HIIT) e contagem de rounds.' },
+    { tag: 'PG',   title: 'Progresso corporal',       desc: 'Registre peso e medidas ao longo do tempo e acompanhe a evolução em gráficos por data.' },
+    { tag: 'CAL',  title: 'Calendário de treinos',    desc: 'Mapa de calor com sequência de dias treinados, estatísticas e histórico — manual ou puxado do cronômetro.' },
+    { tag: 'IMC',  title: 'Calculadora de IMC',       desc: 'Calcule seu IMC e receba uma rotação de treino A/B/C com progressão de fase automática.' },
+    { tag: 'BIB',  title: 'Biblioteca de exercícios', desc: '48 exercícios em 8 grupos musculares, cada um com vídeo demonstrativo do YouTube.' },
   ];
 
   const stats = [
     { num: '48',  label: 'exercícios catalogados' },
     { num: '8',   label: 'grupos musculares' },
-    { num: '100', label: '% gratuito', suffix: '%' },
+    { num: '100', label: '% gratuito' },
     { num: '0',   label: 'cartão de crédito exigido' },
   ];
 
   return (
-    <div className="lp-root" style={{ background: '#17150F', color: '#F3EEE2', minHeight: '100vh', overflowX: 'hidden' }}>
+    <div className="lp-root" style={{ background: '#111118', color: '#f0f0f8', minHeight: '100vh', overflowX: 'hidden' }}>
       <FontLoader />
 
       {/* ── NAV ── */}
       <nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-[5vw]"
-        style={{ height: 60, background: 'rgba(23,21,15,.92)', borderBottom: '1px solid rgba(243,238,226,.12)' }}
+        style={{ height: 60, background: 'rgba(17,17,24,.92)', borderBottom: '1px solid rgba(255,255,255,.08)' }}
       >
-        <div className="lp-display text-[24px]" style={{ color: '#F3EEE2' }}>
-          FIT<span style={{ color: '#D3452B' }}>NESS</span>
+        <div className="lp-display text-[24px]" style={{ color: '#f0f0f8' }}>
+          FIT<span style={{ color: '#5B4FFF' }}>NESS</span>
         </div>
 
         <div className="hidden md:flex items-center gap-8">
@@ -179,7 +177,7 @@ const LandingPage = () => {
           </Link>
           <button
             className="md:hidden p-2 text-lg"
-            style={{ background: 'none', border: 'none', color: '#F3EEE2', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: '#f0f0f8', cursor: 'pointer' }}
             onClick={() => setMobileOpen(v => !v)}
           >
             {mobileOpen ? '✕' : '☰'}
@@ -188,7 +186,7 @@ const LandingPage = () => {
       </nav>
 
       {mobileOpen && (
-        <div className="fixed top-[60px] left-0 right-0 z-40 flex flex-col gap-1 p-4 md:hidden" style={{ background: '#1D1B14', borderBottom: '1px solid rgba(243,238,226,.12)' }}>
+        <div className="fixed top-[60px] left-0 right-0 z-40 flex flex-col gap-1 p-4 md:hidden" style={{ background: '#18181f', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
           <NavLink onClick={() => scrollTo('features')}>Funcionalidades</NavLink>
           <NavLink onClick={() => scrollTo('imc-section')}>Calcular IMC</NavLink>
           <NavLink onClick={() => scrollTo('depoimentos')}>Depoimentos</NavLink>
@@ -200,11 +198,11 @@ const LandingPage = () => {
       <section className="lp-stripes relative" style={{ padding: '150px 5vw 90px' }}>
         <div className="grid gap-12 mx-auto items-center" style={{ maxWidth: 1140, gridTemplateColumns: '1.2fr 1fr' }}>
           <div>
-            <h1 className="lp-display" style={{ fontSize: 'clamp(44px,6.2vw,84px)', color: '#F3EEE2' }}>
+            <h1 className="lp-display" style={{ fontSize: 'clamp(44px,6.2vw,84px)', color: '#f0f0f8' }}>
               REGISTRE O TREINO.<br />
               VEJA O RESULTADO.
             </h1>
-            <p className="mt-6 mb-9" style={{ fontSize: 17, color: 'rgba(243,238,226,.62)', maxWidth: 460, lineHeight: 1.7 }}>
+            <p className="mt-6 mb-9" style={{ fontSize: 17, color: 'rgba(240,240,248,.62)', maxWidth: 460, lineHeight: 1.7 }}>
               Monte rotinas, cronometre suas séries e acompanhe peso, medidas e frequência num só lugar.
               Sem planilha, sem caderno perdido.
             </p>
@@ -219,20 +217,20 @@ const LandingPage = () => {
           </div>
 
           {/* Painel de placar */}
-          <div style={{ border: '1px solid rgba(243,238,226,.16)', background: '#1D1B14' }}>
-            <div style={{ height: 4, background: '#D3452B' }} />
+          <div style={{ border: '1px solid rgba(255,255,255,.10)', background: '#18181f' }}>
+            <div style={{ height: 4, background: '#5B4FFF' }} />
             <div className="grid grid-cols-2">
               {stats.map((s, i) => (
                 <div
                   key={s.label}
                   className="p-6"
                   style={{
-                    borderRight: i % 2 === 0 ? '1px solid rgba(243,238,226,.12)' : 'none',
-                    borderBottom: i < 2 ? '1px solid rgba(243,238,226,.12)' : 'none',
+                    borderRight: i % 2 === 0 ? '1px solid rgba(255,255,255,.08)' : 'none',
+                    borderBottom: i < 2 ? '1px solid rgba(255,255,255,.08)' : 'none',
                   }}
                 >
-                  <div className="lp-display" style={{ fontSize: 42, color: '#F3EEE2' }}>{s.num}</div>
-                  <div className="text-[12px] mt-1" style={{ color: 'rgba(243,238,226,.45)' }}>{s.label}</div>
+                  <div className="lp-display" style={{ fontSize: 42, color: '#f0f0f8' }}>{s.num}</div>
+                  <div className="text-[12px] mt-1" style={{ color: 'rgba(240,240,248,.45)' }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -246,7 +244,7 @@ const LandingPage = () => {
           <h2 className="lp-display mb-3" style={{ fontSize: 'clamp(32px,4vw,48px)' }}>
             Seis ferramentas, um treino sério
           </h2>
-          <p className="text-[16px] mb-2" style={{ color: 'rgba(243,238,226,.6)', maxWidth: 520 }}>
+          <p className="text-[16px] mb-2" style={{ color: 'rgba(240,240,248,.6)', maxWidth: 520 }}>
             Cada uma resolve uma parte do problema: planejar, cronometrar, medir e não deixar a sequência quebrar.
           </p>
         </div>
@@ -259,21 +257,21 @@ const LandingPage = () => {
       </section>
 
       {/* ── IMC ── */}
-      <section id="imc-section" style={{ padding: '90px 5vw', background: '#1D1B14', borderTop: '1px solid rgba(243,238,226,.12)', borderBottom: '1px solid rgba(243,238,226,.12)' }}>
+      <section id="imc-section" style={{ padding: '90px 5vw', background: '#18181f', borderTop: '1px solid rgba(255,255,255,.08)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
         <div className="mx-auto" style={{ maxWidth: 720 }}>
           <h2 className="lp-display mb-3" style={{ fontSize: 'clamp(32px,4vw,48px)' }}>Calcule seu IMC</h2>
-          <p className="text-[16px] mb-10" style={{ color: 'rgba(243,238,226,.6)', maxWidth: 480 }}>
+          <p className="text-[16px] mb-10" style={{ color: 'rgba(240,240,248,.6)', maxWidth: 480 }}>
             Sem cadastro. O resultado já vem com uma sugestão de treino para o seu ponto de partida.
           </p>
 
-          <div style={{ border: '1px solid rgba(243,238,226,.16)', background: '#17150F', padding: 32 }}>
+          <div style={{ border: '1px solid rgba(255,255,255,.10)', background: '#111118', padding: 32 }}>
             <div className="flex gap-8 flex-wrap items-end mb-2">
               {[
                 { label: 'Peso (kg)', placeholder: '75', value: peso, set: setPeso },
                 { label: 'Altura (cm)', placeholder: '175', value: altura, set: setAltura },
               ].map(f => (
                 <div key={f.label} style={{ minWidth: 160 }}>
-                  <label className="block text-[12px] mb-2" style={{ color: 'rgba(243,238,226,.5)' }}>{f.label}</label>
+                  <label className="block text-[12px] mb-2" style={{ color: 'rgba(240,240,248,.5)' }}>{f.label}</label>
                   <input
                     type="number"
                     placeholder={f.placeholder}
@@ -290,15 +288,15 @@ const LandingPage = () => {
             </div>
 
             {imcResult && (
-              <div className="mt-8 pt-8" style={{ borderTop: '1px solid rgba(243,238,226,.12)' }}>
+              <div className="mt-8 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,.08)' }}>
                 <div className="flex items-baseline gap-4 mb-1">
                   <div className="lp-display" style={{ fontSize: 56, color: imcResult.cor }}>{imcResult.val}</div>
-                  <div className="text-[16px] font-medium" style={{ color: '#F3EEE2' }}>{imcResult.label}</div>
+                  <div className="text-[16px] font-medium" style={{ color: '#f0f0f8' }}>{imcResult.label}</div>
                 </div>
-                <div className="text-[13px] mb-4" style={{ color: 'rgba(243,238,226,.45)' }}>Sugestão de treino inicial</div>
+                <div className="text-[13px] mb-4" style={{ color: 'rgba(240,240,248,.45)' }}>Sugestão de treino inicial</div>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {imcResult.exercises.map(ex => (
-                    <span key={ex} className="px-3 py-1 text-[12px]" style={{ border: '1px solid rgba(243,238,226,.2)', color: 'rgba(243,238,226,.75)' }}>
+                    <span key={ex} className="px-3 py-1 text-[12px]" style={{ border: '1px solid rgba(255,255,255,.14)', color: 'rgba(240,240,248,.75)' }}>
                       {ex}
                     </span>
                   ))}
@@ -331,11 +329,11 @@ const LandingPage = () => {
 
       {/* ── CTA FINAL ── */}
       <section style={{ padding: '90px 5vw' }}>
-        <div className="mx-auto" style={{ maxWidth: 760, border: '1px solid rgba(243,238,226,.16)', background: '#1D1B14' }}>
-          <div style={{ height: 4, background: '#D3452B' }} />
+        <div className="mx-auto" style={{ maxWidth: 760, border: '1px solid rgba(255,255,255,.10)', background: '#18181f' }}>
+          <div style={{ height: 4, background: '#5B4FFF' }} />
           <div style={{ padding: '56px 48px' }}>
             <h2 className="lp-display mb-4" style={{ fontSize: 'clamp(32px,4vw,44px)' }}>Comece hoje mesmo</h2>
-            <p className="mb-8 text-[16px]" style={{ color: 'rgba(243,238,226,.62)', maxWidth: 440 }}>
+            <p className="mb-8 text-[16px]" style={{ color: 'rgba(240,240,248,.62)', maxWidth: 440 }}>
               Grátis, sem cartão de crédito. Em menos de um minuto seu primeiro treino já está montado.
             </p>
             <Link to="/signup" className="lp-btn-primary inline-flex items-center px-7 py-[14px] text-[15px] font-medium">
@@ -346,8 +344,8 @@ const LandingPage = () => {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="flex items-center justify-between flex-wrap gap-4 px-[5vw] py-10" style={{ borderTop: '1px solid rgba(243,238,226,.12)' }}>
-        <div className="lp-display text-[20px]">FIT<span style={{ color: '#D3452B' }}>NESS</span></div>
+      <footer className="flex items-center justify-between flex-wrap gap-4 px-[5vw] py-10" style={{ borderTop: '1px solid rgba(255,255,255,.08)' }}>
+        <div className="lp-display text-[20px]">FIT<span style={{ color: '#5B4FFF' }}>NESS</span></div>
         <div className="flex gap-6">
           {[
             { label: 'Funcionalidades', action: () => scrollTo('features') },
@@ -359,13 +357,10 @@ const LandingPage = () => {
             </span>
           ))}
         </div>
-        <div className="text-[12px]" style={{ color: 'rgba(243,238,226,.4)' }}>© 2025 Fitness App</div>
+        <div className="text-[12px]" style={{ color: 'rgba(240,240,248,.4)' }}>© 2025 Fitness App</div>
       </footer>
     </div>
   );
 };
 
 export default LandingPage;
-
-
-ox
