@@ -3,27 +3,38 @@
 
 import React, { useState } from 'react';
 import {
-  Salad, Zap, ShoppingCart, ChevronDown, ChevronUp, ChevronRight,
+  Salad, Zap, ShoppingCart, ChevronDown, ChevronUp,
   Lock, Sparkles, RotateCcw, Clock, Target,
-  Dumbbell, CheckCircle, Check, Flame, Lightbulb, Droplets,
+  Dumbbell, CheckCircle,
 } from 'lucide-react';
 
 export const DAILY_LIMIT = 3;
 
 export const GOALS = [
-  { value: 'emagrecer',  label: 'Emagrecer',    desc: 'Déficit calórico' },
-  { value: 'massa',      label: 'Ganhar massa', desc: 'Superávit + proteína' },
-  { value: 'manutencao', label: 'Manter peso',  desc: 'Equilíbrio' },
-  { value: 'saude',      label: 'Saúde geral',  desc: 'Balanceado' },
+  { value: 'emagrecer',  label: 'Emagrecer',      emoji: '🔥', desc: 'Déficit calórico' },
+  { value: 'massa',      label: 'Ganhar massa',    emoji: '💪', desc: 'Superávit + proteína' },
+  { value: 'manutencao', label: 'Manter peso',     emoji: '⚖️', desc: 'Equilíbrio' },
+  { value: 'saude',      label: 'Saúde geral',     emoji: '🥗', desc: 'Balanceado' },
 ];
 
 export const BIOTYPES = [
-  { value: 'ectomorfo', label: 'Ectomorfo', desc: 'Metabolismo acelerado, dificuldade em ganhar peso' },
-  { value: 'mesomorfo', label: 'Mesomorfo', desc: 'Metabolismo equilibrado, ganha músculo com facilidade' },
-  { value: 'endomorfo', label: 'Endomorfo', desc: 'Metabolismo lento, tende a acumular gordura' },
+  { value: 'ectomorfo', label: 'Ectomorfo', emoji: '🦴', desc: 'Metabolismo acelerado, dificuldade em ganhar peso' },
+  { value: 'mesomorfo', label: 'Mesomorfo', emoji: '💪', desc: 'Metabolismo equilibrado, ganha músculo com facilidade' },
+  { value: 'endomorfo', label: 'Endomorfo', emoji: '🧱', desc: 'Metabolismo lento, tende a acumular gordura' },
 ];
 
 export const ALL_MEALS = ['Café da manhã', 'Lanche da manhã', 'Almoço', 'Lanche da tarde', 'Jantar', 'Ceia'];
+
+export const MEAL_ICONS = {
+  'Café da manhã':   '🌅',
+  'Lanche da manhã': '🍎',
+  'Almoço':          '🥗',
+  'Lanche da tarde': '☕',
+  'Jantar':          '🌆',
+  'Ceia':            '🌙',
+};
+
+export const MEAL_EMOJIS = ['🌅', '☀️', '🥗', '🌆', '🌙', '🌙'];
 
 export const ACTIVITY_OPTS = [
   { value: 'sedentario', label: 'Sedentário',          desc: 'Pouco ou nenhum exercício' },
@@ -32,40 +43,7 @@ export const ACTIVITY_OPTS = [
   { value: 'intenso',    label: 'Muito ativo',         desc: '6–7x por semana' },
 ];
 
-// ── Glyph ──────────────────────────────────────────────────
-// Marca desenhada em CSS (mesmo estilo dos tags da landing page): quadrado com
-// borda roxa, sigla em Bebas Neue e um canto de destaque. Sem imagens externas.
-const GLYPH_TAGS = {
-  emagrecer: 'DEF', massa: 'MASS', manutencao: 'MNT', saude: 'SAÚ',
-  ectomorfo: 'ECTO', mesomorfo: 'MESO', endomorfo: 'ENDO',
-  'cafe-da-manha': 'CAF', 'lanche-da-manha': 'LM', almoco: 'ALM',
-  'lanche-da-tarde': 'LT', jantar: 'JAN', ceia: 'CEI',
-  calorias: 'KCAL', proteina: 'PRO', carboidratos: 'CHO', gorduras: 'GOR',
-};
-
-export function Glyph({ name, size = 'w-10 h-10', active = true }) {
-  const slug = String(name).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
-  const tag = GLYPH_TAGS[slug] || String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').slice(0, 3).toUpperCase();
-  return (
-    <span
-      className={`${size} relative shrink-0 flex items-center justify-center`}
-      style={{
-        border: `1px solid ${active ? '#5B4FFF' : 'rgba(240,240,248,.25)'}`,
-        color: active ? '#5B4FFF' : 'rgba(240,240,248,.6)',
-        fontFamily: "'Bebas Neue', sans-serif",
-        letterSpacing: '.03em',
-        fontSize: 15,
-        lineHeight: 1,
-      }}
-    >
-      <span style={{ position: 'absolute', top: -1, left: -1, width: 10, height: 3, background: '#5B4FFF' }} />
-      {tag}
-    </span>
-  );
-}
-
 // ── OptionCard ─────────────────────────────────────────────
-// `emoji` agora recebe um nó React (ex.: <Glyph />)
 export function OptionCard({ selected, onClick, emoji, label, desc, full }) {
   return (
     <button
@@ -75,7 +53,7 @@ export function OptionCard({ selected, onClick, emoji, label, desc, full }) {
       }`}
     >
       <div className="flex items-center gap-3">
-        {emoji}
+        <span className="text-xl">{emoji}</span>
         <div>
           <p className={`text-sm font-semibold ${selected ? 'text-[#7B6FFF]' : 'text-gray-200'}`}>{label}</p>
           {desc && <p className="text-xs text-gray-500 mt-0.5">{desc}</p>}
@@ -136,12 +114,10 @@ export function UsageBar({ used, limit, isPremium }) {
 }
 
 // ── MacroCard ──────────────────────────────────────────────
-export function MacroCard({ label, value, unit, color }) {
+export function MacroCard({ label, value, unit, color, icon }) {
   return (
     <div className="bg-black/20 border border-white/5 rounded-xl p-4 text-center">
-      <div className="flex justify-center mb-2">
-        <Glyph name={label} size="w-11 h-11" />
-      </div>
+      <p className="text-xl mb-1">{icon}</p>
       <p className="text-xl font-bold" style={{ color, fontFamily: 'Syne, sans-serif' }}>
         {value}<span className="text-xs font-normal text-gray-500 ml-1">{unit}</span>
       </p>
@@ -161,7 +137,9 @@ export function MealCard({ meal, index }) {
         className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/[0.02] transition-colors"
       >
         <div className="flex items-center gap-3">
-          <Glyph name={meal.nome} size="w-10 h-10" />
+          <div className="w-8 h-8 rounded-lg bg-[#5B4FFF]/15 flex items-center justify-center">
+            <span className="text-sm">{MEAL_EMOJIS[index] || '🍽️'}</span>
+          </div>
           <div className="text-left">
             <p className="text-sm font-semibold text-gray-200">{meal.nome}</p>
             <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -191,9 +169,7 @@ export function MealCard({ meal, index }) {
           </ul>
           {meal.dica && (
             <div className="mt-3 bg-[#5B4FFF]/10 border border-[#5B4FFF]/20 rounded-lg px-3 py-2">
-              <p className="text-xs text-[#7B6FFF] flex items-start gap-1.5">
-                <Lightbulb className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {meal.dica}
-              </p>
+              <p className="text-xs text-[#7B6FFF]">💡 {meal.dica}</p>
             </div>
           )}
         </div>
@@ -226,7 +202,7 @@ export function PremiumBanner() {
           <div className="flex items-center gap-4 mt-3 flex-wrap">
             {['Ilimitado', 'Personalizado por treino', 'Biótipo', 'Histórico'].map(f => (
               <span key={f} className="text-xs text-gray-400 flex items-center gap-1">
-                <Check className="w-3 h-3 text-[#22c55e]" />{f}
+                <span className="text-[#22c55e]">✓</span>{f}
               </span>
             ))}
           </div>
@@ -266,9 +242,7 @@ export function PlanResult({ plan, isPremium, allExercises, routines, onReset, o
             </div>
             <p className="text-sm text-gray-300 leading-relaxed">{plan.objetivo}</p>
             {plan.gasto_treino_kcal > 0 && (
-              <p className="text-xs text-[#f59e0b] mt-1.5 flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5" /> Gasto estimado no treino: {plan.gasto_treino_kcal} kcal
-              </p>
+              <p className="text-xs text-[#f59e0b] mt-1.5">🔥 Gasto estimado no treino: {plan.gasto_treino_kcal} kcal</p>
             )}
           </div>
           <button
@@ -286,10 +260,10 @@ export function PlanResult({ plan, isPremium, allExercises, routines, onReset, o
           <Target className="w-3.5 h-3.5" /> Metas do dia
         </p>
         <div className="grid grid-cols-4 gap-2">
-          <MacroCard label="Calorias"     value={plan.macros?.calorias}    unit="kcal" color="#f59e0b" />
-          <MacroCard label="Proteína"     value={plan.macros?.proteina_g}  unit="g"    color="#5B4FFF" />
-          <MacroCard label="Carboidratos" value={plan.macros?.carbo_g}     unit="g"    color="#22c55e" />
-          <MacroCard label="Gorduras"     value={plan.macros?.gordura_g}   unit="g"    color="#06b6d4" />
+          <MacroCard label="Calorias"     value={plan.macros?.calorias}    unit="kcal" color="#f59e0b" icon="🔥" />
+          <MacroCard label="Proteína"     value={plan.macros?.proteina_g}  unit="g"    color="#5B4FFF" icon="💪" />
+          <MacroCard label="Carboidratos" value={plan.macros?.carbo_g}     unit="g"    color="#22c55e" icon="🌾" />
+          <MacroCard label="Gorduras"     value={plan.macros?.gordura_g}   unit="g"    color="#06b6d4" icon="🥑" />
         </div>
       </div>
 
@@ -306,13 +280,11 @@ export function PlanResult({ plan, isPremium, allExercises, routines, onReset, o
       {/* Dicas */}
       {plan.dicas_gerais?.length > 0 && (
         <div className="bg-black/20 border border-white/5 rounded-xl p-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> Dicas do nutricionista
-          </p>
+          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-3">✨ Dicas do nutricionista</p>
           <ul className="space-y-2">
             {plan.dicas_gerais.map((d, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                <ChevronRight className="w-4 h-4 text-[#7B6FFF] shrink-0 mt-0.5" />{d}
+                <span className="text-[#7B6FFF] shrink-0">→</span>{d}
               </li>
             ))}
           </ul>
@@ -323,7 +295,7 @@ export function PlanResult({ plan, isPremium, allExercises, routines, onReset, o
       {plan.agua && (
         <div className="bg-[#06b6d4]/10 border border-[#06b6d4]/20 rounded-xl p-4">
           <p className="text-xs text-[#06b6d4] font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Droplets className="w-3.5 h-3.5" /> Hidratação do dia
+            💧 Hidratação do dia
           </p>
           <div className="flex items-center gap-6">
             <div className="text-center">
@@ -412,13 +384,13 @@ export function PlanResult({ plan, isPremium, allExercises, routines, onReset, o
               <div className="space-y-2">
                 <button
                   onClick={() => setSelectedRoutine('new')}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-all flex items-center gap-2 ${
+                  className={`w-full text-left px-3 py-2.5 rounded-lg border text-sm transition-all ${
                     selectedRoutine === 'new'
                       ? 'border-[#5B4FFF]/50 bg-[#5B4FFF]/10 text-[#7B6FFF]'
                       : 'border-white/10 text-gray-400'
                   }`}
                 >
-                  <Sparkles className="w-4 h-4 shrink-0" /> Criar nova rotina "Treino de hoje"
+                  ✨ Criar nova rotina "Treino de hoje"
                 </button>
                 {routines?.map(r => (
                   <button

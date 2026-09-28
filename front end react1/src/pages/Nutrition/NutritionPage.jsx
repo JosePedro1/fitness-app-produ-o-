@@ -1,19 +1,17 @@
 // src/pages/Nutrition/NutritionPage.jsx
 import React, { useState, useEffect } from 'react';
-import {
-  Salad, Sparkles, Zap, Target, ArrowRight, ArrowLeft, Plus, Trash2, CheckCircle, Circle,
-  Dumbbell, AlertCircle, Carrot, Ban, Utensils, Dna, BarChart3, Footprints,
-} from 'lucide-react';
+import { Salad, Sparkles, Zap, Target, ArrowRight, ArrowLeft, Plus, Trash2, CheckCircle, Circle, Dumbbell, AlertCircle } from 'lucide-react';
 import { getRoutines } from '../../services/api-routines';
 import { getNutritionMe, generateFreePlan, generatePremiumPlan, addExercisesToRoutine } from '../../services/api-nutrition';
 import {
-  DAILY_LIMIT, GOALS, BIOTYPES, ALL_MEALS, ACTIVITY_OPTS,
-  OptionCard, Glyph, StepIndicator, UsageBar, PremiumBanner, PlanResult,
+  DAILY_LIMIT, GOALS, BIOTYPES, ALL_MEALS, MEAL_ICONS, ACTIVITY_OPTS,
+  OptionCard, StepIndicator, UsageBar, PremiumBanner, PlanResult,
 } from './NutritionComponents';
 
 // ── Helpers de validação ───────────────────────────────────
 
 // Detecta nomes próprios no campo de ingredientes.
+// Retorna lista dos tokens suspeitos.
 function findSuspectIngredients(raw) {
   if (!raw?.trim()) return [];
   return raw
@@ -36,23 +34,12 @@ function validateProfile(profile) {
   return null;
 }
 
-// Título de seção com ícone
-function SectionLabel({ icon: Icon, children, hint, className = 'mb-3' }) {
-  return (
-    <p className={`text-sm font-semibold text-gray-300 flex items-center gap-1.5 ${className}`}>
-      <Icon className="w-4 h-4 text-[#5B4FFF]" /> {children}
-      {hint && <span className="text-gray-600 font-normal">{hint}</span>}
-    </p>
-  );
-}
-
 // ── Campo com aviso de ingredientes ───────────────────────
 function IngredientsField({ value, onChange, warning }) {
   return (
     <div>
-      <label className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-1.5">
-        <Carrot className="w-4 h-4 text-[#5B4FFF]" /> O que você tem em casa?
-        <span className="text-gray-600 font-normal">(opcional)</span>
+      <label className="text-sm font-semibold text-gray-300 mb-2 block">
+        🥦 O que você tem em casa? <span className="text-gray-600 font-normal">(opcional)</span>
       </label>
       <textarea
         value={value}
@@ -76,28 +63,17 @@ function IngredientsField({ value, onChange, warning }) {
   );
 }
 
-// Cards de objetivo (foto no lugar do emoji)
-function GoalCard({ g, goal, setGoal }) {
-  return (
-    <OptionCard
-      selected={goal === g.value}
-      onClick={() => setGoal(g.value)}
-      emoji={<Glyph name={g.value} />}
-      label={g.label} desc={g.desc}
-    />
-  );
-}
-
 // ── Formulário Free ────────────────────────────────────────
 function FreeForm({ onGenerate, loading, error, usage }) {
-  const [goal, setGoal]                           = useState('');
-  const [ingredients, setIngredients]             = useState('');
+  const [goal, setGoal]                       = useState('');
+  const [ingredients, setIngredients]         = useState('');
   const [ingredientWarning, setIngredientWarning] = useState([]);
-  const [restrictions, setRestrictions]           = useState('');
-  const [meals, setMeals]                         = useState('3');
+  const [restrictions, setRestrictions]       = useState('');
+  const [meals, setMeals]                     = useState('3');
 
-  const limitReached = usage.used >= DAILY_LIMIT;
-  const canGenerate  = !!goal && ingredientWarning.length === 0 && !loading && !limitReached;
+  const limitReached  = usage.used >= DAILY_LIMIT;
+  // Botão bloqueado se: sem objetivo, com ingredientes inválidos, ou loading
+  const canGenerate   = !!goal && ingredientWarning.length === 0 && !loading && !limitReached;
 
   function handleIngredientsChange(e) {
     setIngredients(e.target.value);
@@ -106,20 +82,34 @@ function FreeForm({ onGenerate, loading, error, usage }) {
 
   return (
     <div className="space-y-5">
+      {/* Objetivo */}
       <div>
-        <SectionLabel icon={Target}>Qual é o seu objetivo?</SectionLabel>
+        <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
+          <Target className="w-4 h-4 text-[#5B4FFF]" /> Qual é o seu objetivo?
+        </p>
         <div className="grid grid-cols-2 gap-2">
-          {GOALS.map(g => <GoalCard key={g.value} g={g} goal={goal} setGoal={setGoal} />)}
+          {GOALS.map(g => (
+            <OptionCard
+              key={g.value}
+              selected={goal === g.value}
+              onClick={() => setGoal(g.value)}
+              emoji={g.emoji} label={g.label} desc={g.desc}
+            />
+          ))}
         </div>
       </div>
 
-      <IngredientsField value={ingredients} onChange={handleIngredientsChange} warning={ingredientWarning} />
+      {/* Ingredientes */}
+      <IngredientsField
+        value={ingredients}
+        onChange={handleIngredientsChange}
+        warning={ingredientWarning}
+      />
 
+      {/* Restrições + refeições */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-1.5">
-            <Ban className="w-4 h-4 text-[#5B4FFF]" /> Restrições
-          </label>
+          <label className="text-sm font-semibold text-gray-300 mb-2 block">🚫 Restrições</label>
           <input
             type="text" value={restrictions} onChange={e => setRestrictions(e.target.value)}
             placeholder="Ex: sem glúten…"
@@ -127,9 +117,7 @@ function FreeForm({ onGenerate, loading, error, usage }) {
           />
         </div>
         <div>
-          <label className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-1.5">
-            <Utensils className="w-4 h-4 text-[#5B4FFF]" /> Refeições/dia
-          </label>
+          <label className="text-sm font-semibold text-gray-300 mb-2 block">🍽️ Refeições/dia</label>
           <select
             value={meals} onChange={e => setMeals(e.target.value)}
             className="w-full bg-black/30 border border-white/10 rounded-xl text-gray-300 text-sm px-3 py-2.5 outline-none focus:border-[#5B4FFF]/50 transition-colors"
@@ -167,7 +155,10 @@ function FreeForm({ onGenerate, loading, error, usage }) {
         </button>
       )}
 
-      {!goal && <p className="text-xs text-gray-600 text-center">Selecione um objetivo para habilitar a geração</p>}
+      {/* Dicas de preenchimento */}
+      {!goal && (
+        <p className="text-xs text-gray-600 text-center">Selecione um objetivo para habilitar a geração</p>
+      )}
       {ingredientWarning.length > 0 && (
         <p className="text-xs text-amber-500/80 text-center">Corrija os ingredientes inválidos para continuar</p>
       )}
@@ -221,11 +212,16 @@ function PremiumWizard({ onGenerate, loading, error }) {
     setIngredientWarning(findSuspectIngredients(e.target.value));
   }
 
+  // Valida cada campo de perfil individualmente (feedback em tempo real)
   function validateProfileField(key, value) {
     const errors = { ...profileErrors };
     const v = parseFloat(value);
-    if (key === 'weight') errors.weight = (!value || isNaN(v) || v < 30 || v > 300) ? 'Entre 30 e 300 kg' : '';
-    if (key === 'height') errors.height = (!value || isNaN(v) || v < 100 || v > 250) ? 'Entre 100 e 250 cm' : '';
+    if (key === 'weight') {
+      errors.weight = (!value || isNaN(v) || v < 30 || v > 300) ? 'Entre 30 e 300 kg' : '';
+    }
+    if (key === 'height') {
+      errors.height = (!value || isNaN(v) || v < 100 || v > 250) ? 'Entre 100 e 250 cm' : '';
+    }
     if (key === 'age') {
       const a = parseInt(value);
       errors.age = (!value || isNaN(a) || a < 10 || a > 100) ? 'Entre 10 e 100 anos' : '';
@@ -249,9 +245,14 @@ function PremiumWizard({ onGenerate, loading, error }) {
     });
   }
 
+  // Step 0: objetivo + biótipo selecionados
   const canNext0 = !!(goal && biotype);
+
+  // Step 1: perfil válido + ao menos 1 refeição selecionada
   const profileValid = !validateProfile(profile) && Object.values(profileErrors).every(e => !e);
   const canNext1 = profileValid && selectedMeals.length >= 1;
+
+  // Step 3 (final): sem ingredientes suspeitos
   const canGenerate = !loading && ingredientWarning.length === 0;
 
   return (
@@ -262,20 +263,24 @@ function PremiumWizard({ onGenerate, loading, error }) {
       {step === 0 && (
         <div className="space-y-5">
           <div>
-            <SectionLabel icon={Target}>Qual é o seu objetivo?</SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-[#5B4FFF]" /> Qual é o seu objetivo?
+            </p>
             <div className="grid grid-cols-2 gap-2">
-              {GOALS.map(g => <GoalCard key={g.value} g={g} goal={goal} setGoal={setGoal} />)}
+              {GOALS.map(g => (
+                <OptionCard key={g.value} selected={goal === g.value} onClick={() => setGoal(g.value)}
+                  emoji={g.emoji} label={g.label} desc={g.desc} />
+              ))}
             </div>
           </div>
           <div>
-            <SectionLabel icon={Dna}>Qual é o seu biótipo?</SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
+              🧬 Qual é o seu biótipo?
+            </p>
             <div className="space-y-2">
               {BIOTYPES.map(b => (
-                <OptionCard
-                  key={b.value} selected={biotype === b.value} onClick={() => setBiotype(b.value)}
-                  emoji={<Glyph name={b.value} size="w-12 h-12" />}
-                  label={b.label} desc={b.desc} full
-                />
+                <OptionCard key={b.value} selected={biotype === b.value} onClick={() => setBiotype(b.value)}
+                  emoji={b.emoji} label={b.label} desc={b.desc} full />
               ))}
             </div>
           </div>
@@ -286,7 +291,9 @@ function PremiumWizard({ onGenerate, loading, error }) {
           >
             Próximo <ArrowRight className="w-4 h-4" />
           </button>
-          {!canNext0 && <p className="text-xs text-gray-600 text-center">Selecione objetivo e biótipo para continuar</p>}
+          {!canNext0 && (
+            <p className="text-xs text-gray-600 text-center">Selecione objetivo e biótipo para continuar</p>
+          )}
         </div>
       )}
 
@@ -294,14 +301,14 @@ function PremiumWizard({ onGenerate, loading, error }) {
       {step === 1 && (
         <div className="space-y-5">
           <div>
-            <SectionLabel icon={BarChart3} hint={<span className="text-xs text-red-400">* obrigatório</span>}>
-              Seu perfil físico
-            </SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
+              📊 Seu perfil físico <span className="text-xs text-red-400 font-normal">* obrigatório</span>
+            </p>
             <div className="bg-black/20 border border-white/5 rounded-xl p-4 grid grid-cols-2 gap-3">
               {[
-                { key: 'weight', label: 'Peso (kg)',   placeholder: '70',  hint: '30–300' },
+                { key: 'weight', label: 'Peso (kg)',   placeholder: '70', hint: '30–300' },
                 { key: 'height', label: 'Altura (cm)', placeholder: '175', hint: '100–250' },
-                { key: 'age',    label: 'Idade',       placeholder: '25',  hint: '10–100' },
+                { key: 'age',    label: 'Idade',       placeholder: '25', hint: '10–100' },
               ].map(({ key, label, placeholder, hint }) => (
                 <div key={key}>
                   <label className="text-xs text-gray-500 mb-1 block">{label}</label>
@@ -317,7 +324,8 @@ function PremiumWizard({ onGenerate, loading, error }) {
                   />
                   {profileErrors[key]
                     ? <p className="text-xs text-red-400 mt-1">{profileErrors[key]}</p>
-                    : <p className="text-xs text-gray-600 mt-1">{hint}</p>}
+                    : <p className="text-xs text-gray-600 mt-1">{hint}</p>
+                  }
                 </div>
               ))}
               <div>
@@ -352,7 +360,9 @@ function PremiumWizard({ onGenerate, loading, error }) {
           </div>
 
           <div>
-            <SectionLabel icon={Utensils} className="mb-1">Quais refeições você fará hoje?</SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-1.5">
+              🍽️ Quais refeições você fará hoje?
+            </p>
             <p className="text-xs text-gray-500 mb-3">Selecione as refeições que você conseguirá fazer</p>
             <div className="grid grid-cols-2 gap-2">
               {ALL_MEALS.map(meal => {
@@ -360,15 +370,15 @@ function PremiumWizard({ onGenerate, loading, error }) {
                 return (
                   <button
                     key={meal} onClick={() => toggleMeal(meal)}
-                    className={`flex items-center gap-2.5 p-2 rounded-xl border text-sm transition-all ${
+                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-sm transition-all ${
                       selected
                         ? 'bg-[#5B4FFF]/15 border-[#5B4FFF]/40 text-[#7B6FFF]'
                         : 'bg-black/20 border-white/5 text-gray-400 hover:border-white/15'
                     }`}
                   >
-                    <Glyph name={meal} size="w-9 h-9" active={selected} />
-                    <span className="font-medium text-xs text-left">{meal}</span>
-                    {selected && <CheckCircle className="w-3.5 h-3.5 ml-auto mr-1 shrink-0" />}
+                    <span className="text-base">{MEAL_ICONS[meal]}</span>
+                    <span className="font-medium text-xs">{meal}</span>
+                    {selected && <CheckCircle className="w-3.5 h-3.5 ml-auto shrink-0" />}
                   </button>
                 );
               })}
@@ -403,7 +413,9 @@ function PremiumWizard({ onGenerate, loading, error }) {
       {step === 2 && (
         <div className="space-y-5">
           <div>
-            <SectionLabel icon={Dumbbell} className="mb-1">Quais rotinas você fez hoje?</SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-1 flex items-center gap-1.5">
+              <Dumbbell className="w-4 h-4 text-[#5B4FFF]" /> Quais rotinas você fez hoje?
+            </p>
             <p className="text-xs text-gray-500 mb-3">Selecione as que você realizou <span className="text-gray-600">(opcional)</span></p>
             {routines.length === 0 ? (
               <p className="text-sm text-gray-500 bg-black/20 border border-white/5 rounded-xl px-4 py-3">
@@ -431,7 +443,7 @@ function PremiumWizard({ onGenerate, loading, error }) {
           </div>
 
           <div>
-            <SectionLabel icon={Plus}>Adicionar exercício avulso</SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-3">➕ Adicionar exercício avulso</p>
             <div className="bg-black/20 border border-white/5 rounded-xl p-4 space-y-3">
               <input
                 type="text" placeholder="Nome do exercício (ex: Supino reto)"
@@ -440,7 +452,7 @@ function PremiumWizard({ onGenerate, loading, error }) {
               />
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { key: 'sets',   label: 'Séries',       placeholder: '4' },
+                  { key: 'sets',   label: 'Séries',      placeholder: '4' },
                   { key: 'weight', label: 'Peso (kg)',    placeholder: '80' },
                   { key: 'rest',   label: 'Descanso (s)', placeholder: '60' },
                 ].map(({ key, label, placeholder }) => (
@@ -498,8 +510,11 @@ function PremiumWizard({ onGenerate, loading, error }) {
       {/* ── Step 3: Cardio + Ingredientes + Restrições + Gerar ── */}
       {step === 3 && (
         <div className="space-y-5">
+          {/* Cardio */}
           <div>
-            <SectionLabel icon={Footprints} hint="(opcional)">Cardio hoje?</SectionLabel>
+            <p className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-1.5">
+              🏃 Cardio hoje? <span className="text-gray-600 font-normal">(opcional)</span>
+            </p>
             <div className="bg-black/20 border border-white/5 rounded-xl p-4">
               <div className="flex gap-2 mb-3">
                 {[{ value: 'min', label: 'Minutos' }, { value: 'km', label: 'Quilômetros' }].map(t => (
@@ -521,12 +536,17 @@ function PremiumWizard({ onGenerate, loading, error }) {
             </div>
           </div>
 
-          <IngredientsField value={ingredients} onChange={handleIngredientsChange} warning={ingredientWarning} />
+          {/* Ingredientes com validação */}
+          <IngredientsField
+            value={ingredients}
+            onChange={handleIngredientsChange}
+            warning={ingredientWarning}
+          />
 
+          {/* Restrições */}
           <div>
-            <label className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-1.5">
-              <Ban className="w-4 h-4 text-[#5B4FFF]" /> Restrições alimentares
-              <span className="text-gray-600 font-normal">(opcional)</span>
+            <label className="text-sm font-semibold text-gray-300 mb-2 block">
+              🚫 Restrições alimentares <span className="text-gray-600 font-normal">(opcional)</span>
             </label>
             <input
               type="text" value={restrictions} onChange={e => setRestrictions(e.target.value)}
@@ -650,6 +670,7 @@ const NutritionPage = () => {
   return (
     <div className="w-full min-h-screen bg-[#171717] pb-16">
       <div className="lg:px-24 md:px-16 px-4 pt-8">
+        {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
           <div className="min-w-0">
             <h1
